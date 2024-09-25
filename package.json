@@ -1,0 +1,24 @@
+{
+  "name": "openplans",
+  "version": "0.0.1",
+  "author": "Vishwajeet Mane",
+  "description": "OpenPlans is a robust tool for creating 2D plans and 2D models of anything you can imagine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "prod": "vite build"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "@types/three": "^0.168.0",
+    "three": "^0.168.0"
+  },
+  "peerDependencies": {
+    "three": "^0.168.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.7"
+  }
+}
