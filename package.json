@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/three": "^0.168.0",
+    "camera-controls": "^2.9.0",
     "three": "^0.168.0"
   },
   "peerDependencies": {

@@ -1,38 +1,38 @@
 import * as THREE from 'three'
-
-interface ITheme {
-  background: string
-  color: string
-}
-
-export type activeTheme = 'darkBlue' | 'light' | 'dark'
-
-interface ICanvasTheme {
-  darkBlue: ITheme,
-  light: ITheme,
-  dark: ITheme,
-}
+import { PlanCamera } from './plancamera'
+import CameraControls from 'camera-controls'
+import { activeTheme, ICanvasTheme } from '../base-type'
+import { PlanGrid } from './plangrid'
+import * as OpenGrid from './../../OpenGridHelper.ts'
 
 export class OpenThree {
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
-  camera: THREE.PerspectiveCamera
+  planCamera: PlanCamera
+  threeCamera: THREE.PerspectiveCamera
   container: HTMLElement
   theme!: ICanvasTheme
   activeTheme: activeTheme = 'light'
 
   dummyMesh!: THREE.Mesh
+  // planGrid: PlanGrid
 
   constructor(container: HTMLElement) {
     console.log('OpenThree constructor')
+    CameraControls.install({THREE: THREE});
+    this.generateTheme()
+
     this.container = container
     this.scene = new THREE.Scene()
     this.renderer = new THREE.WebGLRenderer({
       antialias: true
     })
-    this.camera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 1000)
+    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
     
-    this.generateTheme()
+    this.planCamera = new PlanCamera(this.threeCamera, this.renderer)
+    
+    // this.planGrid = new PlanGrid(this.scene, this.theme, this.activeTheme)
+
     this.setup()
   }
 
@@ -41,15 +41,18 @@ export class OpenThree {
     this.theme = {
       darkBlue: {
         background: '#003ca0',
-        color: '#fff'
+        color: '#fff',
+        gridColor: 0xffffff
       },
       light: {
         background: '#ebdbcc',
-        color: '#003ca0'
+        color: '#003ca0',
+        gridColor: 0x003ca0
       },
       dark: {
         background: '#242b2f',
-        color: '#fff'
+        color: '#fff',
+        gridColor: 0xffffff
       }
     }
   }
@@ -60,14 +63,15 @@ export class OpenThree {
     }
     this.activeTheme = name
     this.scene.background = new THREE.Color(this.theme[this.activeTheme].background)
+    // this.planGrid.applyTheme(this.activeTheme)
+    OpenGrid.Shader.uniforms.color.value.set(this.theme[this.activeTheme].gridColor)
   }
 
   setup() {
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
     this.container.appendChild(this.renderer.domElement)
-    this.camera.position.z = 5
-
+    
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
     this.scene.add(ambientLight)
 
@@ -76,12 +80,25 @@ export class OpenThree {
 
     this.scene.background = new THREE.Color(this.theme[this.activeTheme].background)
 
+    window.addEventListener('resize', () => {
+      this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
+      this.threeCamera.aspect = this.container.clientWidth / this.container.clientHeight
+      this.threeCamera.updateProjectionMatrix()
+    })
+
     this.animate()
+
+
+    // Utils like Grid, Lights and Etc
+    const openGrid = new OpenGrid.Grid(this.theme[this.activeTheme].gridColor)
+    this.scene.add(openGrid)
   }
 
   animate() {
     requestAnimationFrame(() => this.animate())
-    this.renderer.render(this.scene, this.camera)
+    this.renderer.render(this.scene, this.threeCamera)
+
+    this.planCamera.update()
   }
 
   addCube() {

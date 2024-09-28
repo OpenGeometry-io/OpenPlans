@@ -1,4 +1,5 @@
-import { OpenThree, activeTheme } from "./service/three"
+import { OpenThree } from "./service/three"
+import { activeTheme } from "./base-type"
 import * as THREE from 'three'
 // const uiStore = {
 
