@@ -64,7 +64,8 @@ export class OpenThree {
     this.activeTheme = name
     this.scene.background = new THREE.Color(this.theme[this.activeTheme].background)
     // this.planGrid.applyTheme(this.activeTheme)
-    OpenGrid.Shader.uniforms.color.value.set(this.theme[this.activeTheme].gridColor)
+    const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
+    OpenGrid.Shader.uniforms.lineColor.value = gridColor
   }
 
   setup() {
@@ -90,8 +91,15 @@ export class OpenThree {
 
 
     // Utils like Grid, Lights and Etc
-    const openGrid = new OpenGrid.Grid(this.theme[this.activeTheme].gridColor)
+    const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
+    const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
+    // @ts-ignore
     this.scene.add(openGrid)
+  }
+
+  hexToRgb(hex: number) {
+    const color = new THREE.Color(hex)
+    return new THREE.Vector3(color.r, color.g, color.b)
   }
 
   animate() {

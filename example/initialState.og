@@ -1,0 +1,31 @@
+{
+  {
+    "id": "123",
+    "type": "camera",
+    "position": {
+      "x": 3,
+      "y": 6,
+      "z": 2
+    },
+    "target": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "createdBy": "tejas"
+  },
+  {
+    "id: "43432",
+    "type: "chair",
+    "group": "kitchen",
+    "groupId": "34234234",
+    "mesh": "https://elements.openplans.io/userId/meshId",
+    "position": {
+      "x": 3,
+      "y": 6,
+      "z": 2
+    },
+    "floorName: "Third Floor"
+    "floorId": "56786534"
+  }
+}

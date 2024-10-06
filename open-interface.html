@@ -34,10 +34,13 @@
     import { OrbitControls } from 'OrbitControls';
 
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 10, 0);
 
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById("app").appendChild(renderer.domElement);
 
@@ -49,39 +52,96 @@
 
     // Vertex shader for the grid
     const vertexShader = `
-      uniform float gridSize;
+      attribute vec3 offset;
+      attribute vec3 position;
+      
+      varying vec3 vPosition;
+
+      uniform mat4 modelViewMatrix;
+      uniform mat4 projectionMatrix;
+      uniform vec3 cameraPosition;
+
+      uniform float visibleArea;
+      uniform vec3 lineColor;
+
+      vec3 worldPosition;
+
       void main() {
-        vec3 pos = position.${axes} *  gridSize;
-        // pos = pos * cameraPosition;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        worldPosition = position + offset;
+        worldPosition.y = 0.0;
+        worldPosition.x = worldPosition.x + cameraPosition.x - mod(cameraPosition.x, 1.0);
+        worldPosition.z = worldPosition.z + cameraPosition.z - mod(cameraPosition.z, 1.0);
+        vPosition = worldPosition;
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
       }
     `;
 
     // Fragment shader for the grid lines
     const fragmentShader = `
+      precision highp float;
       uniform vec3 lineColor;
+
+      float near = 0.1;
+      uniform float visibleArea;
+
+      varying vec3 vPosition;
+      uniform vec3 cameraPosition;
+      
       void main() {
-        gl_FragColor = vec4(lineColor, 1.0);
+        float dist = distance(vPosition, cameraPosition);
+        float alpha = 1.0 - smoothstep(near, visibleArea, dist);
+        gl_FragColor = vec4(lineColor, alpha);
       }
     `;
 
-    // Shader material setup
-    const gridMaterial = new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
+    // gridMesh.rotation.x = Math.PI / 2;
+    const gridPosition = [];
+    gridPosition.push(1, 0, 1);
+    gridPosition.push(-1, 0, 1);
+    gridPosition.push(-1, 0, -1);
+    gridPosition.push(1, 0, -1);
+    gridPosition.push(1, 0, 1);
+
+    const offsets = [];
+    const area = 50;
+    const visibleArea = 25;
+    const areaNeg = -area;
+    for (let i = areaNeg/2; i < area/2; i++) {
+      for (let j = areaNeg/2; j < area/2; j++) {
+        offsets.push(i, 0, j);
+      }
+    }
+
+    // console.log(offsets);
+    const gridInstancedGeometry = new THREE.InstancedBufferGeometry();
+    gridInstancedGeometry.instanceCount = offsets.length / 3;
+    gridInstancedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(gridPosition, 3));
+    gridInstancedGeometry.setAttribute('offset', new THREE.InstancedBufferAttribute(new Float32Array(offsets), 3));
+
+    console.log(gridInstancedGeometry.getAttribute('position'));
+
+    const gridInstancedMaterial = new THREE.RawShaderMaterial({
+      uniforms: {
+        'lineColor': { value: new THREE.Vector3(0.0, 0.0, 0.0) },
+        'visibleArea': { value: visibleArea }
+      },
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
-      uniforms: {
-        gridSize: { value: 5 },
-        lineColor: { value: new THREE.Vector3(1.0, 0.0, 0.0) }
-      },
-      frustumCulled: false
+      side: THREE.DoubleSide,
+      forceSinglePass: true,
+      transparent: true
     });
-
-    // Create a plane geometry for the grid tile (a single quad)
-    const planeGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-    const gridMesh = new THREE.Mesh(planeGeometry, gridMaterial);
-    // gridMesh.rotation.x = Math.PI / 2;
+    const gridMesh = new THREE.Line(gridInstancedGeometry, gridInstancedMaterial);
+    gridMesh.frustumCulled = false;
     scene.add(gridMesh);
+
+
+
+
+
+
+
 
     // Cube geometry for the box
     const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
