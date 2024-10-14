@@ -5,7 +5,7 @@ import { activeTheme, ICanvasTheme } from '../base-type'
 import { PlanGrid } from './plangrid'
 import * as OpenGrid from './../../OpenGridHelper.ts'
 import { BaseWall } from '../elements/base-wall.ts'
-import { OpenGeometry } from '../../kernel-dist/index'
+import { OpenGeometry } from '../../kernel/index'
 
 export class OpenThree {
   scene: THREE.Scene

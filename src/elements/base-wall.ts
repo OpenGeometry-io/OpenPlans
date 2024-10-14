@@ -1,7 +1,7 @@
 import {
   Vector3D,
   BasePoly,
-} from './../../kernel-dist';
+} from '../../kernel';
 import * as THREE from 'three';
 
 export class BaseWall {
@@ -17,8 +17,8 @@ export class BaseWall {
     const vertices = [
       new Vector3D(0, 0, 0),
       new Vector3D(10, 0, 0),
-      new Vector3D(10, 10, 0),
-      new Vector3D(0, 10, 0),
+      new Vector3D(10, 0, 10),
+      new Vector3D(0, 0, 10),
     ];
     this.mesh = new BasePoly(vertices);
   }
