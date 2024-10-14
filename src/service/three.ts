@@ -5,7 +5,7 @@ import { activeTheme, ICanvasTheme } from '../base-type'
 import { PlanGrid } from './plangrid'
 import * as OpenGrid from './../../OpenGridHelper.ts'
 import { BaseWall } from '../elements/base-wall.ts'
-import { OpenGeometry } from '../../kernel/index'
+import { OpenGeometry } from '../../kernel/dist/index'
 
 export class OpenThree {
   scene: THREE.Scene
@@ -15,8 +15,6 @@ export class OpenThree {
   container: HTMLElement
   theme!: ICanvasTheme
   activeTheme: activeTheme = 'light'
-
-  dummyMesh!: THREE.Mesh
   // planGrid: PlanGrid
 
   constructor(container: HTMLElement) {
@@ -75,7 +73,7 @@ export class OpenThree {
   async setup() {
     const openGeometry = new OpenGeometry(this.container, this.scene, this.threeCamera);
     await openGeometry.setup();
-    console.log(openGeometry);
+    openGeometry.pencil?.groundVisible(false);
 
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
@@ -103,6 +101,8 @@ export class OpenThree {
     const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
     // @ts-ignore
     this.scene.add(openGrid)
+
+    console.log(this.scene);
   }
 
   hexToRgb(hex: number) {

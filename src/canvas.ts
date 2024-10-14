@@ -1,40 +1,6 @@
 import { OpenThree } from "./service/three"
 import { activeTheme } from "./base-type"
 import * as THREE from 'three'
-// const uiStore = {
-
-// }
-
-// const html = `
-//   <div id="canvas"></div>
-// `
-
-// function setupUI (canvasDiv: HTMLDivElement) {
-//   const button = document.createElement('button')
-//   button.textContent = 'Click me'
-//   button.onclick = () => {
-//     alert('Hello, world!')
-//   }
-//   canvasDiv.appendChild(button)
-// }
-
-// function setupCanvas(canvasDiv: HTMLDivElement) {
-//   if (!canvasDiv) {
-//     return
-//   }
-
-//   setupUI(canvasDiv)
-
-//   const threeScene = new OpenThree(canvasDiv)
-//   threeScene.addCube()
-// }
-
-// export function OpenCanvas() {
-//   // console.log('OpenCanvas');
-  
-//   return html
-// }
-
 
 class OpenPlanCanvas extends HTMLElement {
   static observedAttributes = ["size"];
@@ -56,7 +22,6 @@ class OpenPlanCanvas extends HTMLElement {
     const button = this.shadow.querySelector("#toggle-theme");
     button?.addEventListener("click", () => {
       this.threeScene.toggleTheme("dark");
-      (this.threeScene.dummyMesh.material as THREE.MeshStandardMaterial).color.set(this.threeScene.theme.dark.color);
     });
 
     console.log('OpenPlanCanvas connectedCallback');
@@ -67,7 +32,6 @@ class OpenPlanCanvas extends HTMLElement {
       return;
     }
     this.threeScene.toggleTheme(value as activeTheme);
-    (this.threeScene.dummyMesh.material as THREE.MeshStandardMaterial).color.set(this.threeScene.theme[value as activeTheme].color);
   }
 
   render() {
