@@ -4,6 +4,8 @@ import CameraControls from 'camera-controls'
 import { activeTheme, ICanvasTheme } from '../base-type'
 import { PlanGrid } from './plangrid'
 import * as OpenGrid from './../../OpenGridHelper.ts'
+import { BaseWall } from '../elements/base-wall.ts'
+import { OpenGeometry } from '../../kernel-dist/index'
 
 export class OpenThree {
   scene: THREE.Scene
@@ -32,8 +34,10 @@ export class OpenThree {
     this.planCamera = new PlanCamera(this.threeCamera, this.renderer)
     
     // this.planGrid = new PlanGrid(this.scene, this.theme, this.activeTheme)
-
-    this.setup()
+    
+    this.setup().then(() => {
+      this.addCube()
+    })
   }
 
   // accept a theme with type
@@ -68,7 +72,11 @@ export class OpenThree {
     OpenGrid.Shader.uniforms.lineColor.value = gridColor
   }
 
-  setup() {
+  async setup() {
+    const openGeometry = new OpenGeometry(this.container, this.scene, this.threeCamera);
+    await openGeometry.setup();
+    console.log(openGeometry);
+
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
     this.container.appendChild(this.renderer.domElement)
@@ -110,10 +118,15 @@ export class OpenThree {
   }
 
   addCube() {
-    const geometry = new THREE.BoxGeometry()
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-    const cube = new THREE.Mesh(geometry, material)
-    this.scene.add(cube)
-    this.dummyMesh = cube
+    // const geometry = new THREE.BoxGeometry()
+    // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+    // const cube = new THREE.Mesh(geometry, material)
+    // this.scene.add(cube)
+    // this.dummyMesh = cube
+
+    const wall = new BaseWall(0x00ff00);
+    const wallMesh = wall.getMesh();
+    if (wallMesh)
+    this.scene.add(wallMesh);
   }
 }

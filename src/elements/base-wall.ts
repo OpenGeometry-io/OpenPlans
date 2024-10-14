@@ -1,22 +1,29 @@
-import * as OG from './../../../OpenGeometry-Kernel/dist/';
+import {
+  Vector3D,
+  BasePoly,
+} from './../../kernel-dist';
 import * as THREE from 'three';
 
-export class BaseWall extends THREE.Mesh {
+export class BaseWall {
   public color: number;
+  mesh: BasePoly | null = null;
 
   constructor(color: number) {
-    super();
     this.color = color;
     this.setGeometry();
   }
 
   public setGeometry() {
     const vertices = [
-      new OG.Vector3D(0, 0, 0),
-      new OG.Vector3D(10, 0, 0),
-      new OG.Vector3D(10, 10, 0),
-      new OG.Vector3D(0, 10, 0),
+      new Vector3D(0, 0, 0),
+      new Vector3D(10, 0, 0),
+      new Vector3D(10, 10, 0),
+      new Vector3D(0, 10, 0),
     ];
-    new OG.BasePoly(vertices);
+    this.mesh = new BasePoly(vertices);
+  }
+
+  public getMesh() {
+    return this.mesh;
   }
 }
