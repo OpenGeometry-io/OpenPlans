@@ -138,7 +138,7 @@ function vertexShaderFunc() {
     vPosition = worldPosition;
 
     if (polka) {
-      gl_PointSize = 4.0;
+      gl_PointSize = 2.0;
     }
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition, 1.0);
   }

@@ -16,7 +16,6 @@ class OpenPlanCanvas extends HTMLElement {
     this.render();
 
     const container = this.shadow.querySelector("div");
-    console.log(container);
     this.threeScene = new OpenThree(container as HTMLElement);
 
     const button = this.shadow.querySelector("#toggle-theme");

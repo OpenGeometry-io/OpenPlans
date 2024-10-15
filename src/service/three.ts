@@ -15,6 +15,7 @@ export class OpenThree {
   container: HTMLElement
   theme!: ICanvasTheme
   activeTheme: activeTheme = 'light'
+  openGeometry: OpenGeometry | undefined
   // planGrid: PlanGrid
 
   constructor(container: HTMLElement) {
@@ -71,9 +72,11 @@ export class OpenThree {
   }
 
   async setup() {
-    const openGeometry = new OpenGeometry(this.container, this.scene, this.threeCamera);
-    await openGeometry.setup();
-    openGeometry.pencil?.groundVisible(false);
+    this.openGeometry = new OpenGeometry(this.container, this.scene, this.threeCamera);
+    await this.openGeometry.setup();
+    this.openGeometry.pencil?.onCursorDown.add((event) => {
+      console.log('cursor down', event);
+    });
 
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
@@ -92,17 +95,13 @@ export class OpenThree {
       this.threeCamera.aspect = this.container.clientWidth / this.container.clientHeight
       this.threeCamera.updateProjectionMatrix()
     })
-
     this.animate()
-
 
     // Utils like Grid, Lights and Etc
     const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
     const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
     // @ts-ignore
     this.scene.add(openGrid)
-
-    console.log(this.scene);
   }
 
   hexToRgb(hex: number) {
@@ -113,7 +112,7 @@ export class OpenThree {
   animate() {
     requestAnimationFrame(() => this.animate())
     this.renderer.render(this.scene, this.threeCamera)
-
+    this.openGeometry?.update(this.scene, this.threeCamera)
     this.planCamera.update()
   }
 
@@ -123,8 +122,8 @@ export class OpenThree {
     // const cube = new THREE.Mesh(geometry, material)
     // this.scene.add(cube)
     // this.dummyMesh = cube
-
-    const wall = new BaseWall(0x00ff00);
+    if (!this.openGeometry?.pencil) return;
+    const wall = new BaseWall(0x00ff00, this.openGeometry.pencil);
     const wallMesh = wall.getMesh();
     if (wallMesh)
     this.scene.add(wallMesh);
