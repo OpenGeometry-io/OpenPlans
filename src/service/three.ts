@@ -6,6 +6,8 @@ import { PlanGrid } from './plangrid'
 import * as OpenGrid from './../../OpenGridHelper.ts'
 import { BaseWall } from '../elements/base-wall.ts'
 import { OpenGeometry } from '../../kernel/dist/index'
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
+import { PencilMode } from '../../kernel/dist/src/pencil'
 
 export class OpenThree {
   scene: THREE.Scene
@@ -37,6 +39,8 @@ export class OpenThree {
     this.setup().then(() => {
       this.addCube()
     })
+
+    this.addGUI()
   }
 
   // accept a theme with type
@@ -131,6 +135,21 @@ export class OpenThree {
 
     const wall2 = new BaseWall(0xff0000, this.openGeometry.pencil);
     this.scene.add(wall2);
+    wall2.position.set(0, 0, 3);
     // wall2.rotateY(Math.PI / 2);
+  }
+
+  addGUI() {
+    const gui = new GUI();
+    const wallFolder = gui.addFolder('Wall');
+
+    const pencil = gui.addFolder('Pencil');
+    const pencilControls = {
+      'mode': "cursor",
+    };
+    pencil.add(pencilControls, 'mode', ["select", "cursor"]).name('Mode').onChange((value) => {
+      if (!this.openGeometry?.pencil) return;
+      this.openGeometry.pencil.mode = value as PencilMode;
+    });
   }
 }
