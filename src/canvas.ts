@@ -45,11 +45,7 @@ class OpenPlanCanvas extends HTMLElement {
       </style>
       <div>
         <div style="position: absolute; top: 0; left: 0;">
-          <oi-dropdown>
-            <oi-option name="dark">Dark</oi-option>
-            <oi-option name="light">Light</oi-option>
-            <oi-option name="darkBlue">Dark Blue</oi-option>
-          </oi-dropdown>
+
         </div>
       </div>
     `;

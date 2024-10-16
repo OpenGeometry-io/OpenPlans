@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
 
 const WallSet = {
-  id: 4,
+  id: 1,
   bounds: {
     x: 0.25,
     y: 0,
@@ -34,24 +34,24 @@ const WallSet = {
 }
 
 interface WallSetMesh {
-  line: THREE.Line;
-  sphere: THREE.Mesh;
-  sphere2: THREE.Mesh;
+  id: number;
+  shadowMesh: THREE.Mesh;
+  startSphere: THREE.Mesh;
+  endSphere: THREE.Mesh;
 }
 
 
-export class BaseWall {
+export class BaseWall extends BasePoly {
   public color: number;
   mesh: BasePoly | null = null;
   wallSet = WallSet;
-  isEditing = false;
-  isSolid = true;
-  sphere: THREE.Mesh | null = null;
-
   private wallSetMesh: WallSetMesh | null = null;
+
   activeSphere: string | undefined;
+  isEditing = false;
 
   constructor(color: number, private pencil: Pencil) {
+    super();
     this.color = color;
     this.setupSet();
     this.setGeometry();
@@ -62,59 +62,64 @@ export class BaseWall {
    */
   setupSet() {
     if (!this.wallSet) return;
-    this.wallSet.id = 4;
+    this.wallSet.id = this.ogid;
   }
 
   private setGeometry() {
     if (!this.wallSet) return;
     const vertices = [
       new Vector3D(
-        this.wallSet.anchor.start.x - this.wallSet.halfThickness,
+        this.wallSet.anchor.start.x,
         this.wallSet.anchor.start.y,
         this.wallSet.anchor.start.z - this.wallSet.halfThickness
       ),
       new Vector3D(
-        this.wallSet.anchor.start.x - this.wallSet.halfThickness,
+        this.wallSet.anchor.start.x,
         this.wallSet.anchor.start.y,
         this.wallSet.anchor.start.z + this.wallSet.halfThickness
       ),
       new Vector3D(
-        this.wallSet.anchor.end.x + this.wallSet.halfThickness,
+        this.wallSet.anchor.end.x,
         this.wallSet.anchor.end.y,
         this.wallSet.anchor.end.z + this.wallSet.halfThickness
       ),
       new Vector3D(
-        this.wallSet.anchor.end.x + this.wallSet.halfThickness,
+        this.wallSet.anchor.end.x,
         this.wallSet.anchor.end.y,
         this.wallSet.anchor.end.z - this.wallSet.halfThickness
       ),
     ];
-    
-    this.mesh = new BasePoly(vertices);
+    this.addVertices(vertices);
+    // this.material = new THREE.MeshBasicMaterial({ color: this.color });
+
+    this.name = `wall`+this.wallSet.id;
+    console.log('this.name', this.name);
+    this.pencil.pencilMeshes.push(this);
 
     const sphereGeometry = new THREE.SphereGeometry(0.05, 32, 32);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    this.sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    this.sphere.name = 'start';
-    this.sphere.position.set(
+    const sSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sSphere.name = `start`+this.wallSet.id;
+    sSphere.position.set(
       this.wallSet.anchor.start.x,
       this.wallSet.anchor.start.y,
       this.wallSet.anchor.start.z
     )
-    this.mesh.add(this.sphere);
+    this.add(sSphere);
 
-    const sphere2 = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphere2.name = 'end';
-    sphere2.position.set(
+    const eSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    eSphere.name = `end`+this.wallSet.id;
+    eSphere.position.set(
       this.wallSet.anchor.end.x,
       this.wallSet.anchor.end.y,
       this.wallSet.anchor.end.z
     )
-    this.mesh.add(sphere2);
+    this.add(eSphere);
 
+    this.pencil.pencilMeshes.push(sSphere);
+    this.pencil.pencilMeshes.push(eSphere);
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color: this.color });
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+    const shadowGeom = this.generateShadowMesh(
       new THREE.Vector3(
         this.wallSet.anchor.start.x,
         this.wallSet.anchor.start.y,
@@ -124,19 +129,21 @@ export class BaseWall {
         this.wallSet.anchor.end.x,
         this.wallSet.anchor.end.y,
         this.wallSet.anchor.end.z
-      )
-    ]);
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    this.mesh.add(line);
-
-    this.pencil.pencilMeshes.push(this.sphere);
-    this.pencil.pencilMeshes.push(sphere2);
+      ),
+      this.wallSet.halfThickness
+    );
+    const shadowMaterial = new THREE.MeshToonMaterial({ color: 0x000000, wireframe: true });
+    const shadowMesh = new THREE.Mesh(shadowGeom, shadowMaterial);
+    this.add(shadowMesh);
 
     this.wallSetMesh = {
-      line: line,
-      sphere: this.sphere,
-      sphere2: sphere2,
+      id: this.wallSet.id,
+      shadowMesh: shadowMesh,
+      startSphere: sSphere,
+      endSphere: eSphere,
     }
+
+    // console.log('wallSetMesh', this.wallSetMesh);
 
     this.pencil.onElementSelected.add((mesh) => {
       this.handleElementSelected(mesh);
@@ -150,17 +157,54 @@ export class BaseWall {
       if (!this.isEditing) return;
       setTimeout(() => {
         this.isEditing = false;
+
+        if (!this.wallSetMesh) return;
+
+        // Update Vertices and Wall Main Mesh
+        const vertices = [
+          new Vector3D(
+            this.wallSetMesh.startSphere.position.x,
+            this.wallSetMesh.startSphere.position.y,
+            this.wallSetMesh.startSphere.position.z - this.wallSet.halfThickness
+          ),
+          new Vector3D(
+            this.wallSetMesh.startSphere.position.x,
+            this.wallSetMesh.startSphere.position.y,
+            this.wallSetMesh.startSphere.position.z + this.wallSet.halfThickness
+          ),
+          new Vector3D(
+            this.wallSetMesh.endSphere.position.x,
+            this.wallSetMesh.endSphere.position.y,
+            this.wallSetMesh.endSphere.position.z + this.wallSet.halfThickness
+          ),
+          new Vector3D(
+            this.wallSetMesh.endSphere.position.x,
+            this.wallSetMesh.endSphere.position.y,
+            this.wallSetMesh.endSphere.position.z - this.wallSet.halfThickness
+          ),
+        ];
+        this.resetVertices();
+        this.addVertices(vertices);
+
       }, 100);
     });
   }
 
   private handleElementSelected(mesh: THREE.Mesh) {
-    if (mesh.name === 'start' && !this.isEditing) {
+    if (!mesh.name || !(mesh.name !== this.name) || (mesh.parent?.name !== this.name)) return;
+    
+    console.log('handleElementSelected', mesh);
+    console.log('wallsetid', this.wallSet.id);
+    const startSphereName = `start`+this.wallSet.id;
+    const endSphereName = `end`+this.wallSet.id;
+
+    if (mesh.name === startSphereName && !this.isEditing) {
+      console.log('startSphereName', mesh.name);
       this.isEditing = true;
       this.activeSphere = mesh.name;
     }
 
-    if (mesh.name === 'end' && !this.isEditing) {
+    if (mesh.name === endSphereName && !this.isEditing) {
       this.isEditing = true;
       this.activeSphere = mesh.name;
     }
@@ -170,23 +214,45 @@ export class BaseWall {
     if (!this.isEditing) return;
     if (!this.wallSetMesh) return;
 
-    if (this.activeSphere === 'start') {
-      this.wallSetMesh.sphere.position.set(cursorPosition.x, cursorPosition.y, cursorPosition.z);
+    const startSphereName = `start`+this.wallSet.id;
+    const endSphereName = `end`+this.wallSet.id;
+
+    if (this.activeSphere === startSphereName) {
+      const worldToLocal = this.worldToLocal(cursorPosition);
+      this.wallSetMesh.startSphere.position.set(worldToLocal.x, 0, worldToLocal.z);
     }
 
-    if (this.activeSphere === 'end') {
-      this.wallSetMesh.sphere2.position.set(cursorPosition.x, cursorPosition.y, cursorPosition.z);
+    if (this.activeSphere === endSphereName) {
+      const worldToLocal = this.worldToLocal(cursorPosition);
+      this.wallSetMesh.endSphere.position.set(worldToLocal.x, 0, worldToLocal.z);
     }
 
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-      this.wallSetMesh.sphere.position,
-      this.wallSetMesh.sphere2.position
-    ]);
+    this.wallSet.anchor.start.x = this.wallSetMesh.startSphere.position.x;
+    this.wallSet.anchor.start.z = this.wallSetMesh.startSphere.position.z;
+    this.wallSet.anchor.end.x = this.wallSetMesh.endSphere.position.x;
+    this.wallSet.anchor.end.z = this.wallSetMesh.endSphere.position.z;
 
-    this.wallSetMesh.line.geometry = lineGeometry;
+    this.wallSetMesh.shadowMesh.geometry.dispose();
+    this.wallSetMesh.shadowMesh.geometry = this.generateShadowMesh(
+      this.wallSetMesh.startSphere.position,
+      this.wallSetMesh.endSphere.position,
+      this.wallSet.halfThickness
+    );
   }
 
-  public getMesh() {
-    return this.mesh;
+  generateShadowMesh(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+      start.x, start.y, start.z - halfThickness,
+      start.x, start.y, start.z + halfThickness,
+      end.x, end.y, end.z + halfThickness,
+
+      end.x, end.y, end.z - halfThickness,
+      start.x, start.y, start.z - halfThickness,
+      end.x, end.y, end.z + halfThickness,
+    ]), 3));
+    geometry.computeVertexNormals();
+    return geometry;
   }
+
 }

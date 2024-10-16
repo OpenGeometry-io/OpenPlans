@@ -74,9 +74,9 @@ export class OpenThree {
   async setup() {
     this.openGeometry = new OpenGeometry(this.container, this.scene, this.threeCamera);
     await this.openGeometry.setup();
-    this.openGeometry.pencil?.onCursorDown.add((event) => {
-      console.log('cursor down', event);
-    });
+    // this.openGeometry.pencil?.onCursorDown.add((event) => {
+    //   console.log('cursor down', event);
+    // });
 
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
@@ -124,8 +124,13 @@ export class OpenThree {
     // this.dummyMesh = cube
     if (!this.openGeometry?.pencil) return;
     const wall = new BaseWall(0x00ff00, this.openGeometry.pencil);
-    const wallMesh = wall.getMesh();
-    if (wallMesh)
-    this.scene.add(wallMesh);
+    wall.position.set(0, 0, -3);
+    wall.updateMatrixWorld();
+    this.scene.add(wall);
+
+
+    const wall2 = new BaseWall(0xff0000, this.openGeometry.pencil);
+    this.scene.add(wall2);
+    // wall2.rotateY(Math.PI / 2);
   }
 }
