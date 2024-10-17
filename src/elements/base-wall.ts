@@ -23,8 +23,8 @@ const WallSet = {
       z: 0,
     }
   },
-  thickness: 0.5,
-  halfThickness: 0.25
+  thickness: 0.25,
+  halfThickness: 0.125,
 }
 
 interface WallSetMesh {
@@ -62,29 +62,21 @@ export class BaseWall extends BasePoly {
 
   private setGeometry() {
     if (!this.wallSet) return;
+    const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(
+      new THREE.Vector3(this.wallSet.anchor.start.x, this.wallSet.anchor.start.y, this.wallSet.anchor.start.z),
+      new THREE.Vector3(this.wallSet.anchor.end.x, this.wallSet.anchor.end.y, this.wallSet.anchor.end.z),
+      this.wallSet.halfThickness
+    );
+
     const vertices = [
-      new Vector3D(
-        this.wallSet.anchor.start.x,
-        this.wallSet.anchor.start.y,
-        this.wallSet.anchor.start.z - this.wallSet.halfThickness
-      ),
-      new Vector3D(
-        this.wallSet.anchor.start.x,
-        this.wallSet.anchor.start.y,
-        this.wallSet.anchor.start.z + this.wallSet.halfThickness
-      ),
-      new Vector3D(
-        this.wallSet.anchor.end.x,
-        this.wallSet.anchor.end.y,
-        this.wallSet.anchor.end.z + this.wallSet.halfThickness
-      ),
-      new Vector3D(
-        this.wallSet.anchor.end.x,
-        this.wallSet.anchor.end.y,
-        this.wallSet.anchor.end.z - this.wallSet.halfThickness
-      ),
+      new Vector3D(startLeft.x, startLeft.y, startLeft.z),
+      new Vector3D(startRight.x, startRight.y, startRight.z),
+      new Vector3D(endRight.x, endRight.y, endRight.z),
+      new Vector3D(endLeft.x, endLeft.y, endLeft.z),
     ];
     this.addVertices(vertices);
+
+    console.log(startLeft, startRight, endLeft, endRight);
     // this.material = new THREE.MeshBasicMaterial({ color: this.color });
 
     this.name = `wall`+this.ogid;
@@ -114,7 +106,7 @@ export class BaseWall extends BasePoly {
     this.pencil.pencilMeshes.push(sSphere);
     this.pencil.pencilMeshes.push(eSphere);
 
-    const shadowGeom = this.generateShadowMesh(
+    const shadowGeom = this.generateShadowGeometry(
       new THREE.Vector3(
         this.wallSet.anchor.start.x,
         this.wallSet.anchor.start.y,
@@ -170,7 +162,7 @@ export class BaseWall extends BasePoly {
 
     const shadowMesh = this.wallSetMesh[`wall`+this.ogid];
     shadowMesh.geometry.dispose();
-    shadowMesh.geometry = this.generateShadowMesh(
+    shadowMesh.geometry = this.generateShadowGeometry(
       this.wallSetMesh[startSphere].position,
       this.wallSetMesh[endSphere].position,
       this.wallSet.halfThickness
@@ -187,15 +179,8 @@ export class BaseWall extends BasePoly {
     this.pencil.onElementHover.add((mesh) => {
       console.log('hovered', mesh.name);
       if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
-        // console.log('mesh', mesh);
-        // mesh.material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        // TODO: Change Cursor Colors on Hover
       }
-      // const id = mesh.name;
-      // if (!id) return;
-      // console.log('id', id);
-      // const meshObject = this.wallSetMesh[id];
-      // console.log('meshObject', meshObject);
-      // meshObject.material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     });
 
     this.pencil.onCursorMove.add((point) => {
@@ -210,32 +195,22 @@ export class BaseWall extends BasePoly {
         this.pencil.mode = "select";
         if (!this.wallSetMesh) return;
 
-        // Update Vertices and Wall Main Mesh
         const startSphere = `start`+this.ogid;
         const endSphere = `end`+this.ogid;
 
+        const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(
+          this.wallSetMesh[startSphere].position,
+          this.wallSetMesh[endSphere].position,
+          this.wallSet.halfThickness
+        );
+
         const vertices = [
-          new Vector3D(
-            this.wallSetMesh[startSphere].position.x,
-            this.wallSetMesh[startSphere].position.y,
-            this.wallSetMesh[startSphere].position.z - this.wallSet.halfThickness
-          ),
-          new Vector3D(
-            this.wallSetMesh[startSphere].position.x,
-            this.wallSetMesh[startSphere].position.y,
-            this.wallSetMesh[startSphere].position.z + this.wallSet.halfThickness
-          ),
-          new Vector3D(
-            this.wallSetMesh[endSphere].position.x,
-            this.wallSetMesh[endSphere].position.y,
-            this.wallSetMesh[endSphere].position.z + this.wallSet.halfThickness
-          ),
-          new Vector3D(
-            this.wallSetMesh[endSphere].position.x,
-            this.wallSetMesh[endSphere].position.y,
-            this.wallSetMesh[endSphere].position.z - this.wallSet.halfThickness
-          ),
+          new Vector3D(startLeft.x, startLeft.y, startLeft.z),
+          new Vector3D(startRight.x, startRight.y, startRight.z),
+          new Vector3D(endRight.x, endRight.y, endRight.z),
+          new Vector3D(endLeft.x, endLeft.y, endLeft.z),
         ];
+
         this.resetVertices();
         this.addVertices(vertices);
         this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
@@ -243,18 +218,40 @@ export class BaseWall extends BasePoly {
     });
   }
 
-  generateShadowMesh(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
+  generateShadowGeometry(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
+    const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(start, end, halfThickness);
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      start.x, start.y, start.z - halfThickness,
-      start.x, start.y, start.z + halfThickness,
-      end.x, end.y, end.z + halfThickness,
+      startRight.x, startRight.y, startRight.z,
+      startLeft.x, startLeft.y, startLeft.z,
+      endRight.x, endRight.y, endRight.z,
 
-      end.x, end.y, end.z - halfThickness,
-      start.x, start.y, start.z - halfThickness,
-      end.x, end.y, end.z + halfThickness,
+      startLeft.x, startLeft.y, startLeft.z,
+      endLeft.x, endLeft.y, endLeft.z,
+      endRight.x, endRight.y, endRight.z,
     ]), 3));
     geometry.computeVertexNormals();
     return geometry;
+  }
+
+  getOuterCoordinates(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
+    const perpendicular = this.getPerpendicularVector(start, end);
+    const startLeft = start.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    const startRight = start.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
+    const endLeft = end.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    const endRight = end.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
+    return {
+      startLeft,
+      startRight,
+      endLeft,
+      endRight,
+    };
+  }
+
+  getPerpendicularVector(start: THREE.Vector3, end: THREE.Vector3) {
+    const vector = new THREE.Vector3().subVectors(end, start);
+    const perpendicular = new THREE.Vector3().crossVectors(vector, new THREE.Vector3(0, 1, 0));
+    return perpendicular.normalize();
   }
 }
