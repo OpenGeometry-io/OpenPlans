@@ -127,7 +127,7 @@ export class BaseWall extends BasePoly {
       ),
       this.wallSet.halfThickness
     );
-    const shadowMaterial = new THREE.MeshToonMaterial({ color: 0x000000, wireframe: true });
+    const shadowMaterial = new THREE.MeshToonMaterial({ color: 0xff0000 });
     const shadowMesh = new THREE.Mesh(shadowGeom, shadowMaterial);
     shadowMesh.name = `wall`+this.ogid;
     this.add(shadowMesh);
@@ -136,56 +136,8 @@ export class BaseWall extends BasePoly {
     this.wallSetMesh[eSphere.name] = eSphere;
     this.wallSetMesh[shadowMesh.name] = shadowMesh;
 
-    console.log('wallSetMesh', this.wallSetMesh);
-
-    // this.pencil.onElementSelected.add((mesh) => {
-    //   this.activeId = mesh.name;
-    //   console.log('activeId', this.activeId);
-    //   this.handleElementSelected(mesh);
-    // })
-
-    // this.pencil.onCursorMove.add((point) => {
-    //   this.handleCursorMove(point);
-    // });
-
-    // this.pencil.onCursorDown.add((point) => {
-    //   if (!this.isEditing) return;
-    //   setTimeout(() => {
-    //     this.isEditing = false;
-
-    //     if (!this.wallSetMesh) return;
-
-    //     // Update Vertices and Wall Main Mesh
-    //     const startSphere = `start`+this.wallSet.id;
-    //     const endSphere = `end`+this.wallSet.id;
-
-    //     const vertices = [
-    //       new Vector3D(
-    //         this.wallSetMesh[startSphere].position.x,
-    //         this.wallSetMesh[startSphere].position.y,
-    //         this.wallSetMesh[startSphere].position.z - this.wallSet.halfThickness
-    //       ),
-    //       new Vector3D(
-    //         this.wallSetMesh[startSphere].position.x,
-    //         this.wallSetMesh[startSphere].position.y,
-    //         this.wallSetMesh[startSphere].position.z + this.wallSet.halfThickness
-    //       ),
-    //       new Vector3D(
-    //         this.wallSetMesh[endSphere].position.x,
-    //         this.wallSetMesh[endSphere].position.y,
-    //         this.wallSetMesh[endSphere].position.z + this.wallSet.halfThickness
-    //       ),
-    //       new Vector3D(
-    //         this.wallSetMesh[endSphere].position.x,
-    //         this.wallSetMesh[endSphere].position.y,
-    //         this.wallSetMesh[endSphere].position.z - this.wallSet.halfThickness
-    //       ),
-    //     ];
-    //     this.resetVertices();
-    //     this.addVertices(vertices);
-
-    //   }, 100);
-    // });
+    // OG Kernel Wall
+    this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
   }
 
   private handleElementSelected(mesh: THREE.Mesh) {
@@ -206,23 +158,23 @@ export class BaseWall extends BasePoly {
       this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
 
-    // const startSphere = `start`+this.ogid;
-    // const endSphere = `end`+this.ogid;
+    const startSphere = `start`+this.ogid;
+    const endSphere = `end`+this.ogid;
     
-    // this.wallSet.anchor.start.x = this.wallSetMesh[startSphere].position.x;
-    // this.wallSet.anchor.start.y = this.wallSetMesh[startSphere].position.y;
-    // this.wallSet.anchor.start.z = this.wallSetMesh[startSphere].position.z;
-    // this.wallSet.anchor.end.x = this.wallSetMesh[endSphere].position.x;
-    // this.wallSet.anchor.end.y = this.wallSetMesh[endSphere].position.y;
-    // this.wallSet.anchor.end.z = this.wallSetMesh[endSphere].position.z;
+    this.wallSet.anchor.start.x = this.wallSetMesh[startSphere].position.x;
+    this.wallSet.anchor.start.y = this.wallSetMesh[startSphere].position.y;
+    this.wallSet.anchor.start.z = this.wallSetMesh[startSphere].position.z;
+    this.wallSet.anchor.end.x = this.wallSetMesh[endSphere].position.x;
+    this.wallSet.anchor.end.y = this.wallSetMesh[endSphere].position.y;
+    this.wallSet.anchor.end.z = this.wallSetMesh[endSphere].position.z;
 
-    // const shadowMesh = this.wallSetMesh[`wall`+this.ogid];
-    // shadowMesh.geometry.dispose();
-    // shadowMesh.geometry = this.generateShadowMesh(
-    //   this.wallSetMesh[startSphere].position,
-    //   this.wallSetMesh[endSphere].position,
-    //   this.wallSet.halfThickness
-    // );
+    const shadowMesh = this.wallSetMesh[`wall`+this.ogid];
+    shadowMesh.geometry.dispose();
+    shadowMesh.geometry = this.generateShadowMesh(
+      this.wallSetMesh[startSphere].position,
+      this.wallSetMesh[endSphere].position,
+      this.wallSet.halfThickness
+    );
   }
 
   setupEvents() {
@@ -286,7 +238,7 @@ export class BaseWall extends BasePoly {
         ];
         this.resetVertices();
         this.addVertices(vertices);
-
+        this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
       }, 100);
     });
   }
@@ -305,5 +257,4 @@ export class BaseWall extends BasePoly {
     geometry.computeVertexNormals();
     return geometry;
   }
-
 }
