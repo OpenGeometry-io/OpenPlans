@@ -8,8 +8,13 @@ import { BaseWall } from '../elements/base-wall.ts'
 import { OpenGeometry } from '../../kernel/dist/index'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import { PencilMode } from '../../kernel/dist/src/pencil'
+import * as OGLiner from './../helpers/OpenOutliner';
+import { BaseDoor } from '../elements/base-door.ts'
 
 export class OpenThree {
+  
+  private ogElements:any = [];
+
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
   planCamera: PlanCamera
@@ -37,10 +42,11 @@ export class OpenThree {
     // this.planGrid = new PlanGrid(this.scene, this.theme, this.activeTheme)
     
     this.setup().then(() => {
-      this.addCube()
-    })
+      this.addWalls()
+      this.addDoors()
 
-    this.addGUI()
+      this.addGUI()
+    })
   }
 
   // accept a theme with type
@@ -120,7 +126,7 @@ export class OpenThree {
     this.planCamera.update()
   }
 
-  addCube() {
+  addWalls() {
     // const geometry = new THREE.BoxGeometry()
     // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
     // const cube = new THREE.Mesh(geometry, material)
@@ -131,17 +137,58 @@ export class OpenThree {
     wall.position.set(0, 0, -3);
     wall.updateMatrixWorld();
     this.scene.add(wall);
-
+    this.ogElements.push(wall);
 
     const wall2 = new BaseWall(0xff0000, this.openGeometry.pencil);
     this.scene.add(wall2);
     wall2.position.set(0, 0, 3);
-    // wall2.rotateY(Math.PI / 2);
+    wall2.rotateY(Math.PI / 2);
+    this.ogElements.push(wall2);
+
+    // const planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 0.25), new THREE.RawShaderMaterial({ 
+    //   vertexShader: OGLiner.vertexShader(),
+    //   fragmentShader: OGLiner.fragmentShader(),
+    //   side: THREE.DoubleSide,
+    //   uniforms: OGLiner.shader.uniforms,
+    //   name: OGLiner.shader.name,
+    // }));
+    // console.log(planeMesh.geometry);
+    // planeMesh.rotateX(-Math.PI / 2);
+    // this.scene.add(planeMesh);
+  }
+
+  addDoors() {
+    if (!this.openGeometry?.pencil) return;
+    const door = new BaseDoor(this.openGeometry.pencil);
+    this.scene.add(door);
+  }
+
+  getEntitiesByType(type: string) {
+    const entities = [];
+    for (const entity of this.ogElements) {
+      console.log(entity);
+      if (entity.ogType === type) {
+        entities.push(entity);
+      }
+    }
+    return entities;
   }
 
   addGUI() {
     const gui = new GUI();
     const wallFolder = gui.addFolder('Wall');
+    const wallControls = {
+      'thickness': 0.25,
+      'color': '#00ff00',
+    };
+    const walls = this.getEntitiesByType('wall');
+    console.log(walls);
+    walls.forEach((wall: BaseWall) => {
+      const subWall = wallFolder.addFolder(wall.name);
+      subWall.add(wallControls, 'thickness', 0.1, 1).name('Thickness').onChange((value) => {
+        wall.halfThickness = value / 2;
+      });
+    });
 
     const pencil = gui.addFolder('Pencil');
     const pencilControls = {

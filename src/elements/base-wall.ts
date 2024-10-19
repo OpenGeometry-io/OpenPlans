@@ -4,6 +4,7 @@ import {
 } from '../../kernel/dist';
 import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
+import * as OGLiner from './../helpers/OpenOutliner';
 
 const WallSet = {
   position: {
@@ -36,10 +37,11 @@ interface WallSetMesh {
 
 
 export class BaseWall extends BasePoly {
+  public ogType = 'wall';
   public color: number;
   mesh: BasePoly | null = null;
   wallSet = WallSet;
-  private wallSetMesh: { [key: string]: THREE.Mesh } = {};
+  private wallSetMesh: { [key: string]: THREE.Mesh | THREE.Line } = {};
 
   activeSphere: string | undefined;
   isEditing = false;
@@ -83,7 +85,7 @@ export class BaseWall extends BasePoly {
     console.log('this.name', this.name);
     this.pencil.pencilMeshes.push(this);
 
-    const sphereGeometry = new THREE.SphereGeometry(0.05, 32, 32);
+    const sphereGeometry = new THREE.SphereGeometry(0.035, 32, 32);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const sSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sSphere.name = `start`+this.ogid;
@@ -119,8 +121,22 @@ export class BaseWall extends BasePoly {
       ),
       this.wallSet.halfThickness
     );
-    const shadowMaterial = new THREE.MeshToonMaterial({ color: 0xff0000 });
-    const shadowMesh = new THREE.Mesh(shadowGeom, shadowMaterial);
+    console.log('shadowGeom', shadowGeom);
+    // const shadowMaterial = new THREE.MeshToonMaterial({ color: this.color });
+    // const shadowMesh = new THREE.Mesh(shadowGeom, new THREE.RawShaderMaterial({
+    //   vertexShader: OGLiner.vertexShader(),
+    //   fragmentShader: OGLiner.fragmentShader(),
+    //   side: THREE.DoubleSide,
+    //   uniforms: OGLiner.shader.uniforms,
+    //   name: OGLiner.shader.name,
+    //   vertexColors: true,
+    // }));
+    // shadowMesh.name = `wall`+this.ogid;
+    // this.add(shadowMesh);
+
+    const edgeGeom = new THREE.EdgesGeometry(shadowGeom);
+    const shadowMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const shadowMesh = new THREE.LineSegments(edgeGeom, shadowMaterial);
     shadowMesh.name = `wall`+this.ogid;
     this.add(shadowMesh);
 
@@ -129,7 +145,16 @@ export class BaseWall extends BasePoly {
     this.wallSetMesh[shadowMesh.name] = shadowMesh;
 
     // OG Kernel Wall
-    this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
+    // this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
+    // this.material = new THREE.RawShaderMaterial({
+    //   name: OGLiner.shader.name,
+    //   uniforms: OGLiner.shader.uniforms,
+    //   vertexShader: OGLiner.vertexShader(),
+    //   fragmentShader: OGLiner.fragmentShader(),
+    //   side: THREE.DoubleSide,
+    //   forceSinglePass: true,
+    //   transparent: true
+    // });
   }
 
   private handleElementSelected(mesh: THREE.Mesh) {
@@ -218,6 +243,12 @@ export class BaseWall extends BasePoly {
     });
   }
 
+  set halfThickness(value: number) {
+    this.wallSet.halfThickness = value;
+    // regenerate geometry
+    console.log('halfThickness', this.wallSet.halfThickness);
+  }
+
   generateShadowGeometry(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
     const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(start, end, halfThickness);
 
@@ -232,6 +263,16 @@ export class BaseWall extends BasePoly {
       endRight.x, endRight.y, endRight.z,
     ]), 3));
     geometry.computeVertexNormals();
+    // TODO: Add UVs
+    geometry.attributes.uv = new THREE.BufferAttribute(new Float32Array([
+      0, 0,
+      1, 0,
+      0, 1,
+      1, 0,
+      1, 1,
+      0, 1,
+    ]), 2);
+    geometry.attributes.uv.needsUpdate = true;
     return geometry;
   }
 

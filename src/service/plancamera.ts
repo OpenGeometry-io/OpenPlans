@@ -10,7 +10,7 @@ export class PlanCamera {
   constructor(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, renderer: THREE.WebGLRenderer) {
     this.camera = camera;
     // camera from top
-    this.camera.position.set(0, 10, 0);
+    this.camera.position.set(0, 7, 0);
     // Container Events are not being sent to the shadow dom
     this.controls = new CameraControls(camera, document.body);
     this.setupCamera();
