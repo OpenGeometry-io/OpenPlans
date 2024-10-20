@@ -24,8 +24,8 @@ const DoorSet = {
       z: 0,
     }
   },
-  thickness: 0.25,
-  halfThickness: 0.125,
+  thickness: 0.25 / 2,
+  halfThickness: 0.125 / 2,
   hingeColor: 0x000000,
   hingeThickness: 0.125,
   doorColor: 0x000000,
@@ -45,7 +45,7 @@ interface DoorSetMesh {
 
 
 export class BaseDoor extends BasePoly {
-  public ogType = 'window';
+  public ogType = 'door';
   mesh: BasePoly | null = null;
   doorSet = DoorSet;
   private doorSetMesh: DoorSetMesh = {} as DoorSetMesh;
@@ -81,19 +81,25 @@ export class BaseDoor extends BasePoly {
     const hingeGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-hingeThickness, 0, -hingeThickness),
       new THREE.Vector3(-hingeThickness, 0, hingeThickness),
-      new THREE.Vector3(hingeThickness, 0, hingeThickness),
-      new THREE.Vector3(hingeThickness, 0, -hingeThickness),
+      new THREE.Vector3(hingeThickness, 0, hingeThickness ),
+      new THREE.Vector3(hingeThickness, 0, 0),
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -hingeThickness)
     ]);
-    hingeGeo.setIndex([ 0, 1, 2, 0, 2, 3 ]);
+    hingeGeo.setIndex([
+      0, 1, 2,
+      0, 4, 5,
+      4, 2, 3,
+    ]);
     hingeGeo.computeVertexNormals();
-    const hingeMat = new THREE.MeshBasicMaterial({ color: this.doorSet.hingeColor });
+    const hingeMat = new THREE.MeshBasicMaterial({ color: this.doorSet.hingeColor, side: THREE.DoubleSide });
     const hinge = new THREE.Mesh(hingeGeo, hingeMat);
     hinge.position.set(start.x + hingeThickness, start.y, start.z);
     hinge.name = 'hingeStart';
     this.add(hinge);
 
     // Hinge End
-    const hingeEnd = hinge.clone();
+    const hingeEnd = hinge.clone().rotateZ(Math.PI);
     hingeEnd.position.set(end.x - hingeThickness, end.y, end.z);
     hingeEnd.name = 'hingeEnd';
     this.add(hingeEnd);
@@ -101,24 +107,71 @@ export class BaseDoor extends BasePoly {
     // Door
     const doorThickness = this.doorSet.thickness / 2;
     const doorGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(start.x, start.y, start.z - doorThickness),
-      new THREE.Vector3(start.x, start.y, start.z + doorThickness),
-      new THREE.Vector3(end.x, end.y, end.z + doorThickness),
-      new THREE.Vector3(end.x, end.y, end.z - doorThickness),
+      new THREE.Vector3(start.x + doorThickness * 2, start.y, start.z - doorThickness),
+      new THREE.Vector3(start.x + doorThickness * 2, start.y, start.z + doorThickness),
+      new THREE.Vector3(end.x - doorThickness * 2, end.y, end.z + doorThickness),
+      new THREE.Vector3(end.x - doorThickness * 2, end.y, end.z - doorThickness),
     ]);
     doorGeo.setIndex([ 0, 1, 2, 0, 2, 3 ]);
     doorGeo.computeVertexNormals();
     doorGeo.computeBoundingBox();
-    const doorMat = new THREE.MeshBasicMaterial({ color: this.doorSet.doorColor, wireframe: true });
+    const doorMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const door = new THREE.Mesh(doorGeo, doorMat);
-    door.rotateY(Math.PI / 3);
+    door.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
 
-    // door.position.set(start.x, start.y, start.z);
-    // if (door.geometry.boundingBox)
+    const hingeClip = new THREE.SphereGeometry(0.05, 32, 32);
+    const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
+    hingeClipMesh.position.set(0, 0, -hingeThickness);
+    hinge.add(hingeClipMesh);
 
-    // door.position.set(door.position.x + this.doorSet.thickness / 2, door.position.y, door.position.z + door.geometry.boundingBox.min.x - this.doorSet.thickness / 2);
-    // door.name = 'door';
-    this.add(door);
+    const doorGroup = new THREE.Group();
+    doorGroup.position.set(0, 0, 0);
+    hingeClipMesh.add(doorGroup);
+    doorGroup.add(door);
+    doorGroup.rotation.y = Math.PI / 1;
+    doorGroup.name = 'doorGroup';
+    
+    // this.add(door);
+    // door.name = 'doorGroup';
+
+    const doorEdge = new THREE.EdgesGeometry(doorGeo);
+    const doorEdgeMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const doorEdgeMesh = new THREE.LineSegments(doorEdge, doorEdgeMat);
+    doorEdgeMesh.name = 'doorEdge';
+    door.add(doorEdgeMesh);
+  }
+
+  set doorRotation(value: number) {
+    const door = this.getObjectByName('doorGroup');
+    if (!door) return;
+    if (value < 1 || value > 2) return;
+    door.rotation.y = - Math.PI / value;
+  }
+
+  set doorQudrant(value: number) {
+    if (value < 1 || value > 4) return;
+    switch (value) {
+      case 1:
+        this.rotation.set(0, 0, 0);
+        // this.rotateZ(-Math.PI);
+        break;
+      case 2:
+        this.rotation.set(0, 0, 0);
+        this.rotateZ(Math.PI);
+        break;
+      case 3:
+        this.rotation.set(0, 0, 0);
+        this.rotateX(Math.PI);
+        this.rotateZ(Math.PI);
+        break;
+      case 4:
+        this.rotation.set(0, 0, 0);
+        this.rotateX(Math.PI);
+        break;
+      default:
+        break;
+    }
   }
 
   private handleElementSelected(mesh: THREE.Mesh) {

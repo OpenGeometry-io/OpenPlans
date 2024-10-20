@@ -161,6 +161,7 @@ export class OpenThree {
     if (!this.openGeometry?.pencil) return;
     const door = new BaseDoor(this.openGeometry.pencil);
     this.scene.add(door);
+    this.ogElements.push(door);
   }
 
   getEntitiesByType(type: string) {
@@ -187,6 +188,22 @@ export class OpenThree {
       const subWall = wallFolder.addFolder(wall.name);
       subWall.add(wallControls, 'thickness', 0.1, 1).name('Thickness').onChange((value) => {
         wall.halfThickness = value / 2;
+      });
+    });
+
+    const doorFolder = gui.addFolder('Door');
+    const doorControls = {
+      'rotation': 1,
+      'quadrant': 1,
+    };
+    const doors = this.getEntitiesByType('door');
+    doors.forEach((door: BaseDoor) => {
+      const subDoor = doorFolder.addFolder(door.name);
+      subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+        door.doorRotation = value;
+      });
+      subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+        door.doorQudrant = value;
       });
     });
 
