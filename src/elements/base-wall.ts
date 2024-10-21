@@ -47,9 +47,14 @@ export class BaseWall extends BasePoly {
   isEditing = false;
   activeId: string | undefined;
 
+  set wallColor(wColor: number) {
+    this.material = new THREE.MeshStandardMaterial({ color: wColor, side: THREE.DoubleSide, opacity: 0.2, transparent: true });
+  }
+
   constructor(color: number, private pencil: Pencil) {
     super();
     this.color = color;
+    console.log('color', this.color);
     this.setupSet();
     this.setGeometry();
     this.setupEvents();
@@ -78,11 +83,7 @@ export class BaseWall extends BasePoly {
     ];
     this.addVertices(vertices);
 
-    console.log(startLeft, startRight, endLeft, endRight);
-    // this.material = new THREE.MeshBasicMaterial({ color: this.color });
-
     this.name = `wall`+this.ogid;
-    console.log('this.name', this.name);
     this.pencil.pencilMeshes.push(this);
 
     const sphereGeometry = new THREE.SphereGeometry(0.035, 32, 32);
@@ -121,7 +122,6 @@ export class BaseWall extends BasePoly {
       ),
       this.wallSet.halfThickness
     );
-    console.log('shadowGeom', shadowGeom);
     // const shadowMaterial = new THREE.MeshToonMaterial({ color: this.color });
     // const shadowMesh = new THREE.Mesh(shadowGeom, new THREE.RawShaderMaterial({
     //   vertexShader: OGLiner.vertexShader(),
@@ -145,7 +145,8 @@ export class BaseWall extends BasePoly {
     this.wallSetMesh[shadowMesh.name] = shadowMesh;
 
     // OG Kernel Wall
-    // this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
+    this.wallColor = this.color;
+    
     // this.material = new THREE.RawShaderMaterial({
     //   name: OGLiner.shader.name,
     //   uniforms: OGLiner.shader.uniforms,

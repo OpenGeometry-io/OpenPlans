@@ -56,6 +56,14 @@ export class BaseDoor extends BasePoly {
   isEditing = false;
   activeId: string | undefined;
 
+  set doorColor(dColor: number) {
+    const door = this.getObjectByName('doorGroup');
+    if (!door) return;
+    // TODO: Get the exact door mesh by name
+    const doorMesh = door.children[0] as THREE.Mesh;
+    doorMesh.material = new THREE.MeshStandardMaterial({ color: dColor, side: THREE.DoubleSide, opacity: 0.5, transparent: true });
+  }
+
   constructor(private pencil: Pencil) {
     super();
     console.log(this.doorSetMesh);

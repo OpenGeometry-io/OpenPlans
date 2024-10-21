@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Document</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      // TODO: Remove Error with Selection when no element present
+      openPlans.pencil.mode = "select";
+
+      const door1 = openPlans.door();
+      const wall1 = openPlans.wall();
+      wall1.position.set(2, 0, 0);
+      wall1.updateMatrixWorld();
+
+      const wall2 = openPlans.wall();
+      wall2.position.set(-2, 0, 0);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const doorFolder = gui.addFolder('Door');
+      const doorControls = {
+        'rotation': 1,
+        'quadrant': 1,
+      };
+      const doors = openPlans.getEntitiesByType('door');
+      doors.forEach((door) => {
+        const subDoor = doorFolder.addFolder(door.name);
+        subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+          door.doorRotation = value;
+        });
+        subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+          door.doorQudrant = value;
+        });
+        subDoor.add({ 'Fit': () => { openPlans.fit(door.ogType) } }, 'Fit');
+      });
+
+      const wallFolder = gui.addFolder('Wall');
+      const wallControls = {
+        'color': '#ff0000',
+      } 
+      const walls = openPlans.getEntitiesByType('wall');
+      walls.forEach((wall) => {
+        const subWall = wallFolder.addFolder(wall.name);
+        subWall.addColor(wallControls, 'color').name('Color').onChange((value) => {
+          wall.material.color.set(value);
+        });
+        subWall.add({ 'Fit': () => { openPlans.fit(wall.ogType) } }, 'Fit');
+      });
+    }
+
+    await init();
+    setUI();
+  </script>
+</body>
+</html>

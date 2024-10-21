@@ -7,12 +7,12 @@ export class PlanCamera {
   controls: CameraControls
   clock: THREE.Clock = new THREE.Clock()
 
-  constructor(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, renderer: THREE.WebGLRenderer) {
+  constructor(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, container: HTMLElement) {
     this.camera = camera;
     // camera from top
     this.camera.position.set(0, 7, 0);
     // Container Events are not being sent to the shadow dom
-    this.controls = new CameraControls(camera, document.body);
+    this.controls = new CameraControls(camera, container);
     this.setupCamera();
   }
 
@@ -30,6 +30,15 @@ export class PlanCamera {
 
   isometricCamera() {
     
+  }
+
+  fitToElement(meshes: THREE.Mesh[]) {
+    const box = new THREE.Box3();
+    for (const mesh of meshes) {
+      box.expandByObject(mesh);
+    }
+    box.expandByScalar(2);
+    this.controls.fitToSphere(box.getBoundingSphere(new THREE.Sphere()), true);
   }
 
   update() {
