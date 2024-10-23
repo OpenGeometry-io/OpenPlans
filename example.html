@@ -49,6 +49,7 @@
       const doorControls = {
         'rotation': 1,
         'quadrant': 1,
+        'color': '#adb5bd',
       };
       const doors = openPlans.getEntitiesByType('door');
       doors.forEach((door) => {
@@ -59,12 +60,15 @@
         subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
           door.doorQudrant = value;
         });
+        subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
+          door.doorColor = value;
+        });
         subDoor.add({ 'Fit': () => { openPlans.fit(door.ogType) } }, 'Fit');
       });
 
       const wallFolder = gui.addFolder('Wall');
       const wallControls = {
-        'color': '#ff0000',
+        'color': '#edf2f4',
       } 
       const walls = openPlans.getEntitiesByType('wall');
       walls.forEach((wall) => {

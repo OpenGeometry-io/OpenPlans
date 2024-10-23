@@ -56,14 +56,6 @@ export class BaseDoor extends BasePoly {
   isEditing = false;
   activeId: string | undefined;
 
-  set doorColor(dColor: number) {
-    const door = this.getObjectByName('doorGroup');
-    if (!door) return;
-    // TODO: Get the exact door mesh by name
-    const doorMesh = door.children[0] as THREE.Mesh;
-    doorMesh.material = new THREE.MeshStandardMaterial({ color: dColor, side: THREE.DoubleSide, opacity: 0.5, transparent: true });
-  }
-
   constructor(private pencil: Pencil) {
     super();
     console.log(this.doorSetMesh);
@@ -123,11 +115,11 @@ export class BaseDoor extends BasePoly {
     doorGeo.setIndex([ 0, 1, 2, 0, 2, 3 ]);
     doorGeo.computeVertexNormals();
     doorGeo.computeBoundingBox();
-    const doorMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const doorMat = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
     const door = new THREE.Mesh(doorGeo, doorMat);
     door.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
 
-    const hingeClip = new THREE.SphereGeometry(0.05, 32, 32);
+    const hingeClip = new THREE.SphereGeometry(0.001, 32, 32);
     const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
     hingeClipMesh.position.set(0, 0, -hingeThickness);
@@ -137,7 +129,7 @@ export class BaseDoor extends BasePoly {
     doorGroup.position.set(0, 0, 0);
     hingeClipMesh.add(doorGroup);
     doorGroup.add(door);
-    doorGroup.rotation.y = Math.PI / 1;
+    doorGroup.rotation.y = Math.PI / -1.2;
     doorGroup.name = 'doorGroup';
     
     // this.add(door);
@@ -148,13 +140,61 @@ export class BaseDoor extends BasePoly {
     const doorEdgeMesh = new THREE.LineSegments(doorEdge, doorEdgeMat);
     doorEdgeMesh.name = 'doorEdge';
     door.add(doorEdgeMesh);
+
+    const doorArcStart = new THREE.SphereGeometry(0.01, 32, 32);
+    const doorArcStartMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const doorArcStartMesh = new THREE.Mesh(doorArcStart, doorArcStartMat);
+    // doorArcStartMesh.position.set(end.x - doorThickness * 2, start.y, start.z);
+    doorArcStartMesh.name = 'doorArcStart';
+    // hingeEnd.add(doorArcStartMesh);
+
+    const doorArcEnd = new THREE.SphereGeometry(0.02, 32, 32);
+    const doorArcEndMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    const doorArcEndMesh = new THREE.Mesh(doorArcEnd, doorArcEndMat);
+    doorArcEndMesh.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
+    // door.add(doorArcEndMesh);
+    
+    const circle = new THREE.EllipseCurve(
+      0, 0, 
+      hinge.position.x - hingeEnd.position.x, hinge.position.x - hingeEnd.position.x,
+      Math.PI, Math.PI / 1.2,
+      true
+    );
+    const circleMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const circleGeo = new THREE.BufferGeometry().setFromPoints(circle.getPoints(32));
+    const circleMesh = new THREE.Line(circleGeo, circleMat);
+    circleMesh.position.set(0, 0, -hingeThickness);
+    circleMesh.rotateX(Math.PI / 2);
+    hinge.add(circleMesh);
+    this.doorMesh['circle'] = circleMesh;
+    this.doorMesh['door'] = door;
+    this.doorMesh['hinge'] = hinge;
+    this.doorMesh['hingeEnd'] = hingeEnd;
   }
 
   set doorRotation(value: number) {
     const door = this.getObjectByName('doorGroup');
     if (!door) return;
     if (value < 1 || value > 2) return;
-    door.rotation.y = - Math.PI / value;
+    door.rotation.y = -Math.PI / value;
+
+    const circle = this.doorMesh['circle'];
+    if (!circle) return;
+
+    const circleGeo = new THREE.EllipseCurve(
+      0, 0, 
+      this.doorMesh['hinge'].position.x - this.doorMesh['hingeEnd'].position.x, this.doorMesh['hinge'].position.x - this.doorMesh['hingeEnd'].position.x,
+      Math.PI, Math.PI / value,
+      true,
+    );
+    circle.geometry.dispose();
+    circle.geometry = new THREE.BufferGeometry().setFromPoints(circleGeo.getPoints(32));
+  }
+
+  set doorColor(value: number) {
+    const door = this.doorMesh['door'];
+    if (!door) return;
+    (door.material as THREE.MeshBasicMaterial).color.set(value);
   }
 
   set doorQudrant(value: number) {
@@ -162,7 +202,6 @@ export class BaseDoor extends BasePoly {
     switch (value) {
       case 1:
         this.rotation.set(0, 0, 0);
-        // this.rotateZ(-Math.PI);
         break;
       case 2:
         this.rotation.set(0, 0, 0);
@@ -199,24 +238,6 @@ export class BaseDoor extends BasePoly {
       const worldToLocal = this.worldToLocal(cursorPosition);
       // this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
-
-    const startSphere = `start`+this.ogid;
-    const endSphere = `end`+this.ogid;
-    
-    // this.wallSet.anchor.start.x = this.wallSetMesh[startSphere].position.x;
-    // this.wallSet.anchor.start.y = this.wallSetMesh[startSphere].position.y;
-    // this.wallSet.anchor.start.z = this.wallSetMesh[startSphere].position.z;
-    // this.wallSet.anchor.end.x = this.wallSetMesh[endSphere].position.x;
-    // this.wallSet.anchor.end.y = this.wallSetMesh[endSphere].position.y;
-    // this.wallSet.anchor.end.z = this.wallSetMesh[endSphere].position.z;
-
-    // const shadowMesh = this.wallSetMesh[`wall`+this.ogid];
-    // shadowMesh.geometry.dispose();
-    // shadowMesh.geometry = this.generateShadowGeometry(
-    //   this.wallSetMesh[startSphere].position,
-    //   this.wallSetMesh[endSphere].position,
-    //   this.wallSet.halfThickness
-    // );
   }
 
   setupEvents() {

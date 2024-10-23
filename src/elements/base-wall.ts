@@ -86,8 +86,8 @@ export class BaseWall extends BasePoly {
     this.name = `wall`+this.ogid;
     this.pencil.pencilMeshes.push(this);
 
-    const sphereGeometry = new THREE.SphereGeometry(0.035, 32, 32);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const sphereGeometry = new THREE.SphereGeometry(0.025, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xcaf0f8 });
     const sSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sSphere.name = `start`+this.ogid;
     sSphere.position.set(
