@@ -170,6 +170,8 @@ export class BaseDoor extends BasePoly {
     this.doorMesh['door'] = door;
     this.doorMesh['hinge'] = hinge;
     this.doorMesh['hingeEnd'] = hingeEnd;
+
+    this.name = `door`+this.ogid;
   }
 
   set doorRotation(value: number) {

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Document</title>
+  <title>Hello AEC</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -32,7 +32,8 @@
       await openPlans.setupOpenGeometry();
 
       // TODO: Remove Error with Selection when no element present
-      openPlans.pencil.mode = "select";
+      // openPlans.pencil.mode = "select";
+      openPlans.pencil.mode = "view";
 
       const door1 = openPlans.door();
       const wall1 = openPlans.wall();
@@ -63,7 +64,6 @@
         subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
           door.doorColor = value;
         });
-        subDoor.add({ 'Fit': () => { openPlans.fit(door.ogType) } }, 'Fit');
       });
 
       const wallFolder = gui.addFolder('Wall');
@@ -76,7 +76,6 @@
         subWall.addColor(wallControls, 'color').name('Color').onChange((value) => {
           wall.material.color.set(value);
         });
-        subWall.add({ 'Fit': () => { openPlans.fit(wall.ogType) } }, 'Fit');
       });
     }
 

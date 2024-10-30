@@ -41,7 +41,6 @@ export class BaseWall extends BasePoly {
   private wallSetMesh: { [key: string]: THREE.Mesh | THREE.Line } = {};
   private mainSetMesh: OPWallMesh | null = null;
 
-  private activeSphere: string | undefined;
   isEditing = false;
   private activeId: string | undefined;
 
@@ -211,8 +210,8 @@ export class BaseWall extends BasePoly {
         this.pencil.mode = "select";
         if (!this.wallSetMesh) return;
 
-        const startSphere = `start`+this.ogid;
-        const endSphere = `end`+this.ogid;
+        const startSphere = `wallStart`+this.ogid;
+        const endSphere = `wallEnd`+this.ogid;
 
         const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(
           this.wallSetMesh[startSphere].position,
@@ -229,7 +228,7 @@ export class BaseWall extends BasePoly {
 
         this.resetVertices();
         this.addVertices(vertices);
-        this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
+        // this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
       }, 100);
     });
   }

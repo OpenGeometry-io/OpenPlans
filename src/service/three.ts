@@ -24,7 +24,8 @@ export class OpenThree {
     this.container = container
     this.scene = new THREE.Scene()
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true
+      antialias: true,
+      logarithmicDepthBuffer: true
     })
     this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
     this.planCamera = new PlanCamera(this.threeCamera, container)
