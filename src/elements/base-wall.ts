@@ -3,10 +3,12 @@ import {
   BasePoly,
 } from '../../kernel/dist';
 import * as THREE from 'three';
+import { OPWall, OPWallMesh, OPWallType } from './base-types';
 import { Pencil } from '../../kernel/dist/src/pencil';
-import * as OGLiner from './../helpers/OpenOutliner';
+// TODO: Create Much Better Outlines
+// import * as OGLiner from './../helpers/OpenOutliner';
 
-const WallSet = {
+const WallSet: OPWall = {
   position: {
     x: 0,
     y: 0,
@@ -26,45 +28,57 @@ const WallSet = {
   },
   thickness: 0.25,
   halfThickness: 0.125,
+  id: 0,
+  color: 0,
+  type: 'concrete'
 }
-
-interface WallSetMesh {
-  id: number;
-  shadowMesh: THREE.Mesh;
-  startSphere: THREE.Mesh;
-  endSphere: THREE.Mesh;
-}
-
 
 export class BaseWall extends BasePoly {
   public ogType = 'wall';
   public color: number;
   mesh: BasePoly | null = null;
-  wallSet = WallSet;
+  private wallSet: OPWall = WallSet;
   private wallSetMesh: { [key: string]: THREE.Mesh | THREE.Line } = {};
+  private mainSetMesh: OPWallMesh | null = null;
 
-  activeSphere: string | undefined;
+  private activeSphere: string | undefined;
   isEditing = false;
-  activeId: string | undefined;
+  private activeId: string | undefined;
 
-  set wallColor(wColor: number) {
-    this.material = new THREE.MeshStandardMaterial({ color: wColor, side: THREE.DoubleSide, opacity: 0.2, transparent: true });
+  /**
+   * Set Wall Color
+   * @param color: The Color of The Wall
+   * @description The wall already has some opacity, so the color will be a bit transparent
+   */
+  set wallColor(color: THREE.Color) {
+    this.material = new THREE.MeshStandardMaterial({ color: color, side: THREE.DoubleSide, opacity: 0.2, transparent: true });
   }
 
+  /**
+   * Set Wall Type
+   * @param type: The Type of The Wall
+   * @description The wall type will determine the texture of the wall
+   */
+  set wallType(type: OPWallType) {
+    this.wallSet.type = type;
+  }
+
+  // TODO: Since we need Pencil for every element, how to make it global/Singleton?
   constructor(color: number, private pencil: Pencil) {
     super();
     this.color = color;
-    console.log('color', this.color);
     this.setupSet();
     this.setGeometry();
     this.setupEvents();
   }
 
+  // TODO: This can be used for API Calls
   /**
    * If A User Has A Wall Set, We Will Use It
    */
-  setupSet() {
-    if (!this.wallSet) return;
+  setupSet(wallset: OPWall = WallSet) {
+    if (!this.wallSet && wallset) return;
+    this.wallSet = wallset;
   }
 
   private setGeometry() {
@@ -82,89 +96,64 @@ export class BaseWall extends BasePoly {
       new Vector3D(endLeft.x, endLeft.y, endLeft.z),
     ];
     this.addVertices(vertices);
-
+    
     this.name = `wall`+this.ogid;
-    this.pencil.pencilMeshes.push(this);
+    
+    const wallGroup = new THREE.Group();
+    
+    const wallBlockGeom = this.generateShadowGeometry(
+      new THREE.Vector3(this.wallSet.anchor.start.x, this.wallSet.anchor.start.y, this.wallSet.anchor.start.z),
+      new THREE.Vector3(this.wallSet.anchor.end.x, this.wallSet.anchor.end.y, this.wallSet.anchor.end.z),
+      this.wallSet.halfThickness
+    );
+    const wallBlockMesh = new THREE.Mesh(wallBlockGeom);
+    wallBlockMesh.name = `wallBlock`+this.ogid;
+    const wallBlockEdgeGeom = new THREE.EdgesGeometry(wallBlockGeom);
+    const wallBlockEdgeMesh = new THREE.LineSegments(wallBlockEdgeGeom, new THREE.LineBasicMaterial({ color: 0x000000 }));
+    wallBlockEdgeMesh.name = `wallBlockEdge`+this.ogid;
+    wallGroup.add(wallBlockEdgeMesh);
+    this.wallSetMesh[wallBlockEdgeMesh.name] = wallBlockEdgeMesh;  
 
-    const sphereGeometry = new THREE.SphereGeometry(0.025, 32, 32);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xcaf0f8 });
+    const sphereGeometry = new THREE.SphereGeometry(0.035, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const sSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sSphere.name = `start`+this.ogid;
+    sSphere.name = `wallStart`+this.ogid;
     sSphere.position.set(
       this.wallSet.anchor.start.x,
       this.wallSet.anchor.start.y,
       this.wallSet.anchor.start.z
     )
-    this.add(sSphere);
+    wallGroup.add(sSphere);
+    this.wallSetMesh[sSphere.name] = sSphere;
 
     const eSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    eSphere.name = `end`+this.ogid;
+    eSphere.name = `wallEnd`+this.ogid;
     eSphere.position.set(
       this.wallSet.anchor.end.x,
       this.wallSet.anchor.end.y,
       this.wallSet.anchor.end.z
     )
-    this.add(eSphere);
-
-    this.pencil.pencilMeshes.push(sSphere);
-    this.pencil.pencilMeshes.push(eSphere);
-
-    const shadowGeom = this.generateShadowGeometry(
-      new THREE.Vector3(
-        this.wallSet.anchor.start.x,
-        this.wallSet.anchor.start.y,
-        this.wallSet.anchor.start.z
-      ),
-      new THREE.Vector3(
-        this.wallSet.anchor.end.x,
-        this.wallSet.anchor.end.y,
-        this.wallSet.anchor.end.z
-      ),
-      this.wallSet.halfThickness
-    );
-    // const shadowMaterial = new THREE.MeshToonMaterial({ color: this.color });
-    // const shadowMesh = new THREE.Mesh(shadowGeom, new THREE.RawShaderMaterial({
-    //   vertexShader: OGLiner.vertexShader(),
-    //   fragmentShader: OGLiner.fragmentShader(),
-    //   side: THREE.DoubleSide,
-    //   uniforms: OGLiner.shader.uniforms,
-    //   name: OGLiner.shader.name,
-    //   vertexColors: true,
-    // }));
-    // shadowMesh.name = `wall`+this.ogid;
-    // this.add(shadowMesh);
-
-    const edgeGeom = new THREE.EdgesGeometry(shadowGeom);
-    const shadowMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-    const shadowMesh = new THREE.LineSegments(edgeGeom, shadowMaterial);
-    shadowMesh.name = `wall`+this.ogid;
-    this.add(shadowMesh);
-
-    this.wallSetMesh[sSphere.name] = sSphere;
+    wallGroup.add(eSphere);
     this.wallSetMesh[eSphere.name] = eSphere;
-    this.wallSetMesh[shadowMesh.name] = shadowMesh;
 
-    // OG Kernel Wall
-    this.wallColor = this.color;
-    
-    // this.material = new THREE.RawShaderMaterial({
-    //   name: OGLiner.shader.name,
-    //   uniforms: OGLiner.shader.uniforms,
-    //   vertexShader: OGLiner.vertexShader(),
-    //   fragmentShader: OGLiner.fragmentShader(),
-    //   side: THREE.DoubleSide,
-    //   forceSinglePass: true,
-    //   transparent: true
-    // });
+    this.add(wallGroup);
+    this.pencil.pencilMeshes.push(this);
   }
 
   private handleElementSelected(mesh: THREE.Mesh) {
     this.isEditing = true;
-    if (mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
+    console.log('selected', mesh.name);
+    // Manipulate The Wall Start and End
+    if (mesh.name === 'wallStart'+this.ogid || mesh.name === 'wallEnd'+this.ogid) {
       this.activeId = mesh.name;
       console.log('activeId', this.activeId);
+      this.pencil.mode = "cursor";
     }
-    this.pencil.mode = "cursor";
+    
+    // Manipulate The Entire Wall 
+    if (mesh.name === 'wall'+this.ogid) {
+      // TODO: 
+    }
   }
 
   private handleCursorMove(cursorPosition: THREE.Vector3) {
@@ -176,8 +165,8 @@ export class BaseWall extends BasePoly {
       this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
 
-    const startSphere = `start`+this.ogid;
-    const endSphere = `end`+this.ogid;
+    const startSphere = `wallStart`+this.ogid;
+    const endSphere = `wallEnd`+this.ogid;
     
     this.wallSet.anchor.start.x = this.wallSetMesh[startSphere].position.x;
     this.wallSet.anchor.start.y = this.wallSetMesh[startSphere].position.y;
@@ -186,24 +175,25 @@ export class BaseWall extends BasePoly {
     this.wallSet.anchor.end.y = this.wallSetMesh[endSphere].position.y;
     this.wallSet.anchor.end.z = this.wallSetMesh[endSphere].position.z;
 
-    const shadowMesh = this.wallSetMesh[`wall`+this.ogid];
-    shadowMesh.geometry.dispose();
-    shadowMesh.geometry = this.generateShadowGeometry(
+    const wallBlockEdgeMesh = this.wallSetMesh[`wallBlockEdge`+this.ogid];
+    wallBlockEdgeMesh.geometry.dispose();
+    const wallBlockGeom = this.generateShadowGeometry(
       this.wallSetMesh[startSphere].position,
       this.wallSetMesh[endSphere].position,
       this.wallSet.halfThickness
     );
+    const wallBlockEdgeGeom = new THREE.EdgesGeometry(wallBlockGeom);
+    wallBlockEdgeMesh.geometry = wallBlockEdgeGeom;
   }
 
   setupEvents() {
     this.pencil.onElementSelected.add((mesh) => {
-      if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
+      if (mesh.name === 'wall'+this.ogid || mesh.name === 'wallStart'+this.ogid || mesh.name === 'wallEnd'+this.ogid) {
         this.handleElementSelected(mesh);
       }
     });
 
     this.pencil.onElementHover.add((mesh) => {
-      console.log('hovered', mesh.name);
       if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
         // TODO: Change Cursor Colors on Hover
       }
