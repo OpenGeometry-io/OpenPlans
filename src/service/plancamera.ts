@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import CameraControls from 'camera-controls'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class PlanCamera {
   private camera: THREE.PerspectiveCamera | THREE.OrthographicCamera
@@ -13,6 +12,8 @@ export class PlanCamera {
     this.camera.position.set(0, 7, 0);
     // Container Events are not being sent to the shadow dom
     this.controls = new CameraControls(camera, container);
+    this.controls.mouseButtons.left = CameraControls.ACTION.NONE;
+    this.controls.touches.one = CameraControls.ACTION.NONE;
     this.setupCamera();
   }
 

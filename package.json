@@ -7,6 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
+    "obfuscate": "javascript-obfuscator ./dist",
     "prod": "vite build"
   },
   "keywords": [],
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.7",
+    "javascript-obfuscator": "^4.1.1",
     "vite": "^5.4.7"
   }
 }

@@ -1,7 +1,7 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Hello AEC</title>
+  <title>OpenGeometry Hello</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -36,6 +36,11 @@
       openPlans.pencil.mode = "view";
 
       const door1 = openPlans.door();
+      door1.position.set(0, 0, 0);
+      door1.doorRotation = 2;
+      door1.doorQudrant = 3;
+      door1.doorColor = '#ff0000';
+
       const wall1 = openPlans.wall();
       wall1.position.set(2, 0, 0);
       wall1.updateMatrixWorld();
@@ -77,10 +82,17 @@
           wall.material.color.set(value);
         });
       });
+
+
+      if (/Mobi|Android/i.test(navigator.userAgent)) {
+        wallFolder.close();
+      }
     }
 
-    await init();
-    setUI();
+    (async () => {
+      await init();
+      setUI();
+    })();
   </script>
 </body>
-</html> -->
+</html>
