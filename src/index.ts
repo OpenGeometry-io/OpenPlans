@@ -3,6 +3,7 @@ import { Pencil } from '../kernel/dist/src/pencil';
 import { BaseDoor } from './elements/base-door';
 import { BaseWall } from './elements/base-wall';
 import { BaseWindow } from './elements/base-window';
+import { DoubleWindow } from './elements/double-window';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 
@@ -61,6 +62,17 @@ export class OpenPlans {
       throw new Error('Pencil not initialized')
     }
     const window = new BaseWindow(this.pencil)
+    // window.windowColor = 0xadb5bd;
+    this.openThree.scene.add(window)
+    this.ogElements.push(window)
+    return window
+  }
+
+  doubleWindow(): DoubleWindow {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const window = new DoubleWindow(this.pencil)
     // window.windowColor = 0xadb5bd;
     this.openThree.scene.add(window)
     this.ogElements.push(window)

@@ -119,7 +119,7 @@ export class BaseDoor extends BasePoly {
     const door = new THREE.Mesh(doorGeo, doorMat);
     door.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
 
-    const hingeClip = new THREE.SphereGeometry(0.001, 32, 32);
+    const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
     const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
     hingeClipMesh.position.set(0, 0, -hingeThickness);
