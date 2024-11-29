@@ -1,0 +1,131 @@
+name: Release Notes
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  update-notion:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR Content
+        uses: actions/checkout@v3
+
+      - name: Fetch PR Body
+        id: pr_body
+        run: |
+          echo "pr_body=${{ github.event.pull_request.body }}" >> $GITHUB_ENV
+
+      - name: Parse Production Log Message
+        id: parse_log
+        run: |
+          # Extract Production Log Section
+          LOG_MESSAGE=$(echo "${{ env.pr_body }}" | grep -oP "(?<=### Production Log Message)(.|\\n)*?\\[.*?\\]")
+          
+          # Check if Marked with [X]
+          if [[ "$LOG_MESSAGE" == *"[X]"* ]]; then
+            MESSAGE=$(echo "$LOG_MESSAGE" | grep -oP "(?<=\\[X\\] - ).*")
+            echo "message=$MESSAGE" >> $GITHUB_ENV
+          else
+            echo "No valid production log message found."
+            exit 0
+          fi
+
+      - name: Format Date and Message
+        id: format_data
+        run: |
+          # Get Current Date in ISO 8601
+          PR_DATE=$(date -u +"%Y-%m-%d")
+          
+          # Prepare Header and Bullet Point Content
+          echo "pr_date=$PR_DATE" >> $GITHUB_ENV
+          echo "bullet_point=• $MESSAGE" >> $GITHUB_ENV
+
+      - name: Update Notion Page
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          DATE_HEADER: ${{ env.pr_date }}
+          BULLET_POINT: ${{ env.bullet_point }}
+        run: |
+          # Get existing page for the date, if it exists
+          EXISTING_PAGE=$(curl -s -X POST "https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query" \
+            -H "Authorization: Bearer $NOTION_API_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Notion-Version: 2022-06-28" \
+            --data '{
+              "filter": {
+                "property": "Name",
+                "title": {
+                  "equals": "'"$DATE_HEADER"'"
+                }
+              }
+            }')
+
+          # Check if a page exists for the date
+          PAGE_ID=$(echo $EXISTING_PAGE | jq -r '.results[0].id')
+
+          if [ "$PAGE_ID" != "null" ]; then
+            # Update existing page by appending the bullet point
+            curl -X PATCH "https://api.notion.com/v1/blocks/$PAGE_ID/children" \
+              -H "Authorization: Bearer $NOTION_API_KEY" \
+              -H "Content-Type: application/json" \
+              -H "Notion-Version: 2022-06-28" \
+              --data '{
+                "children": [
+                  {
+                    "object": "block",
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {
+                      "text": [
+                        {
+                          "type": "text",
+                          "text": {
+                            "content": "'"$BULLET_POINT"'"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }'
+          else
+            # Create a new page with the date as header and the bullet point
+            curl -X POST "https://api.notion.com/v1/pages" \
+              -H "Authorization: Bearer $NOTION_API_KEY" \
+              -H "Content-Type: application/json" \
+              -H "Notion-Version: 2022-06-28" \
+              --data '{
+                "parent": { "database_id": "'"$NOTION_DATABASE_ID"'" },
+                "properties": {
+                  "Name": {
+                    "title": [
+                      {
+                        "text": {
+                          "content": "'"$DATE_HEADER"'"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "object": "block",
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {
+                      "text": [
+                        {
+                          "type": "text",
+                          "text": {
+                            "content": "'"$BULLET_POINT"'"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }'
+          fi
