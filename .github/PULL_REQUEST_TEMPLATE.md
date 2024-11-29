@@ -8,7 +8,7 @@
 
 <!-- e.g. is there anything you'd like reviewers to focus on? -->
 
-### Production Log Message
+### Production Log Message <!-- Put A Cross(X) If This Is User Reflecting PR And Provide a Nice Message That No Brainer Ape Can Understand -->
 
-[ ] - <!-- Provide a Nice Log Message That No Brainer Ape can understand -->
+[ ] - 
 
