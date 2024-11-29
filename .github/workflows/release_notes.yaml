@@ -14,43 +14,30 @@ jobs:
       - name: Checkout PR Content
         uses: actions/checkout@v3
 
-      - name: Capture PR Body
+      - name: Capture PR Title
         run: |
-          # Capture the PR body dynamically
-          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
           
-          # Ensure proper formatting by using a here document and writing to the environment file
-          echo "pr_body<<EOF" >> $GITHUB_ENV
-          echo "$PR_BODY" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Parse Production Log Message
-        id: parse_log
-        run: |
-          # Extract Production Log Section
-          LOG_MESSAGE=$(echo "${{ env.pr_body }}" | grep -oP "(?<=### Production Log Message)(.|\\n)*?\\[.*?\\]")
-
-          # Check if the log message section exists
-          if [[ -z "$LOG_MESSAGE" ]]; then
-            echo "No '### Production Log Message' section found in PR body."
+          # Check if PR Title is empty
+          if [[ -z "$PR_TITLE" ]]; then
+            echo "No PR title found."
             exit 0
           fi
 
-          # Check if Marked with [X]
-          if [[ "$LOG_MESSAGE" == *"[X]"* ]]; then
-            MESSAGE=$(echo "$LOG_MESSAGE" | grep -oP "(?<=\\[X\\] - ).*")
+          # Check if PR Title contains feat: and extract the message and trigger the release
+          if [[ "$PR_TITLE" == *"feat:"* ]]; then
+            MESSAGE=$(echo "$PR_TITLE" | grep -oP "(?<=feat: ).*")
             if [[ -n "$MESSAGE" ]]; then
               echo "message=$MESSAGE" >> $GITHUB_ENV
             else
-              echo "No valid production log message found after [X] marker."
+              echo "No valid feature message found after feat: marker."
               exit 0
             fi
           else
-            echo "No [X] marker found in '### Production Log Message' section."
+            echo "No feat: marker found in PR title."
             exit 0
           fi
-
-
+          
       - name: Format Date and Message
         id: format_data
         run: |
