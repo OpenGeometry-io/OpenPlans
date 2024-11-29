@@ -10,4 +10,4 @@ OpenPlans can be used in Two Ways
 
 
 #### PR Tests
-- 1 Test
+- 1
