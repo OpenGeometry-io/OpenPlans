@@ -14,10 +14,15 @@ jobs:
       - name: Checkout PR Content
         uses: actions/checkout@v3
 
-      - name: Fetch PR Body
-        id: pr_body
+      - name: Capture PR Body
         run: |
-          echo "pr_body=${{ github.event.pull_request.body }}" | sed 's/\r//g' >> $GITHUB_ENV
+          # Capture the PR body dynamically
+          PR_BODY="${{ github.event.pull_request.body }}"
+          
+          # Ensure proper formatting by using a here document and writing to the environment file
+          echo "pr_body<<EOF" >> $GITHUB_ENV
+          echo "$PR_BODY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Parse Production Log Message
         id: parse_log
