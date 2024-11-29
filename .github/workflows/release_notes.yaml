@@ -24,15 +24,27 @@ jobs:
         run: |
           # Extract Production Log Section
           LOG_MESSAGE=$(echo "${{ env.pr_body }}" | grep -oP "(?<=### Production Log Message)(.|\\n)*?\\[.*?\\]")
-          
+
+          # Check if the log message section exists
+          if [[ -z "$LOG_MESSAGE" ]]; then
+            echo "No '### Production Log Message' section found in PR body."
+            exit 0
+          fi
+
           # Check if Marked with [X]
           if [[ "$LOG_MESSAGE" == *"[X]"* ]]; then
             MESSAGE=$(echo "$LOG_MESSAGE" | grep -oP "(?<=\\[X\\] - ).*")
-            echo "message=$MESSAGE" >> $GITHUB_ENV
+            if [[ -n "$MESSAGE" ]]; then
+              echo "message=$MESSAGE" >> $GITHUB_ENV
+            else
+              echo "No valid production log message found after [X] marker."
+              exit 0
+            fi
           else
-            echo "No valid production log message found."
+            echo "No [X] marker found in '### Production Log Message' section."
             exit 0
           fi
+
 
       - name: Format Date and Message
         id: format_data
