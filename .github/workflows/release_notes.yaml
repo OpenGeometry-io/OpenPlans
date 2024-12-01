@@ -30,11 +30,11 @@ jobs:
             if [[ -n "$MESSAGE" ]]; then
               echo "message=$MESSAGE" >> $GITHUB_ENV
             else
-              echo "No valid feature message found after feat: marker."
+              echo "No valid feature message found after feat: "
               exit 0
             fi
           else
-            echo "No feat: marker found in PR title."
+            echo "No feat: found in PR title."
             exit 0
           fi
           
