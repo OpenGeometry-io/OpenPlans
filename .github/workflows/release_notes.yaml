@@ -22,6 +22,8 @@ jobs:
           
           echo "pr_title=$PR_TITLE" >> $GITHUB_ENV
           echo "pr_user=$PR_USER" >> $GITHUB_ENV
+
+          PR_DATE=$(date -d "$PR_DATE" '+%Y-%m-%d')
           echo "pr_date=$PR_DATE" >> $GITHUB_ENV
           
           # Check if PR Title is empty
@@ -60,6 +62,38 @@ jobs:
             "parent": { "database_id": "15053776c9c18005be88d76140c9a7b5" },
             "properties": {
               "Title": {
+                "rich_text": [
+                  {
+                    "text": {
+                      "content": "${{ env.message }}"
+                    }
+                  }
+                ]
+              },
+              "Release Date": {
+                "date": {
+                  "start": "${{ env.pr_date }}"
+                }
+              },
+              "Type": {
+                "rich_text": [
+                  {
+                    "text": {
+                      "content": "${{ env.type }}"
+                    }
+                  }
+                ]
+              },
+              "Released By": {
+                "rich_text": [
+                  {
+                    "text": {
+                      "content": "${{ env.pr_user }}"
+                    }
+                  }
+                ]
+              },
+              "Name": {
                 "rich_text": [
                   {
                     "text": {
