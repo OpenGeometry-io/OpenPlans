@@ -56,14 +56,14 @@ jobs:
           -H 'Authorization: Bearer '"$NOTION_API_KEY"'' \
           -H "Content-Type: application/json" \
           -H "Notion-Version: 2022-06-28" \
-          -data '{
+          --data '{
             "parent": { "database_id": "15053776c9c18005be88d76140c9a7b5" },
             "properties": {
               "Title": {
                 "rich_text": [
                   {
                     "text": {
-                      "content": ${{ env.message }}
+                      "content": "${{ env.message }}"
                     }
                   }
                 ]
