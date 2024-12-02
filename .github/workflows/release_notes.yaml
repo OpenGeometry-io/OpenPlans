@@ -18,10 +18,10 @@ jobs:
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_USER="${{ github.event.pull_request.user.login }}"
+          PR_DATE=${{ github.event.pull_request.merged_at }}
+          
           echo "pr_title=$PR_TITLE" >> $GITHUB_ENV
           echo "pr_user=$PR_USER" >> $GITHUB_ENV
-
-          PR_DATE=$(date -u +"%Y-%m-%d")
           echo "pr_date=$PR_DATE" >> $GITHUB_ENV
           
       #     # Check if PR Title is empty
