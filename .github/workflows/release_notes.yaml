@@ -94,7 +94,7 @@ jobs:
                 ]
               },
               "Name": {
-                "rich_text": [
+                "title": [
                   {
                     "text": {
                       "content": "${{ env.message }}"
