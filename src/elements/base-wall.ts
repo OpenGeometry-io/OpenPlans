@@ -8,36 +8,11 @@ import { Pencil } from '../../kernel/dist/src/pencil';
 // TODO: Create Much Better Outlines
 // import * as OGLiner from './../helpers/OpenOutliner';
 
-const WallSet: OPWall = {
-  position: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  anchor: {
-    start: {
-      x: -1,
-      y: 0,
-      z: 0,
-    },
-    end: {
-      x: 1,
-      y: 0,
-      z: 0,
-    }
-  },
-  thickness: 0.25,
-  halfThickness: 0.125,
-  id: 0,
-  color: 0,
-  type: 'concrete'
-}
-
 export class BaseWall extends BasePoly {
   public ogType = 'wall';
   public color: number;
   mesh: BasePoly | null = null;
-  private wallSet: OPWall = WallSet;
+  private wallSet: OPWall;
   private wallSetMesh: { [key: string]: THREE.Mesh | THREE.Line } = {};
   private mainSetMesh: OPWallMesh | null = null;
 
@@ -62,11 +37,48 @@ export class BaseWall extends BasePoly {
     this.wallSet.type = type;
   }
 
+  get wallAnchor() {
+    return {
+      start: this.localToWorld(new THREE.Vector3(this.wallSet.anchor.start.x, this.wallSet.anchor.start.y, this.wallSet.anchor.start.z)),
+      end: this.localToWorld(new THREE.Vector3(this.wallSet.anchor.end.x, this.wallSet.anchor.end.y, this.wallSet.anchor.end.z)),
+    }
+  }
+
   // TODO: Since we need Pencil for every element, how to make it global/Singleton?
-  constructor(color: number, private pencil: Pencil) {
+  constructor(color: number, private pencil: Pencil, initialWallSet?: OPWall) {
     super();
     this.color = color;
-    this.setupSet();
+
+    if (initialWallSet) {
+      this.wallSet = initialWallSet;
+    } else {
+      this.wallSet = {
+        position: {
+          x: 0,
+          y: 0,
+          z: 0,
+        },
+        anchor: {
+          start: {
+            x: -1,
+            y: 0,
+            z: 0,
+          },
+          end: {
+            x: 1,
+            y: 0,
+            z: 0,
+          }
+        },
+        thickness: 0.25,
+        halfThickness: 0.125,
+        id: 0,
+        color: 0,
+        type: 'concrete',
+      }
+    }
+
+    // this.setupSet(this.wallSet);
     this.setGeometry();
     this.setupEvents();
   }
@@ -75,9 +87,8 @@ export class BaseWall extends BasePoly {
   /**
    * If A User Has A Wall Set, We Will Use It
    */
-  setupSet(wallset: OPWall = WallSet) {
-    if (!this.wallSet && wallset) return;
-    this.wallSet = wallset;
+  setupSet(wallSet: OPWall) {
+    this.wallSet = wallSet;
   }
 
   private setGeometry() {

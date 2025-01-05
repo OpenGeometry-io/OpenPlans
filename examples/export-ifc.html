@@ -26,8 +26,6 @@
 
     let openPlans;
 
-    let wall1, wall2;
-
     async function init() {
       const container = document.getElementById('app');
       openPlans = new OpenPlans(container);
@@ -36,17 +34,16 @@
       // TODO: Remove Error with Selection when no element present
       openPlans.pencil.mode = "select";
 
-      wall1 = openPlans.wall();
+      const wall1 = openPlans.wall();
       wall1.position.set(2, 0, 0);
 
-      wall2 = openPlans.wall();
+      const wall2 = openPlans.wall();
       wall2.position.set(-2, 0, 0);
     }
 
     function setUI() {
       const gui = new GUI();
       const wallFolder = gui.addFolder('Wall');
-      wallFolder.close();
       const wallControls = {
         'color': '#edf2f4',
       }
@@ -70,34 +67,12 @@
       // Export IFC File
       const fileControls = {
         'Export IFC': () => {
-          console.log(wall1.wallAnchor);
-          console.log(wall2.wallAnchor);
-
-          const eWall1 = {
-            "type": "wall",
-            "name": "simple wall",
-            "start": [wall1.wallAnchor.start.x, -wall1.wallAnchor.start.z],
-            "end": [wall1.wallAnchor.end.x, -wall1.wallAnchor.end.z],
-            "height": 3,
-            "thickness": 0.2,
-            "material": "brick"
-          }
-
-          const eWall2 = {
-            "type": "wall",
-            "name": "simple wall",
-            "start": [wall2.wallAnchor.start.x, -wall2.wallAnchor.start.z],
-            "end": [wall2.wallAnchor.end.x, -wall2.wallAnchor.end.z],
-            "height": 3,
-            "thickness": 0.2,
-            "material": "brick"
-          }
-
-          const raw = JSON.stringify({
-            "elements": [eWall1, eWall2]
-          });
           const myHeaders = new Headers();
           myHeaders.append("Content-Type", "application/json");
+
+          const raw = JSON.stringify({
+            "length": 10
+          });
 
           const requestOptions = {
             method: "POST",
@@ -122,6 +97,7 @@
             .catch((error) => console.error(error));
         }
       }
+
       gui.add(fileControls, 'Export IFC');
     }
 

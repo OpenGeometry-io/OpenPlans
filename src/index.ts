@@ -4,6 +4,7 @@ import { BaseDoor } from './elements/base-door';
 import { BaseWall } from './elements/base-wall';
 import { BaseWindow } from './elements/base-window';
 import { DoubleWindow } from './elements/double-window';
+import { GlyphNode, Glyphs } from './glyphs';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 
@@ -17,15 +18,35 @@ export class OpenPlans {
   private ogElements: any[] = []
 
   constructor(container: HTMLElement) {
+    console.log('OpenPlans constructor')
+
+    this.callback = this.callback.bind(this)
+
     this.container = container
-    this.openThree = new OpenThree(container)
+    this.openThree = new OpenThree(container, this.callback)
     this.planCamera = this.openThree.planCamera
+
+    this.openThree.planCamera.controls.addEventListener("update", () => {
+      Glyphs.updateManager(this.openThree.threeCamera)
+    })
+  }
+
+  callback() {
+    // console.log(this.og?.labelRenderer)
+    if (this.og?.labelRenderer) {
+      this.og.update(this.openThree.scene, this.openThree.threeCamera)
+      // Glyphs.updateManager(this.openThree.threeCamera)
+    }
   }
 
   async setupOpenGeometry() {
     this.og = new OpenGeometry(this.container, this.openThree.scene, this.openThree.threeCamera)
     await this.og.setup()
     this.pencil = this.og.pencil
+
+    Glyphs.scene = this.openThree.scene
+    Glyphs.camera = this.openThree.threeCamera
+    Glyphs.openGeometry = this.og
   }
 
   // addTheme(theme: ICanvasTheme) {
@@ -88,5 +109,24 @@ export class OpenPlans {
     const entities = this.getEntitiesByType(element)
     if (entities.length === 0) return
     this.planCamera.fitToElement(entities)
+  }
+
+  glyph(text: string, size: number, color: string, staticZoom: boolean = true) {
+    const glyph = Glyphs.addGlyph(text, size, color, staticZoom)
+    return glyph
+  }
+
+  selectGlyph(id: string) {
+    if (!id) throw new Error('ID not provided')
+    Glyphs.selectGlyph(id)
+  }
+
+  rotateGlyph(id: string, angle: number) {
+    if (!id) throw new Error('ID not provided')
+    Glyphs.rotateGlyph(id, angle)
+  }
+
+  get glyphNodes() {
+    return Glyphs.glyphNodes
   }
 }

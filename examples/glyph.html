@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>OpenPlan Glyph</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+      cursor: unset!important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "select";
+
+      // const glyph = openPlans.createGlyph({
+      //   name: 'glyph',
+      //   position: { x: 0, y: 0, z: 0 },
+      //   scale: { x: 1, y: 1, z: 1 },
+      //   rotation: { x: 0, y: 0, z: 0 },
+      //   color: '#adb5bd',
+      //   text: 'OpenPlans',
+      //   font: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/fonts/helvetiker_regular.typeface.json',
+      // });
+
+      const glyph = openPlans.glyph(`eeeeeee`, 5, 0x5D0E41, false);
+      // const glyph = openPlans.glyph('OpenGeometry 0.1', 10, 0xFF204E);
+      glyph.position.set(0, 0, 1);
+      // openPlans.rotateGlyph(glyph.uuid, 45);
+
+      // openPlans.rotateGlyph(glyph.uuid, 45);
+      openPlans.selectGlyph(glyph.uuid);
+
+      // const glyph2 = openPlans.glyph('OpenGeometry 0.1', 10, 0xFF204E);
+      // glyph2.position.set(0, 0, -2);
+      // openPlans.selectGlyph(glyph2.uuid);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const glypNodes = openPlans.glyphNodes;
+      console.log(glypNodes);
+      const glyphControls = {
+        color: '#adb5bd',
+        rotation: 0,
+      };
+
+      const glyphFolder = gui.addFolder('Glyph');
+      glyphFolder.addColor(glyphControls, 'color').name('Color').onChange((value) => {
+        glypNodes.forEach((node) => {
+          // openPlans.rotateGlyph(node.key, 45);
+        });
+      });
+      glyphFolder.add(glyphControls, 'rotation', 0, 360).name('Rotation').onChange((value) => {
+        glypNodes.forEach((node) => {
+          openPlans.rotateGlyph(node.uuid, value);
+        });
+      });
+      // doors.forEach((door) => {
+      //   const subDoor = doorFolder.addFolder(door.name);
+      //   subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
+      //     door.doorColor = value;
+      //   });
+      //   subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+      //     door.doorRotation = value;
+      //   });
+      //   subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+      //     door.doorQudrant = value;
+      //   });
+      // });
+    }
+
+    await init();
+    setUI();
+  </script>
+</body>
+</html>

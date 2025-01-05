@@ -1,22 +1,22 @@
 import * as THREE from 'three'
+import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { PlanCamera } from './plancamera'
 import CameraControls from 'camera-controls'
 import { activeTheme, ICanvasTheme } from '../base-type'
 import * as OpenGrid from './../../OpenGridHelper.ts'
-import { OpenGeometry } from '../../kernel/dist/index'
 
 export class OpenThree {
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
+  labelRenderer: CSS2DRenderer | undefined
   planCamera: PlanCamera
   threeCamera: THREE.PerspectiveCamera
   container: HTMLElement
   theme!: ICanvasTheme
   activeTheme: activeTheme = 'light'
-  openGeometry: OpenGeometry | undefined
   // planGrid: PlanGrid
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, private callback: any) {
     console.log('OpenThree constructor')
     CameraControls.install({THREE: THREE})
     this.generateTheme()
@@ -27,7 +27,8 @@ export class OpenThree {
       antialias: true,
       logarithmicDepthBuffer: true
     })
-    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
+
+    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 1, 100)
     this.planCamera = new PlanCamera(this.threeCamera, container)
     
     this.setup()
@@ -68,6 +69,7 @@ export class OpenThree {
   async setup() {
     // this.scene.background = new THREE.Color(0xff00ff)
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.container.appendChild(this.renderer.domElement)
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
@@ -98,10 +100,12 @@ export class OpenThree {
   }
 
   animate() {
-    requestAnimationFrame(() => this.animate())
     this.renderer.render(this.scene, this.threeCamera)
-    this.openGeometry?.update(this.scene, this.threeCamera)
     this.planCamera.update()
+    // console.log('OpenThree animate')
+    this.callback()
+
+    requestAnimationFrame(() => this.animate())
   }
 
   // addGUI() {

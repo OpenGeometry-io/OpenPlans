@@ -14,6 +14,9 @@ export class PlanCamera {
     this.controls = new CameraControls(camera, container);
     this.controls.mouseButtons.left = CameraControls.ACTION.NONE;
     this.controls.touches.one = CameraControls.ACTION.NONE;
+    this.controls.dollyToCursor = true;
+    this.controls.minDistance = 1.5;
+
     this.setupCamera();
   }
 
