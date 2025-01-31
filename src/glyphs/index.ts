@@ -13,13 +13,31 @@ interface GlyphNodesOptions {
   staticZoom: boolean;
 }
 
-export class BoundingMesh extends THREE.Mesh {
-  constructor() {
+class BoundingMesh extends THREE.Mesh {
+  private textMesh: THREE.Mesh;
+  helperRegionsBox: THREE.Mesh[] = [];
+
+  constructor(textMesh: THREE.Mesh, private glyph: GlyphNode) {
     super();
+    this.createBoundingMesh(textMesh);
+    this.textMesh = textMesh;
+    this.enableEditing = false;
+  }
+
+  set enableEditing(edit: boolean) {
+    this.visible = edit;
+  }
+
+  get enableEditing() {
+    return this.visible;
+  }
+
+  recomputeBoundingMesh() {
+    this.remove(...this.children);
+    this.createBoundingMesh(this.textMesh);
   }
 
   createBoundingMesh(mesh: THREE.Mesh) {
-    const boundingMesh = new THREE.Mesh();
     const box = new THREE.Box3().setFromObject(mesh);
     box.expandByScalar(0.1);
 
@@ -43,7 +61,7 @@ export class BoundingMesh extends THREE.Mesh {
       new THREE.Vector3(points[3], points[4], points[5]),
     ]);
     const topLineMesh = new THREE.Line(topLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(topLineMesh);
+    this.add(topLineMesh);
 
     // Bottom Line
     const bottomLine = new THREE.BufferGeometry().setFromPoints([
@@ -51,7 +69,7 @@ export class BoundingMesh extends THREE.Mesh {
       new THREE.Vector3(points[9], points[10], points[11]),
     ]);
     const bottomLineMesh = new THREE.Line(bottomLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(bottomLineMesh);
+    this.add(bottomLineMesh);
 
     // Left Line
     const leftLine = new THREE.BufferGeometry().setFromPoints([
@@ -59,7 +77,7 @@ export class BoundingMesh extends THREE.Mesh {
       new THREE.Vector3(points[15], points[16], points[17]),
     ]);
     const leftLineMesh = new THREE.Line(leftLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(leftLineMesh);
+    this.add(leftLineMesh);
 
     // Right Line
     const rightLine = new THREE.BufferGeometry().setFromPoints([
@@ -67,7 +85,7 @@ export class BoundingMesh extends THREE.Mesh {
       new THREE.Vector3(points[21], points[22], points[23]),
     ]);
     const rightLineMesh = new THREE.Line(rightLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(rightLineMesh);
+    this.add(rightLineMesh);
 
     // Boxes for the Corners
     // Left Top
@@ -75,41 +93,81 @@ export class BoundingMesh extends THREE.Mesh {
     const leftTopMesh = new THREE.Mesh(leftTopPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA })); 
     leftTopMesh.position.set(points[0], points[1], 0);
     leftTopMesh.name = 'left-top-corner';
-    boundingMesh.add(leftTopMesh);
+
+    // Left Top Rot Region
+    const leftTopRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
+    const leftTopRotMesh = new THREE.Mesh(leftTopRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
+    leftTopRotMesh.name = 'left-top-rot-region';
+    leftTopRotMesh.position.set(-0.1, 0.1, 0);
+    leftTopRotMesh.userData = { glyphNode: this.glyph };
+    this.helperRegionsBox.push(leftTopRotMesh);
+    leftTopMesh.add(leftTopRotMesh);
+
+    this.add(leftTopMesh);
 
     // Right Top
     const rightTopPlane = new THREE.PlaneGeometry(0.1, 0.1);
     const rightTopMesh = new THREE.Mesh(rightTopPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
     rightTopMesh.position.set(points[3], points[4], 0);
     rightTopMesh.name = 'right-top-corner';
-    boundingMesh.add(rightTopMesh);
+
+    // Right Top Rot Region
+    const rightTopRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
+    const rightTopRotMesh = new THREE.Mesh(rightTopRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
+    rightTopRotMesh.name = 'right-top-rot-region';
+    rightTopRotMesh.position.set(0.1, 0.1, 0);
+    rightTopRotMesh.userData = { glyphNode: this.glyph };
+    this.helperRegionsBox.push(rightTopRotMesh);
+    rightTopMesh.add(rightTopRotMesh);
+
+    this.add(rightTopMesh);
 
     // Left Bottom
     const leftBottomPlane = new THREE.PlaneGeometry(0.1, 0.1);
     const leftBottomMesh = new THREE.Mesh(leftBottomPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
     leftBottomMesh.position.set(points[6], points[7], 0);
     leftBottomMesh.name = 'left-bottom-corner';
-    boundingMesh.add(leftBottomMesh);
+
+    // Left Bottom Rot Region
+    const leftBottomRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
+    const leftBottomRotMesh = new THREE.Mesh(leftBottomRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
+    leftBottomRotMesh.name = 'left-bottom-rot-region';
+    leftBottomRotMesh.position.set(-0.1, -0.1, 0);
+    leftBottomRotMesh.userData = { glyphNode: this.glyph };
+    this.helperRegionsBox.push(leftBottomRotMesh);
+    leftBottomMesh.add(leftBottomRotMesh);
+
+    this.add(leftBottomMesh);
 
     // Right Bottom
     const rightBottomPlane = new THREE.PlaneGeometry(0.1, 0.1);
     const rightBottomMesh = new THREE.Mesh(rightBottomPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
     rightBottomMesh.position.set(points[9], points[10], 0);
     rightBottomMesh.name = 'right-bottom-corner';
-    boundingMesh.add(rightBottomMesh);
 
-    return boundingMesh;
+    // Right Bottom Rot Region
+    const rightBottomRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
+    const rightBottomRotMesh = new THREE.Mesh(rightBottomRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
+    rightBottomRotMesh.name = 'right-bottom-rot-region';
+    rightBottomRotMesh.position.set(0.1, -0.1, 0);
+    rightBottomRotMesh.userData = { glyphNode: this.glyph };
+    this.helperRegionsBox.push(rightBottomRotMesh);
+    rightBottomMesh.add(rightBottomRotMesh);
+
+    this.add(rightBottomMesh);
   }
 }
 
 export class GlyphNode extends THREE.Group {
   staticZoom: boolean = true;
+  baseRotation: number = 0;
+  isDragging: boolean = false;
   
   private text: string;
 
   // Meshes and Helper Mesh
-  private textMesh: THREE.Mesh;
-  boundMesh: THREE.Mesh;
+  textMesh: THREE.Mesh;
+  boundMesh: BoundingMesh;
   helperRegionsBox: THREE.Mesh[] = [];
 
   constructor(private options: GlyphNodesOptions) {
@@ -132,144 +190,9 @@ export class GlyphNode extends THREE.Group {
     this.textMesh = new THREE.Mesh(textGeometry, material);
     textGeometry.computeBoundingBox();
 
-    this.boundMesh = this.createBoundingMesh(this.textMesh);
-    this.boundMesh.add(this.textMesh);
-    this.boundMesh.visible = false;
+    this.boundMesh = new BoundingMesh(this.textMesh, this);
     this.add(this.boundMesh);
-  }
-
-  /**
-   * Rotate the actual text mesh
-   * @param angle Angle in Radians
-   */
-  // rotateOnY(angle: number) {
-  //   this.textMesh.rotation.z = angle;
-  // }
-
-  private createBoundingMesh(mesh: THREE.Mesh) {
-    const boundingMesh = new THREE.Mesh();
-    const box = new THREE.Box3().setFromObject(mesh);
-    box.expandByScalar(0.1);
-
-    const points = new Float32Array ([
-      box.min.x, box.max.y, 0,
-      box.max.x, box.max.y, 0,
-
-      box.min.x, box.min.y, 0,
-      box.max.x, box.min.y, 0,
-
-      box.min.x, box.min.y, 0,
-      box.min.x, box.max.y, 0,
-
-      box.max.x, box.min.y, 0,
-      box.max.x, box.max.y, 0,
-    ]);
-
-    // Top Line
-    const topLine = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(points[0], points[1], points[2]),
-      new THREE.Vector3(points[3], points[4], points[5]),
-    ]);
-    const topLineMesh = new THREE.Line(topLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(topLineMesh);
-
-    // Bottom Line
-    const bottomLine = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(points[6], points[7], points[8]),
-      new THREE.Vector3(points[9], points[10], points[11]),
-    ]);
-    const bottomLineMesh = new THREE.Line(bottomLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(bottomLineMesh);
-
-    // Left Line
-    const leftLine = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(points[12], points[13], points[14]),
-      new THREE.Vector3(points[15], points[16], points[17]),
-    ]);
-    const leftLineMesh = new THREE.Line(leftLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(leftLineMesh);
-
-    // Right Line
-    const rightLine = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(points[18], points[19], points[20]),
-      new THREE.Vector3(points[21], points[22], points[23]),
-    ]);
-    const rightLineMesh = new THREE.Line(rightLine, new THREE.LineBasicMaterial({ color: 0x1D24CA }));
-    boundingMesh.add(rightLineMesh);
-
-    // Boxes for the Corners
-    // Left Top
-    const leftTopPlane = new THREE.PlaneGeometry(0.1, 0.1);
-    const leftTopMesh = new THREE.Mesh(leftTopPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
-    leftTopMesh.position.set(points[0], points[1], 0);
-    leftTopMesh.name = 'left-top-corner';
-
-    // Left Top Rot Region
-    const leftTopRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
-    const leftTopRotMesh = new THREE.Mesh(leftTopRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
-    leftTopRotMesh.name = 'left-top-rot-region';
-    leftTopRotMesh.position.set(-0.1, 0.1, 0);
-    leftTopRotMesh.userData = { glyphNode: this };
-    this.helperRegionsBox.push(leftTopRotMesh);
-    leftTopMesh.add(leftTopRotMesh);
-
-    boundingMesh.add(leftTopMesh);
-
-    // // Right Top
-    // // const rightTopPlane = new THREE.PlaneGeometry(0.1, 0.1);
-    // // const rightTopMesh = new THREE.Mesh(rightTopPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
-    // // rightTopMesh.position.set(points[3], points[4], 0);
-    // // rightTopMesh.name = 'right-top-corner';
-    // // boundingMesh.add(rightTopMesh);
-    // const rightTopDiv = document.createElement('div');
-    // rightTopDiv.className = 'helper-region';
-    // rightTopDiv.style.backgroundColor = 'red';
-    // rightTopDiv.style.width = '20px';
-    // rightTopDiv.style.height = '20px';
-    // rightTopDiv.style.position = 'absolute';
-    // // rightTopDiv.style.top = '0';
-    // // rightTopDiv.style.right = '0';
-    // // rightTopDiv.style.cursor = 'pointer';
-    // // rightTopDiv.style.zIndex = '100';
-    // const rightTopDivMesh = new CSS2DObject(rightTopDiv);
-    // rightTopDivMesh.position.set(points[3], points[4], 0);
-    // boundingMesh.add(rightTopDivMesh);
-
-    // Left Bottom
-    const leftBottomPlane = new THREE.PlaneGeometry(0.1, 0.1);
-    const leftBottomMesh = new THREE.Mesh(leftBottomPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
-    leftBottomMesh.position.set(points[6], points[7], 0);
-    leftBottomMesh.name = 'left-bottom-corner';
-
-    // Left Bottom Rot Region
-    const leftBottomRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
-    const leftBottomRotMesh = new THREE.Mesh(leftBottomRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
-    leftBottomRotMesh.name = 'left-bottom-rot-region';
-    leftBottomRotMesh.position.set(-0.1, -0.1, 0);
-    leftBottomRotMesh.userData = { glyphNode: this };
-    this.helperRegionsBox.push(leftBottomRotMesh);
-    leftBottomMesh.add(leftBottomRotMesh);
-
-    boundingMesh.add(leftBottomMesh);
-
-    // Right Bottom
-    const rightBottomPlane = new THREE.PlaneGeometry(0.1, 0.1);
-    const rightBottomMesh = new THREE.Mesh(rightBottomPlane, new THREE.MeshBasicMaterial({ color: 0x1D24CA }));
-    rightBottomMesh.position.set(points[9], points[10], 0);
-    rightBottomMesh.name = 'right-bottom-corner';
-
-    // Right Bottom Rot Region
-    const rightBottomRotRegion = new THREE.PlaneGeometry(0.2, 0.2);
-    const rightBottomRotMesh = new THREE.Mesh(rightBottomRotRegion, new THREE.MeshBasicMaterial({ color: 0x1D24CA, wireframe: true }));
-    rightBottomRotMesh.name = 'right-bottom-rot-region';
-    rightBottomRotMesh.position.set(0.1, -0.1, 0);
-    rightBottomRotMesh.userData = { glyphNode: this };
-    this.helperRegionsBox.push(rightBottomRotMesh);
-    rightBottomMesh.add(rightBottomRotMesh);
-
-    boundingMesh.add(rightBottomMesh);
-
-    return boundingMesh;
+    this.add(this.textMesh);
   }
 }
 
@@ -288,6 +211,10 @@ class _GlyphManager {
   private selectorBoxes: THREE.Mesh[] = [];
 
   private _selectedGlyph: GlyphNode | null = null;
+  private _tempDirection: THREE.Vector3 = new THREE.Vector3();
+  private _selectedRotRegion: string = '';
+  private _tempAngle: number = 0;
+
   private cameraDistance: number = 0;
 
   // Editor Tools
@@ -315,30 +242,22 @@ class _GlyphManager {
     this._scene.add(this._glyphSelectorHelper.debugMesh);
 
     // Delete This Later
-    const debugNodeCenter = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({ color: 0x0000ff }));
+    const debugNodeCenter = new THREE.Mesh(new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial({ color: 0x0000ff }));
     debugNodeCenter.name = 'debug-node-center';
     this._glyphSelectorHelper.debugMesh.add(debugNodeCenter);
     
-    // const debugCenterSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-    // debugCenterSphere.name = 'debug-center-sphere';
-    // this._glyphSelectorHelper.debugMesh.add(debugCenterSphere);
-    // const debugDirectionSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-    // debugDirectionSphere.name = 'debug-direction-sphere';
-    // this._glyphSelectorHelper.debugMesh.add(debugDirectionSphere);
+    const debugDirectionSphere = new THREE.Mesh(new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+    debugDirectionSphere.name = 'debug-direction-sphere';
+    this._glyphSelectorHelper.debugMesh.add(debugDirectionSphere);
 
-    // const lineAC = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, this._glyphSelectorHelper.direction]);
-    // const lineACMesh = new THREE.LineSegments(lineAC, new THREE.LineBasicMaterial({ color: 0x0000ff }));
-    // lineACMesh.name = 'debug-line-ac';
-    // const lineAB = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, this._glyphSelectorHelper.center]);
-    // const lineABMesh = new THREE.LineSegments(lineAB, new THREE.LineBasicMaterial({ color: 0xff0000 }));
-    // lineABMesh.name = 'debug-line-ab';
-
-    // this._glyphSelectorHelper.debugMesh.add(lineABMesh);
-    // this._glyphSelectorHelper.debugMesh.add(lineACMesh);
-
-    console.log(this._scene);
-
-    // this.updateSelectorBox();
+    const lineAC = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, this._glyphSelectorHelper.direction]);
+    const lineACMesh = new THREE.LineSegments(lineAC, new THREE.LineBasicMaterial({ color: 0x0000ff }));
+    lineACMesh.name = 'debug-line-ac';
+    const lineAB = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, this._glyphSelectorHelper.center]);
+    const lineABMesh = new THREE.LineSegments(lineAB, new THREE.LineBasicMaterial({ color: 0xff0000 }));
+    lineABMesh.name = 'debug-line-ab';
+    this._glyphSelectorHelper.debugMesh.add(lineABMesh);
+    this._glyphSelectorHelper.debugMesh.add(lineACMesh);
   }
 
   set camera(camera: THREE.PerspectiveCamera) {
@@ -426,10 +345,11 @@ class _GlyphManager {
     });
 
     glyphNodes.rotation.x = -(Math.PI / 2);
+    glyphNodes.updateMatrixWorld(true);
     this._scene?.add(glyphNodes);
     this._glyphNodes.set(glyphNodes.uuid, glyphNodes);
 
-    for (const region of glyphNodes.helperRegionsBox) {
+    for (const region of glyphNodes.boundMesh.helperRegionsBox) {
       this.selectorBoxes.push(region);
     }
 
@@ -437,8 +357,9 @@ class _GlyphManager {
   }
 
   setupTransformation() {
+
+    // For Changing Cursor
     window.addEventListener("mousemove", (event) => {
-      console.log('Moving');
       const pointer = new THREE.Vector2();
       pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
       pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -449,85 +370,137 @@ class _GlyphManager {
       const intersects = this.glyphCaster.intersectObjects(this.selectorBoxes);
       if (intersects.length > 0) {
         const object = intersects[0].object;
+
+        // If Glyph is not selected, disable mousemove
+        if (object.userData.glyphNode.uuid !== this._selectedGlyph?.uuid) {
+          document.body.style.cursor = "default";
+          return;
+        }
+
         if (object.name === 'left-top-rot-region' || object.name === 'right-top-rot-region' || object.name === 'left-bottom-rot-region' || object.name === 'right-bottom-rot-region') {
           document.body.style.cursor = `url('https://opengeometry-43705.web.app/Open-Plans-Resources/${object.name}-cursor.png') 10 10, default`;
+          this._selectedRotRegion = object.name;
         }
       } else {
         document.body.style.cursor = "default";
       }
+
+      // If Editing is Enabled
+      if (!this._isEditing) return;
+
+      const intersectsGround = this.glyphCaster.intersectObjects([this._scene.getObjectByName('pencil-ground') as THREE.Mesh]);
+      if (intersectsGround.length > 0) {
+        document.body.style.cursor = `url('https://opengeometry-43705.web.app/Open-Plans-Resources/${this._selectedRotRegion}-cursor.png') 10 10, default`;
+        const point = intersectsGround[0].point;
+        console.log(point);
+
+        // Direction Mesh
+        const rotMesh = this._selectedGlyph?.boundMesh.helperRegionsBox.find((mesh) => mesh.name === this._selectedRotRegion);
+        if (!rotMesh) return;
+
+        const rotMeshWorldPosition = this._tempDirection;
+        const directionMesh = this._glyphSelectorHelper.debugMesh.getObjectByName('debug-direction-sphere') as THREE.Mesh;
+        directionMesh.position.copy(rotMeshWorldPosition);
+        
+        const debugLineAB = this._glyphSelectorHelper.debugMesh.getObjectByName('debug-line-ab') as THREE.LineSegments;
+        const lineABGeometry = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, point]);
+        debugLineAB.geometry = lineABGeometry;
+
+        const debugLineAC = this._glyphSelectorHelper.debugMesh.getObjectByName('debug-line-ac') as THREE.LineSegments;
+        const lineACGeometry = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, rotMeshWorldPosition]);
+        debugLineAC.geometry = lineACGeometry;
+
+        const lineAB = point.clone().sub(this._glyphSelectorHelper.center).normalize();
+        const lineAC = rotMeshWorldPosition.clone().sub(this._glyphSelectorHelper.center).normalize();
+        const angle = ((lineAB.clone().cross(lineAC).y < 0 ? 1 : -1) * Math.acos(lineAB.dot(lineAC)) * 180 / Math.PI);
+
+        const baseAngle = this._selectedGlyph?.baseRotation as number;
+        console.log(`Base Angle: ${baseAngle}`);
+        this._tempAngle = angle;
+        this.rotateGlyph(this._selectedGlyph?.uuid as string, baseAngle + angle);
+      }
     });
 
-    // Below Logic Needs to be refined or deleted
-    // window.addEventListener("mousemove", (event) => {
-    //   if (!this._isEditing) return;
-    //   console.log('Editing');
+    window.addEventListener("mousedown", (event) => {
+      const pointer = new THREE.Vector2();
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
-    //   const pointer = new THREE.Vector2();
-    //   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    //   pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+      if (!this._camera || !this._scene) return;
+      this.glyphCaster.setFromCamera(pointer, this._camera);
 
-    //   if (!this._camera || !this._scene) return;
-    //   this.glyphCaster.setFromCamera(pointer, this._camera);
-      
-    //   const pencilPlane = this._scene.getObjectByName('pencil-ground') as THREE.Mesh;
-    //   console.log(this._scene);
-    //   const intersects = this.glyphCaster.intersectObjects([pencilPlane]);
-    //   if (intersects.length > 0) {
-    //     const point = intersects[0].point;
+      const intersects = this.glyphCaster.intersectObjects(this.selectorBoxes);
+      if (intersects.length > 0) {
+        const object = intersects[0].object;
 
-    //     const lineAB = point.clone().sub(this._glyphSelectorHelper.center).normalize();
-    //     const debugLineAB = this._glyphSelectorHelper.debugMesh.getObjectByName('debug-line-ab') as THREE.LineSegments;
-    //     const lineABGeometry = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, point]);
-    //     debugLineAB.geometry = lineABGeometry;
+        // If Glyph is not selected, disable mousedown
+        if (object.userData.glyphNode.uuid !== this._selectedGlyph?.uuid) {
+          document.body.style.cursor = "default";
+          return;
+        }
 
-    //     const lineAC = this._glyphSelectorHelper.direction.clone().sub(this._glyphSelectorHelper.center).normalize();
-    //     const debugLineAC = this._glyphSelectorHelper.debugMesh.getObjectByName('debug-line-ac') as THREE.LineSegments;
-    //     const lineACGeometry = new THREE.BufferGeometry().setFromPoints([this._glyphSelectorHelper.center, this._glyphSelectorHelper.direction]);
-    //     debugLineAC.geometry = lineACGeometry;
-        
-    //     const angle = ((lineAB.clone().cross(lineAC).y < 0 ? 1 : -1)*Math.acos(lineAB.dot(lineAC))*180/Math.PI);
-    //     // // cross product
-    //     // console.log(angle);
-    //     // glyphManager?.rotateGlyph(this._selectedGlyph?.uuid as string, angle);
+        if (object.name === 'left-top-rot-region' || object.name === 'right-top-rot-region' || object.name === 'left-bottom-rot-region' || object.name === 'right-bottom-rot-region') {
+          this._isEditing = true;
+          this._selectedGlyph = object.userData.glyphNode;
 
-    //     const radAngle = angle * Math.PI / 180;
-    //     this._selectorBox.rotation.y = radAngle;
-    //     // this._selectorBox.position.copy(this._glyphSelectorHelper.nodeCenter);
-    //   }
-    // });
+          const rotMesh = this._selectedGlyph?.boundMesh.helperRegionsBox.find((mesh) => mesh.name === object.name);
+          if (!rotMesh) return;
 
-    // window.addEventListener("mouseup", (event) => {
-    //   this._isEditing = false;
-    // });
+          const rotMeshWorldPosition = new THREE.Vector3();
+          rotMesh.getWorldPosition(rotMeshWorldPosition);
+          this._tempDirection.copy(rotMeshWorldPosition);
+
+          if (this._selectedGlyph) this._selectedGlyph.isDragging = true;
+        }
+      }
+    });
+
+    window.addEventListener("mouseup", (event) => {
+      this._isEditing = false;
+      document.body.style.cursor = "default";
+
+      if (this._selectedGlyph) {
+        this._selectedGlyph.isDragging = false;
+        this._selectedGlyph.baseRotation += this._tempAngle;
+        this._tempAngle = 0;
+        console.log(`Base Angle: ${this._selectedGlyph.baseRotation}`);
+      }
+
+    });
   }
 
   /**
    * Create a Boundary around the Glyph Text
    */
   selectGlyph(id: string) {
-    // console.log(id);
-
     const glyphNode = this._glyphNodes.get(id);
     if (!glyphNode) throw new Error('Glyph Node not found');
 
     this._selectedGlyph = glyphNode;
+    glyphNode.boundMesh.enableEditing = true;
 
-    glyphNode.boundMesh.visible = true;
+    const box = new THREE.Box3().setFromObject(glyphNode);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    this._glyphSelectorHelper.center = center;
+    this._glyphSelectorHelper.debugMesh.getObjectByName('debug-node-center')?.position.copy(center);
+  }
 
-    // const box = new THREE.Box3().setFromObject(glyphNode);
-
-    // const center = new THREE.Vector3();
-    // box.getCenter(center);
-    // this._glyphSelectorHelper.center = center;
-    // this._glyphSelectorHelper.debugMesh.getObjectByName('debug-node-center')?.position.copy(center);
-
-    // // box.expandByScalar(0.2);
-    // this.updateSelectorBox(box.min, box.max);
+  /**
+   * Clear All Selections
+   */
+  clearSelection() {
+    if (this._selectedGlyph) {
+      this._selectedGlyph.boundMesh.enableEditing = false;
+      this._selectedGlyph = null;
+      console.log('Cleared Selection');
+      console.log(this._selectedGlyph);
+    }
   }
 
   updateManager(camera: THREE.PerspectiveCamera) {
-    // const cameraDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-    // if (!(cameraDistance > this.cameraDistance + 1 || cameraDistance < this.cameraDistance - 1)) return;
+    const cameraDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+    if (!(cameraDistance > this.cameraDistance + 1 || cameraDistance < this.cameraDistance - 1)) return;
     
     for (const [, glyphNode] of this._glyphNodes) {
       if (!glyphNode.staticZoom) {
@@ -549,9 +522,13 @@ class _GlyphManager {
   rotateGlyph(id: string, angle: number) {
     const glyphNode = this._glyphNodes.get(id);
     if (!glyphNode) throw new Error('Glyph Node not found');
-
+    
     const radians = angle * Math.PI / 180;
-    glyphNode.boundMesh.rotation.z = radians;
+    glyphNode.rotation.z = radians;
+  }
+
+  getGlyph(id: string): GlyphNode | undefined {
+    return this._glyphNodes.get(id);
   }
 }
 

@@ -44,16 +44,15 @@
       //   font: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js/examples/fonts/helvetiker_regular.typeface.json',
       // });
 
-      const glyph = openPlans.glyph(`eeeeeee`, 5, 0x5D0E41, false);
-      // const glyph = openPlans.glyph('OpenGeometry 0.1', 10, 0xFF204E);
+      const glyph = openPlans.glyph(`Break Free`, 5, 0x5D0E41, false);
       glyph.position.set(0, 0, 1);
       // openPlans.rotateGlyph(glyph.uuid, 45);
 
       // openPlans.rotateGlyph(glyph.uuid, 45);
-      openPlans.selectGlyph(glyph.uuid);
+      // openPlans.selectGlyph(glyph.uuid);
 
-      // const glyph2 = openPlans.glyph('OpenGeometry 0.1', 10, 0xFF204E);
-      // glyph2.position.set(0, 0, -2);
+      const glyph2 = openPlans.glyph('OpenGeometry 0.1', 10, 0xFF204E);
+      glyph2.position.set(0, 0, -2);
       // openPlans.selectGlyph(glyph2.uuid);
     }
 
@@ -64,19 +63,50 @@
       const glyphControls = {
         color: '#adb5bd',
         rotation: 0,
+        select: false
       };
 
       const glyphFolder = gui.addFolder('Glyph');
-      glyphFolder.addColor(glyphControls, 'color').name('Color').onChange((value) => {
-        glypNodes.forEach((node) => {
-          // openPlans.rotateGlyph(node.key, 45);
+      // glyphFolder.addColor(glyphControls, 'color').name('Color').onChange((value) => {
+      //   glypNodes.forEach((node) => {
+      //     // openPlans.rotateGlyph(node.key, 45);
+      //   });
+      // });
+      // glyphFolder.add(glyphControls, 'rotation', 0, 360).name('Rotation').onChange((value) => {
+      //   glypNodes.forEach((node) => {
+      //     openPlans.rotateGlyph(node.uuid, value);
+      //   });
+      // });
+      // glyphFolder.add(glyphControls, 'select').name('Select').onChange((value) => {
+      //   if (value) {
+      //     glypNodes.forEach((node) => {
+      //       openPlans.selectGlyph(node.uuid);
+      //     });
+      //   } else {
+      //     openPlans.clearGlyphSelection();
+      //   }
+      // });
+
+      glypNodes.forEach((glyphNode) => {
+        console.log(glyphNode);
+  
+        const subGlyph = glyphFolder.addFolder(glyphNode.text);
+        // subGlyph.addColor(glyphControls, 'color').name('Color').onChange((value) => {
+        //   openPlans.changeGlyphColor(node.uuid, value);
+        // });
+        subGlyph.add(glyphControls, 'rotation', 0, 360).name('Rotation').onChange((value) => {
+          openPlans.rotateGlyph(glyphNode.uuid, value);
+        });
+
+        subGlyph.add(glyphControls, 'select').name('Select').onChange((value) => {
+          if (value) {
+            openPlans.selectGlyph(glyphNode.uuid);
+          } else {
+            openPlans.clearGlyphSelection();
+          }
         });
       });
-      glyphFolder.add(glyphControls, 'rotation', 0, 360).name('Rotation').onChange((value) => {
-        glypNodes.forEach((node) => {
-          openPlans.rotateGlyph(node.uuid, value);
-        });
-      });
+
       // doors.forEach((door) => {
       //   const subDoor = doorFolder.addFolder(door.name);
       //   subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {

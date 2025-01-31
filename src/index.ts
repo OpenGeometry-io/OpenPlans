@@ -116,6 +116,12 @@ export class OpenPlans {
     return glyph
   }
 
+  getGlyph(id: string): GlyphNode {
+    const glyph = Glyphs.getGlyph(id)
+    if (!glyph) throw new Error('Glyph not found')
+    return glyph
+  }
+
   selectGlyph(id: string) {
     if (!id) throw new Error('ID not provided')
     Glyphs.selectGlyph(id)
@@ -128,5 +134,9 @@ export class OpenPlans {
 
   get glyphNodes() {
     return Glyphs.glyphNodes
+  }
+
+  clearGlyphSelection() {
+    Glyphs.clearSelection()
   }
 }
