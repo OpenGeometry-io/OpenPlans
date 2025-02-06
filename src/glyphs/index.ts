@@ -164,6 +164,7 @@ export class GlyphNode extends THREE.Group {
   isDragging: boolean = false;
   
   private text: string;
+  fontSize: number = 1;
 
   // Meshes and Helper Mesh
   textMesh: THREE.Mesh;
@@ -193,6 +194,30 @@ export class GlyphNode extends THREE.Group {
     this.boundMesh = new BoundingMesh(this.textMesh, this);
     this.add(this.boundMesh);
     this.add(this.textMesh);
+  }
+
+  updateText(textGeometry: THREE.ShapeGeometry, text: string) {
+    this.text = text;
+    this.remove(this.textMesh);
+    this.remove(this.boundMesh);
+
+    textGeometry.computeBoundingBox();
+    if (!textGeometry.boundingBox) {
+      throw new Error('BoundingBox is null');
+    }
+    
+    const xMid = -0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
+    const yMid = -0.5 * (textGeometry.boundingBox.max.y - textGeometry.boundingBox.min.y);
+    const zMid = -0.5 * (textGeometry.boundingBox.max.z - textGeometry.boundingBox.min.z);
+    textGeometry.translate( xMid, yMid, zMid );
+
+    const material = new THREE.MeshBasicMaterial({ color: this.options.color, side: THREE.DoubleSide });
+    this.textMesh = new THREE.Mesh(textGeometry, material);
+    textGeometry.computeBoundingBox();
+
+    this.boundMesh = new BoundingMesh(this.textMesh, this);
+    this.add(this.textMesh);
+    this.add(this.boundMesh);
   }
 }
 
@@ -344,6 +369,9 @@ class _GlyphManager {
       staticZoom: staticZoom
     });
 
+    // It is important to set the size of the glyph node, so that it can be used for scaling and editing later
+    glyphNodes.fontSize = size;
+
     glyphNodes.rotation.x = -(Math.PI / 2);
     glyphNodes.updateMatrixWorld(true);
     this._scene?.add(glyphNodes);
@@ -354,6 +382,34 @@ class _GlyphManager {
     }
 
     return glyphNodes;
+  }
+
+  updateGlyphText(id: string, text: string) {
+    this.checkAssigmnet();
+
+    const glyphNode = this._glyphNodes.get(id);
+    if (!glyphNode) throw new Error('Glyph Node not found');
+
+    // remove selector boxes
+    for (const region of glyphNode.boundMesh.helperRegionsBox) {
+      this.selectorBoxes = this.selectorBoxes.filter((box) => box.uuid !== region.uuid);
+    }
+
+    const isEditingActive = glyphNode.boundMesh.enableEditing;
+
+    const shape = this._currentFont?.generateShapes(text, glyphNode.fontSize * 0.1);
+    const geometry = new THREE.ShapeGeometry(shape);
+    glyphNode.updateText(geometry, text);
+
+    // Add Selector Boxes
+    for (const region of glyphNode.boundMesh.helperRegionsBox) {
+      this.selectorBoxes.push(region);
+    }
+
+    // If Editing is Active, re-enable it
+    if (isEditingActive) {
+      this.selectGlyph(id);
+    }
   }
 
   setupTransformation() {

@@ -139,4 +139,8 @@ export class OpenPlans {
   clearGlyphSelection() {
     Glyphs.clearSelection()
   }
+
+  updateGlyphText(id: string, text: string) {
+    Glyphs.updateGlyphText(id, text)
+  }
 }

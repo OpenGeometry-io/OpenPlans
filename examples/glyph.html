@@ -63,7 +63,8 @@
       const glyphControls = {
         color: '#adb5bd',
         rotation: 0,
-        select: false
+        select: false,
+        text: 'OpenPlans',
       };
 
       const glyphFolder = gui.addFolder('Glyph');
@@ -104,6 +105,11 @@
           } else {
             openPlans.clearGlyphSelection();
           }
+        });
+
+        subGlyph.add(glyphControls, 'text').name('Text').onChange((value) => {
+          openPlans.updateGlyphText(glyphNode.uuid, value);
+          console.log(value);
         });
       });
 
