@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>OpenPlan JSON</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    // let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "select";
+
+      // // const graphJsonURL = "./graph.json";
+      // // const graphJsonURL = "./alternate.json";
+      // // const graph = await fetch(graphJsonURL);
+      // // const graphJson = await graph.json();
+      // // console.log(graphJson);
+      // // openPlans.generateGeometry(graphJson);
+      
+      const impleniaJsonURL = "./impleniaGraph.json";
+      const graph = await fetch(impleniaJsonURL);
+      const graphJson = await graph.json();
+      console.log(graphJson);
+      openPlans.convertImpleniaToOGFormat(graphJson);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      
+    }
+
+    await init();
+    setUI();
+  </script>
+</body>
+</html>

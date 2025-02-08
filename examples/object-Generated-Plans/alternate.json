@@ -1,0 +1,355 @@
+{
+  "building_id": "BLDG_001",
+  "building_name": "Apartment Building 1",
+  "floors": [
+    {
+      "OG_ID": "FLOOR_001",
+      "OG_TYPE": "OG_FLOOR",
+      "OG_DATA": ["ROOM_001", "ROOM_002", "ROOM_003", "ROOM_004", "ROOM_005", "ROOM_006", "ROOM_007", "ROOM_008"]
+    }
+  ],
+  "rooms": [
+    {
+      "OG_ID": "ROOM_001",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Living Room",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_004",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_005",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_006",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_007",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_008",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_009",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [18.9, 0, 7.96],
+        [18.9, 0, 3.45],
+        [28.18, 0, 3.45],
+        [28.18, 0, 7.88],
+        [23.54, 0, 7.88],
+        [21.84, 0, 7.96]
+      ],
+      "connections": ["ROOM_002", "ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_002",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_010",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_011",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_012",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_013",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [23.54, 0, 7.88],
+        [23.54, 0, 10.77],
+        [28.27, 0, 10.77],
+        [28.18, 0, 7.88]
+      ],
+      "connections": ["ROOM_003", "ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_003",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_014",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_015",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_016",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_017",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [23.54, 0, 10.77],
+        [23.54, 0, 13.58],
+        [28.27, 0, 13.58],
+        [28.27, 0, 10.77]
+      ],
+      "connections": ["ROOM_002", "ROOM_004", "ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_004",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_018",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_019",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_020",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_021",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [23.54, 0, 13.58],
+        [23.54, 0, 16.56],
+        [28.27, 0, 16.56],
+        [28.27, 0, 13.58]
+      ],
+      "connections": ["ROOM_003", "ROOM_005", "ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_005",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bathroom",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_023",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_024",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_025",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_026",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [23.54, 0, 14.56],
+        [21.84, 0, 14.56],
+        [21.84, 0, 16.47],
+        [23.54, 0, 16.56]
+      ],
+      "connections": ["ROOM_004", "ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_006",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Corridor",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_027",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_028",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_029",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_030",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_031",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_032",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_033",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [21.84, 0, 10.0],
+        [21.84, 0, 14.56],
+        [23.54, 0, 14.56],
+        [23.54, 0, 13.58],
+        [23.54, 0, 10.77],
+        [23.54, 0, 7.88],
+        [21.84, 0, 7.96]
+      ],
+      "connections": ["ROOM_001", "ROOM_002", "ROOM_003", "ROOM_004", "ROOM_005", "ROOM_007"]
+    },
+    {
+      "OG_ID": "ROOM_007",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bathroom",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_001",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_002",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_003",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [18.9, 0, 9.96],
+        [18.9, 0, 7.96],
+        [21.84, 0, 7.96],
+        [21.84, 0, 10.0]
+      ],
+      "connections": ["ROOM_006"]
+    },
+    {
+      "OG_ID": "ROOM_008",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Core",
+      "OG_DATA": [
+        {
+          "OG_ID": "WALL_034",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_035",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_036",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_037",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_038",
+          "OG_TYPE": "OG_WALL"
+        },
+        {
+          "OG_ID": "WALL_039",
+          "OG_TYPE": "OG_WALL"
+        }
+      ],
+      "coordinates": [
+        [18.9, 0, 9.96],
+        [18.9, 0, 18.98],
+        [21.88, 0, 18.98],
+        [21.84, 0, 16.47],
+        [21.84, 0, 14.56],
+        [21.84, 0, 10.0]
+      ],
+      "connections": []
+    }
+  ],
+  "walls": [
+    {
+      "OG_ID": "WALL_001",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [18.9, 0, 9.96],
+      "end": [18.9, 0, 7.96]
+    },
+    {
+      "OG_ID": "WALL_002",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [18.9, 0, 7.96],
+      "end": [21.84, 0, 7.96]
+    },
+    {
+      "OG_ID": "WALL_003",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [21.84, 0, 7.96],
+      "end": [21.84, 0, 10.0]
+    },
+    {
+      "OG_ID": "WALL_004",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [18.9, 0, 7.96],
+      "end": [18.9, 0, 3.45]
+    },
+    {
+      "OG_ID": "WALL_005",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [18.9, 0, 3.45],
+      "end": [28.18, 0, 3.45]
+    },
+    {
+      "OG_ID": "WALL_006",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [28.18, 0, 3.45],
+      "end": [28.18, 0, 7.88]
+    }
+  ],
+  "windows": [
+    {
+      "OG_ID": "WINDOW_001",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [28.18, 0, 5.45],
+      "end": [28.18, 0, 6.45]
+    }
+  ],
+  "doors": [
+    {
+      "OG_ID": "DOOR_001",
+      "OG_TYPE": "OG_DOOR",
+      "type": "internal",
+      "thickness": 0.2,
+      "hingeThickness": 0.1,
+      "start": [21.84, 0, 7.96],
+      "end": [22.84, 0, 7.96]
+    }
+  ]
+}

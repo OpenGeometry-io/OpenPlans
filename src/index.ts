@@ -1,10 +1,14 @@
 import { OpenGeometry } from '../kernel/dist';
 import { Pencil } from '../kernel/dist/src/pencil';
 import { BaseDoor } from './elements/base-door';
+import { BaseSpace } from './elements/base-spaces';
+import { OPDoor, OPSpace, OPWall } from './elements/base-types';
 import { BaseWall } from './elements/base-wall';
 import { BaseWindow } from './elements/base-window';
 import { DoubleWindow } from './elements/double-window';
 import { GlyphNode, Glyphs } from './glyphs';
+import { BuildingData } from './parser/IGraph';
+import convertToOGFormat from './parser/ImpleniaConverter';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 
@@ -89,6 +93,16 @@ export class OpenPlans {
     return window
   }
 
+  space(): BaseSpace {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const space = new BaseSpace(this.pencil)
+    this.openThree.scene.add(space)
+    this.ogElements.push(space)
+    return space
+  }
+
   doubleWindow(): DoubleWindow {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
@@ -111,7 +125,7 @@ export class OpenPlans {
     this.planCamera.fitToElement(entities)
   }
 
-  glyph(text: string, size: number, color: string, staticZoom: boolean = true) {
+  glyph(text: string, size: number, color: number, staticZoom: boolean = true) {
     const glyph = Glyphs.addGlyph(text, size, color, staticZoom)
     return glyph
   }
@@ -142,5 +156,177 @@ export class OpenPlans {
 
   updateGlyphText(id: string, text: string) {
     Glyphs.updateGlyphText(id, text)
+  }
+
+  convertImpleniaToOGFormat(sourceJson: any) {
+    console.log('Converting Implenia to OG format');
+    const ogJSON = convertToOGFormat(sourceJson);
+    this.generateGeometry(ogJSON);
+  }
+
+  ////// Automated Stuff
+  /**
+   * 
+   * @param graph This is the graph that will be used to generate the geometry.
+   * @returns 
+   */
+  public generateGeometry(graph: BuildingData): void {
+    const wallText = this.glyph(`Implenia Building`, 2, 0x5D0E41, false);
+    wallText.position.set(0, 0, 1);
+
+    console.log('Generating geometry');
+    console.log(graph);
+
+    // Calling APIs to generate the geometry.
+    
+    const floors = graph.floors;
+    console.log(floors);
+
+    // Just doing for first floor
+    for (let i = 0; i < 1; i++) {
+      const floor = floors[i];
+      const rooms = floor.OG_DATA;
+      for (let j = 0; j < rooms.length; j++) {
+        const roomId = rooms[j];
+        const room = graph.rooms.find((r) => r.OG_ID === roomId);
+        if (!room) return;
+
+        // ROOM/SPACE visualization
+
+        const roomCoords = room.coordinates;
+        console.log(`Room coordinates for ${room.USER_DATA}: ${roomCoords}`);
+        const roomSet: OPSpace = {
+          id: j,
+          position: { x: 0, y: 0, z: 0 },
+          color: 0xff0000,
+          type: 'internal',
+          coordinates: roomCoords,
+          labelName: room.USER_DATA
+        }
+
+        if (!this.pencil) return;
+        const roomElement = new BaseSpace(this.pencil, roomSet);
+        this.openThree.scene.add(roomElement);
+
+        const roomElements = room.OG_DATA;
+        for (let k = 0; k < roomElements.length; k++) {
+          const elementFromRoom = roomElements[k];
+          const elementType = elementFromRoom.OG_TYPE;
+          switch (elementType) {
+            case 'OG_WALL':
+              const wall = graph.walls.find((w) => w.OG_ID === elementFromRoom.OG_ID);
+              if (!wall) return;
+              if (wall.type === 'internal') {
+                // Generate wall geometry
+                const start = wall.start;
+                const end = wall.end;
+                const thickness = wall.thickness;
+                
+                if (!this.pencil) return;
+
+                const wallSet: OPWall = {
+                  id: k,
+                  position: { x: 0, y: 0, z: 0 },
+                  color: 0xedf2f4,
+                  type: 'concrete',
+                  anchor: {
+                    start: {
+                      x: start[0],
+                      y: start[1],
+                      z: start[2]
+                    },
+                    end: {
+                      x: end[0],
+                      y: end[1],
+                      z: end[2]
+                    }
+                  },
+                  thickness: thickness,
+                  halfThickness: thickness / 2
+                }
+                const wallElement = new BaseWall(0xedf2f4, this.pencil, wallSet);
+                this.openThree.scene.add(wallElement);
+                // console.log(`Processing wall: ${wall.USER_DATA}`);
+                // const wallText = this.glyph(wall.USER_DATA, 1, 0x5D0E41, false);
+                // wallText.position.set((start[0] + end[0]) / 2, (start[1] + end[1]) / 2, (start[2] + end[2]) / 2);
+              }
+              break;
+            case 'OG_DOOR':
+              const door = graph.doors.find((d) => d.OG_ID === elementFromRoom.OG_ID);
+              console.log(door);
+              if (!door) return;
+              if (door.type === 'internal') {
+                // Generate door geometry
+                const start = door.start;
+                const end = door.end;
+                const thickness = door.thickness;
+                const hingeThickness = door.hingeThickness;
+                
+                if (!this.pencil) return;
+                console.log('Creating door');
+                const doorSet: OPDoor = {
+                  id: k,
+                  position: { x: 0, y: 0, z: 0 },
+                  doorColor: 0x00000,
+                  anchor: {
+                    start: {
+                      x: -1,
+                      y: 0,
+                      z: 1
+                    },
+                    end: {
+                      x: 1,
+                      y: 0,
+                      z: 0
+                    }
+                  },
+                  thickness: thickness / 2,
+                  halfThickness: thickness / 2 / 2,
+                  hingeColor: 0x000000,
+                  hingeThickness: hingeThickness,
+                }
+                const doorElement = new BaseDoor(this.pencil, doorSet);
+                this.openThree.scene.add(doorElement);
+              }
+              break;
+            default:
+              break;
+          }
+
+          // if (wall.type === 'internal' && roomTest) {
+          //   console.log(wall);
+          //   // Generate wall geometry
+          //   const start = wall.start;
+          //   const end = wall.end;
+          //   const thickness = wall.thickness;
+            
+          //   if (!this.pencil) return;
+
+          //   const wallSet: OPWall = {
+          //     id: k,
+          //     position: { x: 0, y: 0, z: 0 },
+          //     color: 0xedf2f4,
+          //     type: 'concrete',
+          //     anchor: {
+          //       start: {
+          //         x: start[0],
+          //         y: start[1],
+          //         z: start[2]
+          //       },
+          //       end: {
+          //         x: end[0],
+          //         y: end[1],
+          //         z: end[2]
+          //       }
+          //     },
+          //     thickness: thickness,
+          //     halfThickness: thickness / 2
+          //   }
+          //   const wallElement = new BaseWall(0xedf2f4, this.pencil, wallSet);
+          //   this.openThree.scene.add(wallElement);
+          // }
+        }
+      }
+    }
   }
 }

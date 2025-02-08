@@ -8,7 +8,7 @@ import { OpenGeometry } from '../../kernel/dist';
 
 interface GlyphNodesOptions {
   geometry: THREE.ShapeGeometry;
-  color: string;
+  color: number;
   text: string;
   staticZoom: boolean;
 }
@@ -356,7 +356,7 @@ class _GlyphManager {
     return this._glyphNodes;
   }
 
-  addGlyph(text: string, size: number, color: string, staticZoom: boolean = true) {
+  addGlyph(text: string, size: number, color: number, staticZoom: boolean = true) {
     this.checkAssigmnet();
 
     const shape = this._currentFont?.generateShapes(text, size * 0.1);

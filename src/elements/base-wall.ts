@@ -78,7 +78,7 @@ export class BaseWall extends BasePoly {
       }
     }
 
-    // this.setupSet(this.wallSet);
+    this.setupSet(this.wallSet);
     this.setGeometry();
     this.setupEvents();
   }

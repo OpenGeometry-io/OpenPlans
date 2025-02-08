@@ -1,0 +1,453 @@
+{
+  "building_id": "Building_123",
+  "building_name": "Building Name",
+  "floors": [
+    {
+      "OG_ID": "Floor_1",
+      "OG_TYPE": "OG_FLOOR",
+      "OG_DATA": ["Room_1", "Room_2", "Room_3"]
+    },
+    {
+      "OG_ID": "Floor_2",
+      "OG_TYPE": "OG_FLOOR",
+      "OG_DATA": ["Room_4", "Room_5", "Room_6"]
+    },
+    {
+      "OG_ID": "Floor_3",
+      "OG_TYPE": "OG_FLOOR",
+      "OG_DATA": ["Room_7", "Room_8", "Room_9"]
+    }
+  ],
+"rooms": [
+    {
+      "OG_ID": "Room_1",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {"OG_ID": "Wall_1", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_2", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_3", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_1", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_1", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[0, 0, 0], [4, 0, 0], [0, 0, 3.5], [4, 0, 3.5]],
+      "connections": ["Room_2"]
+    },
+    {
+      "OG_ID": "Room_2",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Living Room",
+      "OG_DATA": [
+        {"OG_ID": "Wall_4", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_5", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_6", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_2", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_2", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[4, 0, 0], [10, 0, 0], [4, 0, 4], [10, 0, 4]],
+      "connections": ["Room_1", "Room_3"]
+    },
+    {
+      "OG_ID": "Room_3",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Kitchen",
+      "OG_DATA": [
+        {"OG_ID": "Wall_7", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_8", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_9", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_3", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_3", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[10, 0, 0], [13.5, 0, 0], [10, 0, 3.5], [13.5, 0, 3.5]],
+      "connections": ["Room_2"]
+    },
+    {
+      "OG_ID": "Room_4",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {"OG_ID": "Wall_10", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_11", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_12", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_4", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_4", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[0, 0, 4], [4, 0, 4], [0, 0, 7.5], [4, 0, 7.5]],
+      "connections": ["Room_5"]
+    },
+    {
+      "OG_ID": "Room_5",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Living Room",
+      "OG_DATA": [
+        {"OG_ID": "Wall_13", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_14", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_15", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_5", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_5", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[4, 0, 4], [10, 0, 4], [4, 0, 8], [10, 0, 8]],
+      "connections": ["Room_4", "Room_6"]
+    },
+    {
+      "OG_ID": "Room_6",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Kitchen",
+      "OG_DATA": [
+        {"OG_ID": "Wall_16", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_17", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_18", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_6", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_6", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[10, 0, 4], [13.5, 0, 4], [10, 0, 7.5], [13.5, 0, 7.5]],
+      "connections": ["Room_5"]
+    },
+    {
+      "OG_ID": "Room_7",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Bedroom",
+      "OG_DATA": [
+        {"OG_ID": "Wall_19", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_20", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_21", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_7", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_7", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[0, 0, 8], [4, 0, 8], [0, 0, 11.5], [4, 0, 11.5]],
+      "connections": ["Room_8"]
+    },
+    {
+      "OG_ID": "Room_8",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Living Room",
+      "OG_DATA": [
+        {"OG_ID": "Wall_22", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_23", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_24", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_8", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_8", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[4, 0, 8], [10, 0, 8], [4, 0, 12], [10, 0, 12]],
+      "connections": ["Room_7", "Room_9"]
+    },
+    {
+      "OG_ID": "Room_9",
+      "OG_TYPE": "OG_ROOM",
+      "type": "Kitchen",
+      "OG_DATA": [
+        {"OG_ID": "Wall_25", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_26", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Wall_27", "OG_TYPE": "OG_WALL"},
+        {"OG_ID": "Window_9", "OG_TYPE": "OG_WINDOW"},
+        {"OG_ID": "Door_9", "OG_TYPE": "OG_DOOR"}
+      ],
+      "coordinates": [[10, 0, 8], [13.5, 0, 8], [10, 0, 11.5], [13.5, 0, 11.5]],
+      "connections": ["Room_8"]
+    }
+  ],
+  "walls": [
+    {
+      "OG_ID": "Wall_1",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 0],
+      "end": [4, 0, 3.5]
+    },
+    {
+      "OG_ID": "Wall_2",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 3.5],
+      "end": [0, 0, 3.5]
+    },
+    {
+      "OG_ID": "Wall_3",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [0, 0, 3.5],
+      "end": [0, 0, 0]
+    },
+    {
+      "OG_ID": "Wall_4",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 0],
+      "end": [10, 0, 4]
+    },
+    {
+      "OG_ID": "Wall_5",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 4],
+      "end": [4, 0, 4]
+    },
+    {
+      "OG_ID": "Wall_6",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 4],
+      "end": [4, 0, 0]
+    },
+    {
+      "OG_ID": "Wall_7",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 0],
+      "end": [13.5, 0, 3.5]
+    },
+    {
+      "OG_ID": "Wall_8",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 3.5],
+      "end": [10, 0, 3.5]
+    },
+    {
+      "OG_ID": "Wall_9",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 3.5],
+      "end": [10, 0, 0]
+    },
+    {
+      "OG_ID": "Wall_10",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 4],
+      "end": [4, 0, 7.5]
+    },
+    {
+      "OG_ID": "Wall_11",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 7.5],
+      "end": [0, 0, 7.5]
+    },
+    {
+      "OG_ID": "Wall_12",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [0, 0, 7.5],
+      "end": [0, 0, 4]
+    },
+    {
+      "OG_ID": "Wall_13",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 4],
+      "end": [10, 0, 8]
+    },
+    {
+      "OG_ID": "Wall_14",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 8],
+      "end": [4, 0, 8]
+    },
+    {
+      "OG_ID": "Wall_15",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 8],
+      "end": [4, 0, 4]
+    },
+    {
+      "OG_ID": "Wall_16",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 4],
+      "end": [13.5, 0, 7.5]
+    },
+    {
+      "OG_ID": "Wall_17",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 7.5],
+      "end": [10, 0, 7.5]
+    },
+    {
+      "OG_ID": "Wall_18",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 7.5],
+      "end": [10, 0, 4]
+    },
+    {
+      "OG_ID": "Wall_19",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 8],
+      "end": [4, 0, 11.5]
+    },
+    {
+      "OG_ID": "Wall_20",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 11.5],
+      "end": [0, 0, 11.5]
+    },
+    {
+      "OG_ID": "Wall_21",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [0, 0, 11.5],
+      "end": [0, 0, 8]
+    },
+    {
+      "OG_ID": "Wall_22",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 8],
+      "end": [10, 0, 12]
+    },
+    {
+      "OG_ID": "Wall_23",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 12],
+      "end": [4, 0, 12]
+    },
+    {
+      "OG_ID": "Wall_24",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [4, 0, 12],
+      "end": [4, 0, 8]
+    },
+    {
+      "OG_ID": "Wall_25",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 8],
+      "end": [13.5, 0, 11.5]
+    },
+    {
+      "OG_ID": "Wall_26",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [13.5, 0, 11.5],
+      "end": [10, 0, 11.5]
+    },
+    {
+      "OG_ID": "Wall_27",
+      "OG_TYPE": "OG_WALL",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [10, 0, 11.5],
+      "end": [10, 0, 8]
+    }
+  ],
+  "windows": [
+    {
+      "OG_ID": "Window_1",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [2, 0, 3.5],
+      "end": [2, 0, 4.5]
+    },
+    {
+      "OG_ID": "Window_2",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [6, 0, 4],
+      "end": [6, 0, 5]
+    },
+    {
+      "OG_ID": "Window_3",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [11.5, 0, 3.5],
+      "end": [11.5, 0, 4.5]
+    },
+    {
+      "OG_ID": "Window_4",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [2, 0, 7.5],
+      "end": [2, 0, 8.5]
+    },
+    {
+      "OG_ID": "Window_5",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [6, 0, 8],
+      "end": [6, 0, 9]
+    },
+    {
+      "OG_ID": "Window_6",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [11.5, 0, 7.5],
+      "end": [11.5, 0, 8.5]
+    },
+    {
+      "OG_ID": "Window_7",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [2, 0, 11.5],
+      "end": [2, 0, 12.5]
+    },
+    {
+      "OG_ID": "Window_8",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [6, 0, 12],
+      "end": [6, 0, 13]
+    },
+    {
+      "OG_ID": "Window_9",
+      "OG_TYPE": "OG_WINDOW",
+      "type": "internal",
+      "thickness": 0.2,
+      "start": [11.5, 0, 11.5],
+      "end": [11.5, 0, 12.5]
+    }
+  ],
+  "doors": [
+    {
+      "OG_ID": "Door_1",
+      "OG_TYPE": "OG_DOOR",
+      "type": "internal",
+      "thickness": 0.25,
+      "hingeThickness": 0.125,
+      "start": [0, 0, 1.0],
+      "end": [0, 0, 1.8],
+      "position": [0, 0, 1.0]
+    }
+  ]
+}

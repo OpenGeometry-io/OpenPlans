@@ -5,8 +5,15 @@ import {
 import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import * as OGLiner from './../helpers/OpenOutliner';
+import { OPDoor } from './base-types';
+
+/**
+ * TODO: Door Needs To Have A Start And End Point like Walls
+ * It's much better to have a start and end point for the door
+ */
 
 const DoorSet = {
+  id: 0,
   position: {
     x: 0,
     y: 0,
@@ -47,20 +54,24 @@ interface DoorSetMesh {
 export class BaseDoor extends BasePoly {
   public ogType = 'door';
   mesh: BasePoly | null = null;
-  doorSet = DoorSet;
   private doorSetMesh: DoorSetMesh = {} as DoorSetMesh;
-
+  private doorSet: OPDoor;
   private doorMesh : { [key: string]: THREE.Mesh | THREE.Line } = {};
 
   activeSphere: string | undefined;
   isEditing = false;
   activeId: string | undefined;
 
-  constructor(private pencil: Pencil) {
+  constructor(private pencil: Pencil, private initialDoorSet?: OPDoor) {
     super();
     console.log(this.doorSetMesh);
-    // this.color = color;
-    // this.setupSet();
+
+    if (this.initialDoorSet) {
+      this.doorSet = this.initialDoorSet;
+    } else {
+      this.doorSet = DoorSet;
+    }
+
     this.setGeometry();
     // this.setupEvents();
   }
@@ -76,6 +87,7 @@ export class BaseDoor extends BasePoly {
     if (!this.doorSetMesh) return;
 
     const { start, end } = this.doorSet.anchor;
+    console.log('doorSet', this.doorSet);
     const hingeThickness = this.doorSet.hingeThickness;
 
     const hingeGeo = new THREE.BufferGeometry().setFromPoints([
