@@ -137,7 +137,7 @@
       left: 50%;
       transform: translateX(-50%);
       width: 270px;
-      height: 40px;
+      height: 36px;
       border-radius: 16px;
       background-color: #f8f9fa;
       border-bottom: 1px solid #e9ecef;
@@ -152,6 +152,9 @@
       border: none;
       cursor: pointer;
       color: #adb5bd;
+      border-radius: 24px;
+      padding-top: 2px;
+      padding-bottom: 2px;
     }
 
     #toolEditorWindow button span {
@@ -159,8 +162,46 @@
     }
 
     #toolEditorWindow button:hover {
-      color: #212529;
+      color: #000000;
+      background-color: #ececec;
+      transition: 0.3s;
     }
+
+    /* Top Toolbar For Element Adding */
+    #ogElementCreatorWindow {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 30px;
+      border-radius: 16px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    #ogElementCreatorWindow button {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      color: #adb5bd;
+      border-radius: 26px;
+    }
+
+    #ogElementCreatorWindow button span {
+      font-size: 21px;
+    }
+
+    #ogElementCreatorWindow button:hover {
+      color: #000000;
+      background-color: #ececec;
+      transition: 0.3s;
+    }
+
   </style>
 </head>
 <body>
@@ -171,10 +212,26 @@
     
   </div>
 
+  <div id="co2Window">
+
+  </div>
+
   <div id="ogElementCreatorWindow">
-    <button id="createDoor">Create Door</button>
-    <button id="createWindow">Create Window</button>
-    <button id="createStair">Double Window</button>
+    <button id="createDoor">
+      <span class="material-symbols-outlined">
+        door_open
+      </span>
+    </button>
+    <button id="createWindow">
+      <span class="material-symbols-outlined">
+        window_open
+      </span>
+    </button>
+    <button id="createStair">
+      <span class="material-symbols-outlined">
+        stairs
+      </span>
+    </button>
   </div>
 
   <!-- Floating Window with Tool Buttons -->
@@ -217,6 +274,7 @@
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
+    let isSpaceEditing = false;
 
     async function init() {
       const container = document.getElementById('app');
@@ -233,11 +291,34 @@
     }
 
     function setUI() {
-      const gui = new GUI();
+      addEvents();
+    }
+
+    function addEvents() {
+      const spaces = openPlans.getEntitiesByType('space');
+      // console.log(spaces);
+      for (const space of spaces) {
+        space.onSpaceSelected.add((spaceId) => {
+          console.log('Space Selected', spaceId);
+          openPlans.fitToSpace(spaceId);
+        });
+      }
+
+
+      const startEdit = document.getElementById('editEnabled');
+      startEdit.addEventListener('click', () => {
+        if (isSpaceEditing) {
+          isSpaceEditing = false;
+          openPlans.stopEditingSpaces();
+        } else {
+          isSpaceEditing = true;
+          openPlans.startEditingSpaces();
+        }
+      });
     }
 
     await init();
-    // setUI();
+    setUI();
   </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ import { BuildingData } from './parser/IGraph';
 import convertToOGFormat from './parser/ImpleniaConverter';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
+import * as THREE from 'three';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -207,6 +208,7 @@ export class OpenPlans {
         if (!this.pencil) return;
         const roomElement = new BaseSpace(this.pencil, roomSet);
         this.openThree.scene.add(roomElement);
+        this.ogElements.push(roomElement);
 
         const roomElements = room.OG_DATA;
         for (let k = 0; k < roomElements.length; k++) {
@@ -329,4 +331,31 @@ export class OpenPlans {
       }
     }
   }
+
+
+  public startEditingSpaces() {
+    const spaces = this.getEntitiesByType('space');
+    for (let i = 0; i < spaces.length; i++) {
+      // change material to white
+      const baseMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+      spaces[i].material = baseMaterial;
+
+      spaces[i].isEditing = true;
+    }
+  }
+
+  public stopEditingSpaces() {
+    const spaces = this.getEntitiesByType('space');
+    for (let i = 0; i < spaces.length; i++) {
+      spaces[i].isEditing = false;
+      spaces[i].material = new THREE.MeshBasicMaterial({ color: spaces[i].spaceSet.color, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+    }
+  }
+
+  public fitToSpace(spaceId: string) {
+    const space = this.getEntitiesByType('space').find((s) => s.name === spaceId);
+    if (!space) return;
+    this.planCamera.fitToElement([space]);
+  }
+
 }

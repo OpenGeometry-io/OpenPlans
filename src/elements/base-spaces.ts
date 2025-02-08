@@ -3,6 +3,7 @@ import { Pencil } from "../../kernel/dist/src/pencil";
 import * as THREE from 'three';
 import { GlyphNode, Glyphs } from "../glyphs";
 import { OPSpace } from "./base-types";
+import { Event } from "./../../utils/event";
 
 interface SpaceContainerMesh {
   id: number;
@@ -12,17 +13,22 @@ interface SpaceContainerMesh {
 
 export class BaseSpace extends BasePoly {
   public ogType = 'space';
+
   mesh: BasePoly | null = null;
   private spaceSetMesh: SpaceContainerMesh = {} as SpaceContainerMesh;
   private spaceSet: OPSpace;
 
   isEditing = false;
+
   isHovered = false;
   isHighlighted = false;
   isLocked = false;
 
+  onSpaceSelected = new Event<String>();
+
   constructor(private pencil: Pencil, initialSpaceSet?: OPSpace) {
     super();
+    this.name = `space`+this.ogid;
 
     if (initialSpaceSet) {
       this.spaceSet = initialSpaceSet;
@@ -47,6 +53,36 @@ export class BaseSpace extends BasePoly {
     }
 
     this.setGeometry();
+    this.setupEvents();
+  }
+
+  private setupEvents() {
+    this.pencil.onElementHover.add((mesh) => {
+      if (mesh.name === this.name) {
+        this.isHovered = true;
+        const material = this.material as THREE.MeshBasicMaterial;
+        material.color.setHex(0x00ff00);
+      } else {
+        this.isHovered = false;
+        const material = this.material as THREE.MeshBasicMaterial;
+        
+        if (this.isEditing) {
+          material.color.setHex(0xffffff);
+        } else {
+          material.color.setHex(this.spaceSet.color);
+        }
+      }
+    });
+
+    this.pencil.onElementSelected.add((mesh) => {
+      if (mesh.name === this.name) {
+        this.isEditing = true;
+        const material = this.material as THREE.MeshBasicMaterial;
+        material.color.setHex(0xff00ff);
+
+        this.onSpaceSelected.trigger(this.name);
+      }
+    });
   }
 
   private setGeometry() {
@@ -67,10 +103,8 @@ export class BaseSpace extends BasePoly {
       this.addVertex(vector);
     }
 
-    // spaceGeoemtry.computeVertexNormals();
-    // spaceGeoemtry.computeBoundingBox();
-
     const randomColor = Math.floor(Math.random() * 16777215);
+    this.spaceSet.color = randomColor;
     const spaceMaterial = new THREE.MeshBasicMaterial({ color: randomColor, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const spaceMesh = new THREE.Mesh(spaceGeoemtry, spaceMaterial);
     spaceMesh.position.set(x, y, z);
@@ -89,7 +123,7 @@ export class BaseSpace extends BasePoly {
     this.geometry.boundingBox.getCenter(center);
     label.position.set(center.x + x, center.y + y, center.z + z);
     this.add(label);
-  }
 
-  
+    this.pencil.pencilMeshes.push(this);
+  }
 }
