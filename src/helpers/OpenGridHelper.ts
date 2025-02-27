@@ -114,7 +114,6 @@ function fragmentShaderFun() {
 }
 
 function vertexShaderFunc() {
-  console.log(`vAxes: ${vAxes}`);
   return `
   precision highp float;
   attribute vec3 offset;

@@ -1,3 +1,9 @@
+/**
+ * As for today, I'm creating a reader in the format shared by Implenai.
+ * But I need to identify the format of the graph/JSON that I will be using. Maybe GraphML.
+ * If there is a standard format, I will use it. If not, better I will create one.
+ */
+
 import type { 
   BuildingData, 
   Floor, 
@@ -59,8 +65,6 @@ function doComponentsShare(start1: Coordinates, end1: Coordinates, start2: Coord
 
 function convertToOGFormat(sourceJson: SourceJSON): BuildingData {
     const processedElements = new Set<string>();
-    console.log(processedElements);
-
     const rooms: Room[] = [];
     const walls: Wall[] = [];
     const windows: Window[] = [];

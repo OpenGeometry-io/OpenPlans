@@ -30,20 +30,10 @@
       const container = document.getElementById('app');
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
-
       openPlans.pencil.mode = "select";
-
-      // // const graphJsonURL = "./graph.json";
-      // // const graphJsonURL = "./alternate.json";
-      // // const graph = await fetch(graphJsonURL);
-      // // const graphJson = await graph.json();
-      // // console.log(graphJson);
-      // // openPlans.generateGeometry(graphJson);
-      
       const impleniaJsonURL = "https://raw.githubusercontent.com/aka-blackboots/2025-AEC-Hackathon/refs/heads/main/json/GenericDesign_21004/21004.json";
       const graph = await fetch(impleniaJsonURL);
       const graphJson = await graph.json();
-      console.log(graphJson);
       openPlans.convertImpleniaToOGFormat(graphJson);
     }
 

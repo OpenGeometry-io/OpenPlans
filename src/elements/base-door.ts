@@ -64,8 +64,6 @@ export class BaseDoor extends BasePoly {
 
   constructor(private pencil: Pencil, private initialDoorSet?: OPDoor) {
     super();
-    console.log(this.doorSetMesh);
-
     if (this.initialDoorSet) {
       this.doorSet = this.initialDoorSet;
     } else {
@@ -87,7 +85,6 @@ export class BaseDoor extends BasePoly {
     if (!this.doorSetMesh) return;
 
     const { start, end } = this.doorSet.anchor;
-    console.log('doorSet', this.doorSet);
     const hingeThickness = this.doorSet.hingeThickness;
 
     const hingeGeo = new THREE.BufferGeometry().setFromPoints([
@@ -239,7 +236,6 @@ export class BaseDoor extends BasePoly {
     this.isEditing = true;
     if (mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
       this.activeId = mesh.name;
-      console.log('activeId', this.activeId);
     }
     this.pencil.mode = "cursor";
   }
@@ -248,7 +244,6 @@ export class BaseDoor extends BasePoly {
     if (!this.isEditing) return;
 
     if (this.activeId) {
-      console.log('activeId', this.activeId);
       const worldToLocal = this.worldToLocal(cursorPosition);
       // this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
@@ -262,7 +257,6 @@ export class BaseDoor extends BasePoly {
     });
 
     this.pencil.onElementHover.add((mesh) => {
-      console.log('hovered', mesh.name);
       if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
         // TODO: Change Cursor Colors on Hover
       }
@@ -352,5 +346,14 @@ export class BaseDoor extends BasePoly {
     const vector = new THREE.Vector3().subVectors(end, start);
     const perpendicular = new THREE.Vector3().crossVectors(vector, new THREE.Vector3(0, 1, 0));
     return perpendicular.normalize();
+  }
+
+  get area() {
+    const wallDim = {
+      area: 4,
+      perimeter: 0
+    };
+
+    return wallDim.area;
   }
 }

@@ -1,9 +1,9 @@
 import { BasePoly, Vector3D } from "../../kernel/dist";
 import { Pencil } from "../../kernel/dist/src/pencil";
 import * as THREE from 'three';
-import { GlyphNode, Glyphs } from "../glyphs";
+import { GlyphNode, Glyphs } from "@opengeometry/openglyph";
 import { OPSpace } from "./base-types";
-import { Event } from "./../../utils/event";
+import { Event } from "../utils/event";
 
 interface SpaceContainerMesh {
   id: number;
@@ -92,7 +92,6 @@ export class BaseSpace extends BasePoly {
     const { x, y, z } = this.spaceSet.position;
 
     const spaceGeoemtry = new THREE.BufferGeometry();
-    console.log(coordinates);
 
     for (let i = 0; i < coordinates.length; i++) {
       const coord = coordinates[i];
@@ -125,5 +124,25 @@ export class BaseSpace extends BasePoly {
     this.add(label);
 
     this.pencil.pencilMeshes.push(this);
+  }
+
+  get area() {
+    const spaceDim = {
+      area: 0,
+      perimeter: 0
+    };
+
+    const position = this.geometry.getAttribute('position');
+    // calculate area
+    for (let i = 0; i < position.array.length; i+=9) {
+      const triangle = new THREE.Triangle(
+        new THREE.Vector3(position.array[i], position.array[i+1], position.array[i+2]),
+        new THREE.Vector3(position.array[i+3], position.array[i+4], position.array[i+5]),
+        new THREE.Vector3(position.array[i+6], position.array[i+7], position.array[i+8])
+      );
+      spaceDim.area += triangle.getArea();
+    }
+
+    return spaceDim.area;
   }
 }

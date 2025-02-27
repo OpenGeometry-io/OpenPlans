@@ -152,11 +152,9 @@ export class BaseWall extends BasePoly {
 
   private handleElementSelected(mesh: THREE.Mesh) {
     this.isEditing = true;
-    console.log('selected', mesh.name);
     // Manipulate The Wall Start and End
     if (mesh.name === 'wallStart'+this.ogid || mesh.name === 'wallEnd'+this.ogid) {
       this.activeId = mesh.name;
-      console.log('activeId', this.activeId);
       this.pencil.mode = "cursor";
     }
     
@@ -170,7 +168,6 @@ export class BaseWall extends BasePoly {
     if (!this.isEditing) return;
 
     if (this.activeId) {
-      console.log('activeId', this.activeId);
       const worldToLocal = this.worldToLocal(cursorPosition);
       this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
@@ -246,8 +243,6 @@ export class BaseWall extends BasePoly {
 
   set halfThickness(value: number) {
     this.wallSet.halfThickness = value;
-    // regenerate geometry
-    console.log('halfThickness', this.wallSet.halfThickness);
   }
 
   generateShadowGeometry(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
@@ -295,5 +290,14 @@ export class BaseWall extends BasePoly {
     const vector = new THREE.Vector3().subVectors(end, start);
     const perpendicular = new THREE.Vector3().crossVectors(vector, new THREE.Vector3(0, 1, 0));
     return perpendicular.normalize();
+  }
+
+  get area() {
+    const wallDim = {
+      area: 4,
+      perimeter: 0
+    };
+
+    return wallDim.area;
   }
 }

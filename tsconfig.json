@@ -9,9 +9,14 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
+
+    /* Output settings */
+    "declaration": true,
+    "declarationDir": "dist/types",
+    "outDir": "dist",
 
     /* Linting */
     "strict": true,
@@ -19,7 +24,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    "types": ["vite/client"],
+    "types": ["vite/client"]
   },
   "include": ["src"]
 }

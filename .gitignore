@@ -2,3 +2,4 @@ node_modules/
 kernel/
 .vscode/
 dist/
+.DS_Store

@@ -3,7 +3,7 @@ import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { PlanCamera } from './plancamera'
 import CameraControls from 'camera-controls'
 import { activeTheme, ICanvasTheme } from '../base-type'
-import * as OpenGrid from './../../OpenGridHelper.ts'
+import * as OpenGrid from '../helpers/OpenGridHelper.ts'
 
 export class OpenThree {
   scene: THREE.Scene
@@ -17,7 +17,6 @@ export class OpenThree {
   // planGrid: PlanGrid
 
   constructor(container: HTMLElement, private callback: any) {
-    console.log('OpenThree constructor')
     CameraControls.install({THREE: THREE})
     this.generateTheme()
 

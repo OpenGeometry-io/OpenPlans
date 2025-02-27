@@ -1,0 +1,445 @@
+{
+  "TotalProducts": 4,
+  "countProductsOnPage": 4,
+  "current_page": 1,
+  "product_range": [
+      1,
+      4
+  ],
+  "next": null,
+  "previous": null,
+  "results": [
+      {
+          "name": "Ceramic Tiles (Earthenware)",
+          "description": "Application: indoor house surface covering, offices, stores, hospitals, etc, in indoor and outdoor\nenvironments, as well as covering walls and other\nsurfaces.",
+          "company": "Geotiles",
+          "group_elements_nrm_1": [
+              "3 - Internal finishes",
+              "8 - External works"
+          ],
+          "elements_nrm_1": [
+              "3.1 - Wall finishes",
+              "8.X - External works",
+              "3.2 - Floor finishes"
+          ],
+          "product_type": "Tiles",
+          "product_type_family": "Interior finishes",
+          "material_type": "Ceramic",
+          "building_applications": "Wall finishes",
+          "building_types": "Commercial",
+          "material_type_family": "Ceramic",
+          "manufacturing_location": "Castellón de la Plana, Spain",
+          "manufacturing_country": "Spain",
+          "city": "Castellón de la Plana",
+          "continent": "Europe",
+          "lat": "39.9855905",
+          "lng": "-0.0496388",
+          "material_facts": {
+              "data_source": "EPD",
+              "total_co2e_kg_mf": 9.28,
+              "manufacturing": 9.28,
+              "water_use_kg": 3115.0,
+              "recycled_content": 0.0,
+              "recyclable_content": 0.0,
+              "reuse_potential": 0.0,
+              "energy_recovery_possibility": 0.0,
+              "odp": 2.16e-08,
+              "data_source_link__date_of_issue": "2020-01-27",
+              "data_source_link__certificate_expiry": "2025-01-27",
+              "data_source_link__certificate_type__family__name": "Product certifications (General)",
+              "mass_per_declared_unit": 15.6,
+              "mass_per_declared_unit_estimated": false,
+              "net_fresh_water_use": {
+                  "A1A2A3": 3115.0
+              },
+              "ozone_depletion_potential": {
+                  "A1A2A3": 2.16e-08
+              },
+              "global_warming_potential_fossil": {
+                  "A1A2A3": 9.28
+              },
+              "declared_unit": "m2",
+              "scaling_factors": {
+                  "m2": {
+                      "value": 1.0,
+                      "estimated": false
+                  },
+                  "kg": {
+                      "value": 15.6,
+                      "estimated": false
+                  },
+                  "lb": {
+                      "value": 34.39214095486693,
+                      "estimated": false
+                  },
+                  "ust": {
+                      "value": 0.017196051522015907,
+                      "estimated": false
+                  },
+                  "mt": {
+                      "value": 0.0156,
+                      "estimated": false
+                  },
+                  "in2": {
+                      "value": 1550.0031000062002,
+                      "estimated": false
+                  },
+                  "ft2": {
+                      "value": 10.763915051182416,
+                      "estimated": false
+                  },
+                  "ha": {
+                      "value": 0.0001,
+                      "estimated": false
+                  }
+              }
+          },
+          "grammage": 15.6,
+          "grammage_estimated": false,
+          "unique_product_uuid_v2": "f9482e46-bea9-11ee-8f72-0242ac180003",
+          "product_url": "https://app.2050-materials.com/product/details_designer/geotiles-ceramic-tiles-earthenware",
+          "product_slug": "geotiles-ceramic-tiles-earthenware",
+          "updated": "2024-01-29T13:26:59.582269Z",
+          "life_expectancy": "50",
+          "certificate_url": "https://app.2050-materials.com/media/certificates/4f05da90-2d6.pdf",
+          "uniclass_systems": [
+              "(Ss_25_45) Wall covering and finish systems",
+              "(Ss_30_42) Floor covering and finishing systems",
+              "(Ss_25_45_88) Tiling systems",
+              "(Ss_30_42_32) Floor tiling systems"
+          ],
+          "uniclass_products": [
+              "(Pr_35_93_96_19) Ceramic tiles"
+          ],
+          "uniclass_materials": [
+              "(Ma_20_13) Ceramic"
+          ],
+          "thermal_conductivity": 175.0,
+          "thermal_conductivity_estimated": true
+      },
+      {
+          "name": "Ceramic Tiles - Glazed stoneware",
+          "description": "Application: indoor house surface covering, offices, stores, hospitals, etc, in indoor and outdoor\nenvironments, as well as covering walls and other\nsurfaces.",
+          "company": "Geotiles",
+          "group_elements_nrm_1": [
+              "3 - Internal finishes",
+              "8 - External works"
+          ],
+          "elements_nrm_1": [
+              "3.1 - Wall finishes",
+              "8.X - External works",
+              "3.2 - Floor finishes"
+          ],
+          "product_type": "Tiles",
+          "product_type_family": "Interior finishes",
+          "material_type": "Ceramic",
+          "building_applications": "Wall finishes",
+          "building_types": "Commercial",
+          "material_type_family": "Ceramic",
+          "manufacturing_location": "Castellón de la Plana, Spain",
+          "manufacturing_country": "Spain",
+          "city": "Castellón de la Plana",
+          "continent": "Europe",
+          "lat": "39.9855905",
+          "lng": "-0.0496388",
+          "material_facts": {
+              "data_source": "EPD",
+              "total_co2e_kg_mf": 7.65,
+              "manufacturing": 7.65,
+              "water_use_kg": 1939.0,
+              "recycled_content": 0.0,
+              "recyclable_content": 0.0,
+              "reuse_potential": 0.0,
+              "energy_recovery_possibility": 0.0,
+              "odp": 1.86e-08,
+              "data_source_link__date_of_issue": "2020-01-27",
+              "data_source_link__certificate_expiry": "2025-01-27",
+              "data_source_link__certificate_type__family__name": "Product certifications (General)",
+              "mass_per_declared_unit": 17.4,
+              "mass_per_declared_unit_estimated": false,
+              "net_fresh_water_use": {
+                  "A1A2A3": 1939.0
+              },
+              "ozone_depletion_potential": {
+                  "A1A2A3": 1.86e-08
+              },
+              "global_warming_potential_fossil": {
+                  "A1A2A3": 7.65
+              },
+              "declared_unit": "m2",
+              "scaling_factors": {
+                  "m2": {
+                      "value": 1.0,
+                      "estimated": false
+                  },
+                  "kg": {
+                      "value": 17.4,
+                      "estimated": false
+                  },
+                  "lb": {
+                      "value": 38.360464911197724,
+                      "estimated": false
+                  },
+                  "ust": {
+                      "value": 0.019180211313017743,
+                      "estimated": false
+                  },
+                  "mt": {
+                      "value": 0.0174,
+                      "estimated": false
+                  },
+                  "in2": {
+                      "value": 1550.0031000062002,
+                      "estimated": false
+                  },
+                  "ft2": {
+                      "value": 10.763915051182416,
+                      "estimated": false
+                  },
+                  "ha": {
+                      "value": 0.0001,
+                      "estimated": false
+                  }
+              }
+          },
+          "grammage": 17.4,
+          "grammage_estimated": false,
+          "unique_product_uuid_v2": "62daf1dc-bea9-11ee-931e-0242ac180003",
+          "product_url": "https://app.2050-materials.com/product/details_designer/geotiles-ceramic-tiles-glazed-stoneware-2",
+          "product_slug": "geotiles-ceramic-tiles-glazed-stoneware-2",
+          "updated": "2024-01-29T13:44:37.900329Z",
+          "life_expectancy": "50",
+          "certificate_url": "https://app.2050-materials.com/media/certificates/74cfb8f8-a87.pdf",
+          "uniclass_systems": [
+              "(Ss_25_45) Wall covering and finish systems",
+              "(Ss_30_42) Floor covering and finishing systems",
+              "(Ss_25_45_88) Tiling systems",
+              "(Ss_30_42_32) Floor tiling systems"
+          ],
+          "uniclass_products": [
+              "(Pr_35_93_96_19) Ceramic tiles"
+          ],
+          "uniclass_materials": [
+              "(Ma_20_13) Ceramic"
+          ],
+          "thermal_conductivity": 175.0,
+          "thermal_conductivity_estimated": true
+      },
+      {
+          "name": "Ceramic Tiles (Glazed stoneware)",
+          "description": "Application: indoor house surface covering, offices, stores, hospitals, etc, in indoor and outdoor\nenvironments, as well as covering walls and other\nsurfaces.",
+          "company": "Geotiles",
+          "group_elements_nrm_1": [
+              "3 - Internal finishes",
+              "8 - External works"
+          ],
+          "elements_nrm_1": [
+              "3.2 - Floor finishes",
+              "8.X - External works",
+              "3.1 - Wall finishes"
+          ],
+          "product_type": "Tiles",
+          "product_type_family": "Interior finishes",
+          "material_type": "Ceramic",
+          "building_applications": "Wall finishes",
+          "building_types": "Commercial",
+          "material_type_family": "Ceramic",
+          "manufacturing_location": "Castellón de la Plana, Spain",
+          "manufacturing_country": "Spain",
+          "city": "Castellón de la Plana",
+          "continent": "Europe",
+          "lat": "39.9855905",
+          "lng": "-0.0496388",
+          "material_facts": {
+              "data_source": "EPD",
+              "total_co2e_kg_mf": 8.8,
+              "manufacturing": 8.8,
+              "water_use_kg": 4060.0,
+              "recycled_content": 0.0,
+              "recyclable_content": 0.0,
+              "reuse_potential": 0.0,
+              "energy_recovery_possibility": 0.0,
+              "odp": 5.17e-08,
+              "data_source_link__date_of_issue": "2020-01-27",
+              "data_source_link__certificate_expiry": "2025-01-27",
+              "data_source_link__certificate_type__family__name": "Product certifications (General)",
+              "mass_per_declared_unit": 20.8,
+              "mass_per_declared_unit_estimated": false,
+              "net_fresh_water_use": {
+                  "A1A2A3": 4060.0
+              },
+              "ozone_depletion_potential": {
+                  "A1A2A3": 5.17e-08
+              },
+              "global_warming_potential_fossil": {
+                  "A1A2A3": 8.8
+              },
+              "declared_unit": "m2",
+              "scaling_factors": {
+                  "m2": {
+                      "value": 1.0,
+                      "estimated": false
+                  },
+                  "kg": {
+                      "value": 20.8,
+                      "estimated": false
+                  },
+                  "lb": {
+                      "value": 45.856187939822576,
+                      "estimated": false
+                  },
+                  "ust": {
+                      "value": 0.022928068696021212,
+                      "estimated": false
+                  },
+                  "mt": {
+                      "value": 0.0208,
+                      "estimated": false
+                  },
+                  "in2": {
+                      "value": 1550.0031000062002,
+                      "estimated": false
+                  },
+                  "ft2": {
+                      "value": 10.763915051182416,
+                      "estimated": false
+                  },
+                  "ha": {
+                      "value": 0.0001,
+                      "estimated": false
+                  }
+              }
+          },
+          "grammage": 20.8,
+          "grammage_estimated": false,
+          "unique_product_uuid_v2": "c78371c6-be96-11ee-8f72-0242ac180003",
+          "product_url": "https://app.2050-materials.com/product/details_designer/geotiles-ceramic-tiles-glazed-stoneware",
+          "product_slug": "geotiles-ceramic-tiles-glazed-stoneware",
+          "updated": "2024-01-29T13:32:29.702036Z",
+          "life_expectancy": "50",
+          "certificate_url": "https://app.2050-materials.com/media/certificates/4f973c88-286.pdf",
+          "uniclass_systems": [
+              "(Ss_25_45) Wall covering and finish systems",
+              "(Ss_30_42) Floor covering and finishing systems",
+              "(Ss_25_45_88) Tiling systems",
+              "(Ss_30_42_32) Floor tiling systems"
+          ],
+          "uniclass_products": [
+              "(Pr_35_93_96_19) Ceramic tiles"
+          ],
+          "uniclass_materials": [
+              "(Ma_20_13) Ceramic"
+          ],
+          "thermal_conductivity": 175.0,
+          "thermal_conductivity_estimated": true
+      },
+      {
+          "name": "Ceramic Tiles (Porcelain tiles)",
+          "description": "Application: indoor house surface covering, offices, stores, hospitals, etc, in indoor and outdoor\nenvironments, as well as covering walls and other\nsurfaces.",
+          "company": "Geotiles",
+          "group_elements_nrm_1": [
+              "3 - Internal finishes",
+              "8 - External works"
+          ],
+          "elements_nrm_1": [
+              "3.1 - Wall finishes",
+              "8.X - External works",
+              "3.2 - Floor finishes"
+          ],
+          "product_type": "Tiles",
+          "product_type_family": "Interior finishes",
+          "material_type": "Porcelain",
+          "building_applications": "Wall finishes",
+          "building_types": "Commercial",
+          "material_type_family": "Ceramic",
+          "manufacturing_location": "Castellón de la Plana, Spain",
+          "manufacturing_country": "Spain",
+          "city": "Castellón de la Plana",
+          "continent": "Europe",
+          "lat": "39.9855905",
+          "lng": "-0.0496388",
+          "material_facts": {
+              "data_source": "EPD",
+              "total_co2e_kg_mf": 9.63,
+              "manufacturing": 9.63,
+              "water_use_kg": 4591.0,
+              "recycled_content": 0.0,
+              "recyclable_content": 0.0,
+              "reuse_potential": 0.0,
+              "energy_recovery_possibility": 0.0,
+              "odp": 5.58e-08,
+              "data_source_link__date_of_issue": "2020-01-27",
+              "data_source_link__certificate_expiry": "2025-01-27",
+              "data_source_link__certificate_type__family__name": "Product certifications (General)",
+              "mass_per_declared_unit": 22.5,
+              "mass_per_declared_unit_estimated": false,
+              "net_fresh_water_use": {
+                  "A1A2A3": 4591.0
+              },
+              "ozone_depletion_potential": {
+                  "A1A2A3": 5.58e-08
+              },
+              "global_warming_potential_fossil": {
+                  "A1A2A3": 9.63
+              },
+              "declared_unit": "m2",
+              "scaling_factors": {
+                  "m2": {
+                      "value": 1.0,
+                      "estimated": false
+                  },
+                  "kg": {
+                      "value": 22.5,
+                      "estimated": false
+                  },
+                  "lb": {
+                      "value": 49.604049454134994,
+                      "estimated": false
+                  },
+                  "ust": {
+                      "value": 0.024801997387522944,
+                      "estimated": false
+                  },
+                  "mt": {
+                      "value": 0.0225,
+                      "estimated": false
+                  },
+                  "in2": {
+                      "value": 1550.0031000062002,
+                      "estimated": false
+                  },
+                  "ft2": {
+                      "value": 10.763915051182416,
+                      "estimated": false
+                  },
+                  "ha": {
+                      "value": 0.0001,
+                      "estimated": false
+                  }
+              }
+          },
+          "grammage": 22.5,
+          "grammage_estimated": false,
+          "unique_product_uuid_v2": "a88de1a2-beaa-11ee-be2c-0242ac180003",
+          "product_url": "https://app.2050-materials.com/product/details_designer/geotiles-ceramic-tiles-porcelain-tiles",
+          "product_slug": "geotiles-ceramic-tiles-porcelain-tiles",
+          "updated": "2024-01-29T13:35:01.327676Z",
+          "life_expectancy": "50",
+          "certificate_url": "https://app.2050-materials.com/media/certificates/7acc681d-3b6.pdf",
+          "uniclass_systems": [
+              "(Ss_25_45) Wall covering and finish systems",
+              "(Ss_30_42) Floor covering and finishing systems",
+              "(Ss_25_45_88) Tiling systems",
+              "(Ss_30_42_32) Floor tiling systems"
+          ],
+          "uniclass_products": [
+              "(Pr_35_93_96_63) Porcelain tiles"
+          ],
+          "uniclass_materials": [
+              "(Ma_20_13_65) Porcelain"
+          ],
+          "thermal_conductivity": 1.5,
+          "thermal_conductivity_estimated": true
+      }
+  ]
+}

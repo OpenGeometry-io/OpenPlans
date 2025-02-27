@@ -56,7 +56,6 @@ export class BaseWindow extends BasePoly {
 
   constructor(private pencil: Pencil) {
     super();
-    console.log(this.windowSetMesh);
     // this.color = color;
     // this.setupSet();
     this.setGeometry();
@@ -146,7 +145,6 @@ export class BaseWindow extends BasePoly {
     const endVec = new THREE.Vector3(end.x, end.y, end.z);
     const anchorDistance = startVec.distanceTo(endVec);
     const doorDistance = anchorDistance - hingeThickness * 4;
-    console.log('doorDistance', doorDistance);
 
     const windowBaseGeom = window.geometry.clone();
     const windowBase = new THREE.Mesh(windowBaseGeom, windowMat);
@@ -340,7 +338,6 @@ export class BaseWindow extends BasePoly {
     this.isEditing = true;
     if (mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
       this.activeId = mesh.name;
-      console.log('activeId', this.activeId);
     }
     this.pencil.mode = "cursor";
   }
@@ -349,7 +346,6 @@ export class BaseWindow extends BasePoly {
     if (!this.isEditing) return;
 
     if (this.activeId) {
-      console.log('activeId', this.activeId);
       const worldToLocal = this.worldToLocal(cursorPosition);
       // this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
     }
