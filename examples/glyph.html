@@ -127,8 +127,10 @@
       // });
     }
 
-    await init();
-    setUI();
+    (async function () {
+      await init();
+      setUI();
+    })();
   </script>
 </body>
 </html>
