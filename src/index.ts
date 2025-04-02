@@ -14,6 +14,7 @@ import { OpenThree } from './service/three';
 import * as THREE from 'three';
 import { BaseWall2 } from './elements/base-wall-2';
 import { Event } from './utils/event';
+import { PaperFrame } from './drawing';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -372,4 +373,17 @@ export class OpenPlans {
     return elementArea;
   }
 
+  /**
+   * Paper Creation and Frames
+   */
+  paperFrame() {
+    // if (!this.pencil) {
+    //   throw new Error('Pencil not initialized')
+    // }
+    const paperFrame = new PaperFrame()
+    this.openThree.scene.add(paperFrame)
+    this.ogElements.push(paperFrame)
+    return paperFrame
+  }
 }
+
