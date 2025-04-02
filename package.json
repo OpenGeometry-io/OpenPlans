@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
     "clean": "rimraf dist",
+    "build-examples": "vite build",
     "build": "npm run clean && rollup -c"
   },
   "keywords": [],
@@ -32,6 +33,7 @@
     "@types/three": "^0.173.0",
     "rimraf": "^6.0.1",
     "rollup": "^4.34.8",
+    "stats.js": "^0.17.0",
     "tslib": "^2.8.1",
     "vite": "^5.4.7"
   }

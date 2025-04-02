@@ -12,6 +12,8 @@ import convertToOGFormat from './parser/ImpleniaConverter';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 import * as THREE from 'three';
+import { BaseWall2 } from './elements/base-wall-2';
+import { Event } from './utils/event';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -21,6 +23,8 @@ export class OpenPlans {
 
   private og: OpenGeometry | undefined
   private ogElements: any[] = []
+
+  private onRender: Event<void> = new Event<void>();
 
   constructor(container: HTMLElement) {
     console.log('OpenPlans constructor')
@@ -40,6 +44,8 @@ export class OpenPlans {
     if (this.og?.labelRenderer) {
       this.og.update(this.openThree.scene, this.openThree.threeCamera)
     }
+
+    this.onRender.trigger();
   }
 
   async setupOpenGeometry() {
@@ -90,6 +96,16 @@ export class OpenPlans {
     this.openThree.scene.add(wall)
     this.ogElements.push(wall)
     return wall
+  }
+  
+  wall2(): BaseWall2 {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized');
+    }
+    const wall = new BaseWall2(this.pencil);
+    this.openThree.scene.add(wall);
+    this.ogElements.push(wall);
+    return wall;
   }
 
   door(): BaseDoor {

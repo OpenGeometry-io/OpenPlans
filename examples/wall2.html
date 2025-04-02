@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>OpenPlans Wall</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(0);
+
+    let openPlans;
+    let wall;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      // TODO: Remove Error with Selection when no element present
+      openPlans.pencil.mode = "select";
+
+      wall = openPlans.wall2();
+      // wall.position.set(2, 0, 0);
+
+      // wall.length = 10;
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const wallFolder = gui.addFolder('Wall');
+    //  wallFolder.close();
+      const wallControls = {
+        'color': '#edf2f4',
+        'length': 2,
+        'wallMaterial': 'concrete',
+        'edit': false,
+      }
+    //   const pencilFolder = gui.addFolder('Pencil');
+    //   const pencilControls = {
+    //     'mode': 'select',
+    //   }
+    const walls = openPlans.getEntitiesByType('wall');
+      walls.forEach((wall) => {
+        console.log(wall);
+        const subWall = wallFolder.addFolder(wall.ogid);
+        subWall.addColor(wallControls, 'color').name('Color').onChange((value) => {
+          wall.material.color.set(value);
+        });
+        subWall.add({ 'Fit': () => { openPlans.fit(wall.ogType) } }, 'Fit');
+        subWall.add(wallControls, 'length', 1, 10, 1).name('Length').onChange((value) => {
+          wall.length = value;
+        });
+        subWall.add(wallControls, 'wallMaterial', ['concrete', 'brick', 'wood']).name('Material').onChange((value) => {
+          wall.wallMaterial = value;
+        });
+        subWall.add(wallControls, 'edit').name('Edit').onChange((value) => {
+          wall.edit = value;
+        });
+      });
+    }
+
+    //   pencilFolder.add(pencilControls, 'mode', ['select', 'draw', 'move', 'delete']).name('Mode').onChange((value) => {
+    //     openPlans.pencil.mode = value;
+    //   });
+
+    //   // Export IFC File
+    //   const fileControls = {
+    //     'Export IFC': () => {
+    //       console.log(wall1.wallAnchor);
+    //       console.log(wall2.wallAnchor);
+
+    //       const eWall1 = {
+    //         "type": "wall",
+    //         "name": "simple wall",
+    //         "start": [wall1.wallAnchor.start.x, -wall1.wallAnchor.start.z],
+    //         "end": [wall1.wallAnchor.end.x, -wall1.wallAnchor.end.z],
+    //         "height": 3,
+    //         "thickness": 0.2,
+    //         "material": "brick"
+    //       }
+
+    //       const eWall2 = {
+    //         "type": "wall",
+    //         "name": "simple wall",
+    //         "start": [wall2.wallAnchor.start.x, -wall2.wallAnchor.start.z],
+    //         "end": [wall2.wallAnchor.end.x, -wall2.wallAnchor.end.z],
+    //         "height": 3,
+    //         "thickness": 0.2,
+    //         "material": "brick"
+    //       }
+
+    //       const raw = JSON.stringify({
+    //         "elements": [eWall1, eWall2]
+    //       });
+    //       const myHeaders = new Headers();
+    //       myHeaders.append("Content-Type", "application/json");
+
+    //       const requestOptions = {
+    //         method: "POST",
+    //         headers: myHeaders,
+    //         body: raw,
+    //         redirect: "follow"
+    //       };
+
+    //       fetch("http://127.0.0.1:5000/generate_ifc", requestOptions)
+    //         .then(async (response) => {
+    //           const fileName = "openplans.ifc";
+    //           const fileText = await response.text();
+    //           console.log(fileText);
+    //           const blob = new Blob([fileText], { type: "text/plain" });
+    //           const url = window.URL.createObjectURL(blob);
+    //           const a = document.createElement("a");
+    //           a.href = url;
+    //           a.download = fileName;
+    //           a.click();
+    //         })
+    //         .then((result) => console.log(result))
+    //         .catch((error) => console.error(error));
+    //     }
+    //   }
+    //   gui.add(fileControls, 'Export IFC');
+    // }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+
+    document.body.appendChild(stats.dom);
+  </script>
+</body>
+</html>
