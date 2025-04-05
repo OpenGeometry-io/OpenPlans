@@ -28,6 +28,7 @@
 
     async function init() {
       const container = document.getElementById('app');
+      console.log(container);
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
       openPlans.pencil.mode = "select";

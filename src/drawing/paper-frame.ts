@@ -1,5 +1,8 @@
 import { BasePoly, Vector3D } from "../../kernel/dist";
 import * as THREE from 'three';
+import { InfoBlock, LayoutOptions } from "./info-block";
+import { LogoInfoBlock } from "./logo-block";
+import { RowInfoBlock } from "./row-info-block";
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
 export type PaperOrientation = 'portrait' | 'landscape';
@@ -29,6 +32,8 @@ export class PaperFrame extends BasePoly {
 
   private options: PaperFrameOptions;
   private subNodes: Map<string, THREE.Object3D> = new Map();
+
+  private blocks: InfoBlock[] = [];
   
   private readonly Y_OFFSET = 0.010; // Offset to avoid z-fighting
 
@@ -53,6 +58,10 @@ export class PaperFrame extends BasePoly {
     this.createInnerBorder();
   }
 
+  set paperName(name: string) {
+    this.options.name = name;
+  }
+
   set format(format: PaperFormat) {
     this.options.format = format;
     this.options.paperSize = paperSizes[format];
@@ -70,6 +79,10 @@ export class PaperFrame extends BasePoly {
 
     this.remove(this.subNodes.get('InnerBorder')!);
     this.createInnerBorder();
+  }
+
+  get margin() {
+    return this.options.margin;
   }
 
   set backgroundColor(color: string) {
@@ -170,7 +183,7 @@ export class PaperFrame extends BasePoly {
     this.subNodes.set('InnerBorder', innerBorderMesh);
   }
 
-  updateGeometry() {
+  private updateGeometry() {
     this.resetVertices();
 
     // Clear previous geometry and borders
@@ -181,5 +194,113 @@ export class PaperFrame extends BasePoly {
     this.setupMaterial();
     this.createOuterBorder();
     this.createInnerBorder();
+  }
+
+  /**
+   * 
+   * @param infoBlock InfoBlock
+   * @description Adds an InfoBlock to the paper frame. The InfoBlock is positioned based on its placement property.
+   */
+  async addBlock(infoBlock: InfoBlock) {
+    const infoBlockMaterial = new THREE.LineBasicMaterial({
+      color: infoBlock.options.borderColor,
+      linewidth: 1,
+    });
+    const { width, height } = infoBlock.options;
+    const infoBlockGeometry = new THREE.BufferGeometry();
+    const blockVertices = [
+      new THREE.Vector3(-width / 2, -height / 2, this.Y_OFFSET), // Bottom left
+      new THREE.Vector3(width / 2, -height / 2, this.Y_OFFSET), // Bottom right
+      new THREE.Vector3(width / 2, height / 2, this.Y_OFFSET), // Top right
+      new THREE.Vector3(-width / 2, height / 2, this.Y_OFFSET), // Top left
+      new THREE.Vector3(-width / 2, -height / 2, this.Y_OFFSET), // Bottom left
+      new THREE.Vector3(-width / 2, height / 2, this.Y_OFFSET), // Top left
+      new THREE.Vector3(width / 2, -height / 2, this.Y_OFFSET), // Bottom right
+      new THREE.Vector3(width / 2, height / 2, this.Y_OFFSET), // Top right
+    ];
+    infoBlockGeometry.setFromPoints(blockVertices);
+    const infoBlockMesh = new THREE.LineSegments(infoBlockGeometry, infoBlockMaterial);
+
+    this.add(infoBlockMesh);
+
+    this.blocks.push(infoBlock);
+    infoBlockMesh.name = infoBlock.options.id;
+    this.subNodes.set(infoBlock.options.id, infoBlockMesh);
+
+    // Set position based on the block layout
+    const placement = infoBlock.options.placement;
+    switch (placement) {
+      case 'topRight':
+        infoBlockMesh.position.set(this.options.paperSize.width / 2 - infoBlock.options.width / 2 - this.margin / 10, this.options.paperSize.height / 2 - infoBlock.options.height / 2 - this.margin / 10, this.Y_OFFSET);
+        break;
+      case 'topLeft':
+        infoBlockMesh.position.set(-this.options.paperSize.width / 2 + infoBlock.options.width / 2 + this.margin / 10, this.options.paperSize.height / 2 - infoBlock.options.height / 2 - this.margin / 10, this.Y_OFFSET);
+        break;
+      case 'bottomRight':
+        infoBlockMesh.position.set(this.options.paperSize.width / 2 - infoBlock.options.width / 2 - this.margin / 10, -this.options.paperSize.height / 2 + infoBlock.options.height / 2 + this.margin / 10, this.Y_OFFSET);
+        break;
+      case 'bottomLeft':
+        infoBlockMesh.position.set(-this.options.paperSize.width / 2 + infoBlock.options.width / 2 + this.margin / 10, -this.options.paperSize.height / 2 + infoBlock.options.height / 2 + this.margin / 10, this.Y_OFFSET);
+        break;
+      default:
+        throw new Error('Invalid block placement');
+    }
+
+    // Add Blocks based on the layout
+    if (!infoBlock.layoutOptions.layout) {
+      console.log('No layout set for the block');
+      return; 
+    }
+    const layout = infoBlock.layoutOptions.layout;
+    const layoutBlocks: Record<string, RowInfoBlock> = infoBlock.layoutOptions.blocks;
+
+    const layoutArray = layout.split('\n');
+
+    for (let i = 1; i < layoutArray.length - 1; i++) {
+      const lBlockName = layoutArray[i].trim();
+      const lBlock = layoutBlocks[lBlockName];
+
+      for (const block of await lBlock.getBlockData()) {
+        let absoluteHeightInBlock = infoBlockMesh.position.y + infoBlock.options.height / 2 - block.userData.dimension.height / 2;
+        if (i > 1) {
+          absoluteHeightInBlock = infoBlockMesh.position.y + infoBlock.options.height / 2 - block.userData.dimension.height / 2 - (i - 1) * block.userData.dimension.height;
+        }
+
+        block.position.set(
+          infoBlockMesh.position.x - infoBlock.options.width / 2 + block.userData.dimension.width / 2,
+          absoluteHeightInBlock,
+          this.Y_OFFSET);
+        
+        this.add(block);
+        this.subNodes.set(block.name, block);
+      }
+    }
+  }
+
+  // updateBlocks() {
+  //   for (const block of this.blocks) {
+  //     const blockMesh = this.subNodes.get(block.options.id);
+
+  //     this.remove(blockMesh!);
+
+  //     this.subNodes.delete(block.options.id);
+  //   }
+
+  //   console.log(this.subNodes);
+
+  //   for (const block of this.blocks) {
+  //     console.log(block);
+  //   }
+  // }
+
+  removeBlock(blockId: string) {
+    const blockMesh = this.subNodes.get(blockId);
+    console.log('BlockMesh:', blockMesh);
+    if (blockMesh) {
+      this.remove(blockMesh);
+      this.subNodes.delete(blockId);
+    }
+
+    // remove logo and other blocks
   }
 }
