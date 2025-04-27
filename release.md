@@ -1,0 +1,4 @@
+- Releasing the package is quite manual.
+- Build package using `npm run build`
+- Copy `package.json` from root to `dist`
+- Navigate to dist and run `npm publish`

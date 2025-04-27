@@ -1,4 +1,4 @@
-## 🚧 Under Development 🚧  
+## 🚧 Under Heavy Development 🚧  
 
 **This project is currently a work in progress!**  
 Expect frequent updates, breaking changes. 
@@ -11,7 +11,6 @@ OpenPlans can be used in Two Ways
 - Create Editor Tools
 
 #### 2. Headless Floorplan Generation
-
 
 #### Feature List
 - Docs - 
@@ -26,3 +25,4 @@ OpenPlans can be used in Two Ways
 - Docusaurus is being used for documentation
 - `cd docs`
 - `npm run start` to make any changes
+

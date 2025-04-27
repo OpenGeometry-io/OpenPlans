@@ -52,9 +52,9 @@ export class OpenPlans {
     this.onRender.trigger();
   }
 
-  async setupOpenGeometry() {
+  async setupOpenGeometry(wasmURL: string) {
     this.og = new OpenGeometry(this.container, this.openThree.scene, this.openThree.threeCamera)
-    await this.og.setup()
+    await this.og.setup(wasmURL)
     this.pencil = this.og.pencil
 
     await Glyphs.loadFaces('Source_Code_Pro_Regular');
