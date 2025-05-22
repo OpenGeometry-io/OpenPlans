@@ -1,9 +1,13 @@
-import { BasePoly, Vector3D } from "../../kernel/dist";
+import { Polygon, Vector3D } from "../../kernel/dist";
 import { Pencil } from "../../kernel/dist/src/pencil";
 import * as THREE from 'three';
 import { GlyphNode, Glyphs } from "@opengeometry/openglyph";
 import { OPSpace } from "./base-types";
 import { Event } from "../utils/event";
+
+// Space is somehwat equivalent to a room in a building
+// It is a 2D Polygon which we can directly use from kernel and construct each time a new vertex is added
+// can be extruded as well
 
 interface SpaceContainerMesh {
   id: number;
@@ -11,10 +15,10 @@ interface SpaceContainerMesh {
   labelMesh: GlyphNode;
 }
 
-export class BaseSpace extends BasePoly {
+export class BaseSpace extends Polygon {
   public ogType = 'space';
 
-  mesh: BasePoly | null = null;
+  mesh: Polygon | null = null;
   private spaceSetMesh: SpaceContainerMesh = {} as SpaceContainerMesh;
   private spaceSet: OPSpace;
 
@@ -25,6 +29,16 @@ export class BaseSpace extends BasePoly {
   isLocked = false;
 
   onSpaceSelected = new Event<String>();
+
+  get labelName() {
+    const label = this.spaceSetMesh.labelMesh;
+    return label.text;
+  }
+
+  set labelName(name: string) {
+    const label = this.spaceSetMesh.labelMesh;
+    Glyphs.updateGlyphText(label.uuid, name);
+  }
 
   constructor(private pencil: Pencil, initialSpaceSet?: OPSpace) {
     super();
@@ -60,8 +74,8 @@ export class BaseSpace extends BasePoly {
     this.pencil.onElementHover.add((mesh) => {
       if (mesh.name === this.name) {
         this.isHovered = true;
-        const material = this.material as THREE.MeshBasicMaterial;
-        material.color.setHex(0x00ff00);
+        // const material = this.material as THREE.MeshBasicMaterial;
+        // material.color.setHex(0x00ff00);
       } else {
         this.isHovered = false;
         const material = this.material as THREE.MeshBasicMaterial;
@@ -75,13 +89,13 @@ export class BaseSpace extends BasePoly {
     });
 
     this.pencil.onElementSelected.add((mesh) => {
-      if (mesh.name === this.name) {
-        this.isEditing = true;
-        const material = this.material as THREE.MeshBasicMaterial;
-        material.color.setHex(0xff00ff);
+      // if (mesh.name === this.name) {
+      //   this.isEditing = true;
+      //   const material = this.material as THREE.MeshBasicMaterial;
+      //   material.color.setHex(0xff00ff);
 
-        this.onSpaceSelected.trigger(this.name);
-      }
+      //   this.onSpaceSelected.trigger(this.name);
+      // }
     });
   }
 
@@ -112,7 +126,7 @@ export class BaseSpace extends BasePoly {
     // this.spaceSetMesh.mainMesh = spaceMesh;
     // this.add(spaceMesh);
 
-    const label = Glyphs.addGlyph(this.spaceSet.labelName, 1, 0x000000, false);
+    const label = Glyphs.addGlyph(this.spaceSet.labelName, 8, 0x000000, false);
     this.spaceSetMesh.labelMesh = label;
 
     // // get center of space mesh
@@ -120,7 +134,7 @@ export class BaseSpace extends BasePoly {
     this.geometry.computeBoundingBox();
     if (!this.geometry.boundingBox) return;
     this.geometry.boundingBox.getCenter(center);
-    label.position.set(center.x + x, center.y + y, center.z + z);
+    label.position.set(center.x + x, center.y + 0.01, center.z + z); // add small offset to y axis to avoid z-fighting
     this.add(label);
 
     this.pencil.pencilMeshes.push(this);

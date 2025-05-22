@@ -1,4 +1,4 @@
-import { BasePoly, Vector3D } from "../../kernel/dist";
+import { Polygon, Vector3D } from "../../kernel/dist";
 import * as THREE from 'three';
 import { InfoBlock, LayoutOptions } from "./info-block";
 import { LogoInfoBlock } from "./logo-block";
@@ -27,7 +27,7 @@ export interface PaperFrameOptions {
   paperSize: { width: number; height: number };
 }
 
-export class PaperFrame extends BasePoly {
+export class PaperFrame extends Polygon {
   ogType = 'paperFrame';
 
   private options: PaperFrameOptions;

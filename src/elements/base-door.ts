@@ -1,10 +1,8 @@
 import {
-  Vector3D,
-  BasePoly,
+  Polygon
 } from '../../kernel/dist';
 import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
-import * as OGLiner from './../helpers/OpenOutliner';
 import { OPDoor } from './base-types';
 
 /**
@@ -51,9 +49,10 @@ interface DoorSetMesh {
 }
 
 
-export class BaseDoor extends BasePoly {
+export class BaseDoor extends Polygon {
   public ogType = 'door';
-  mesh: BasePoly | null = null;
+  mesh: Polygon | null = null;
+
   private doorSetMesh: DoorSetMesh = {} as DoorSetMesh;
   private doorSet: OPDoor;
   private doorMesh : { [key: string]: THREE.Mesh | THREE.Line } = {};
@@ -129,7 +128,7 @@ export class BaseDoor extends BasePoly {
     door.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
 
     const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
-    const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const hingeClipMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
     const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
     hingeClipMesh.position.set(0, 0, -hingeThickness);
     hinge.add(hingeClipMesh);

@@ -1,6 +1,6 @@
 import {
   Vector3D,
-  BasePoly,
+  Polygon,
 } from '../../kernel/dist';
 import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
@@ -42,9 +42,9 @@ interface WindowSetMesh {
   endSphere: THREE.Mesh;
 }
  
-export class BaseWindow extends BasePoly {
+export class BaseWindow extends Polygon {
   public ogType = 'window';
-  mesh: BasePoly | null = null;
+  mesh: Polygon | null = null;
   windowSet = WindowSet;
   private windowSetMesh: WindowSetMesh = {} as WindowSetMesh;
 
@@ -99,7 +99,7 @@ export class BaseWindow extends BasePoly {
     this.add(hingeEnd);
 
     const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
-    const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
     const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
     hingeClipMesh.name = 'hingeClip';
     hingeClipMesh.position.set(hingeThickness, 0, -hingeThickness);
@@ -134,7 +134,7 @@ export class BaseWindow extends BasePoly {
     window.add(windowEdgeMesh);
 
     const windowArcStart = new THREE.SphereGeometry(0.01, 32, 32);
-    const windowArcStartMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const windowArcStartMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0 });
     const windowArcStartMesh = new THREE.Mesh(windowArcStart, windowArcStartMat);
     windowArcStartMesh.position.set(hingeThickness, 0, 0);
     windowArcStartMesh.name = 'windowArcStart';
@@ -146,9 +146,10 @@ export class BaseWindow extends BasePoly {
     const anchorDistance = startVec.distanceTo(endVec);
     const doorDistance = anchorDistance - hingeThickness * 4;
 
+    // Base Window Inner
     const windowBaseGeom = window.geometry.clone();
     const windowBase = new THREE.Mesh(windowBaseGeom, windowMat);
-    windowBase.material = new THREE.MeshBasicMaterial({ color: 0x495057 });
+    windowBase.material = new THREE.MeshBasicMaterial({ color: 0x495057, side: THREE.DoubleSide });
     windowBase.position.set(start.x + doorDistance / 2, start.y, start.z + windowThickness);
     windowBase.name = 'windowBase';
     this.add(windowBase);
@@ -167,7 +168,6 @@ export class BaseWindow extends BasePoly {
     line.name = 'windowArcPerpendicular';
     // line.position.set();
     hingeClipMesh.add(line);
-
 
     const circle = new THREE.EllipseCurve(
       hingeClipMesh.position.x, hingeClipMesh.position.z,

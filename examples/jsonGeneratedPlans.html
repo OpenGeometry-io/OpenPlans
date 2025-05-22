@@ -30,7 +30,7 @@
       const container = document.getElementById('app');
       console.log(container);
       openPlans = new OpenPlans(container);
-      await openPlans.setupOpenGeometry();
+      // await openPlans.setupOpenGeometry();
       openPlans.pencil.mode = "select";
       const impleniaJsonURL = "https://raw.githubusercontent.com/aka-blackboots/2025-AEC-Hackathon/refs/heads/main/json/GenericDesign_21004/21004.json";
       const graph = await fetch(impleniaJsonURL);

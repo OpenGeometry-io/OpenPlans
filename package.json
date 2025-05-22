@@ -15,7 +15,7 @@
   "keywords": [],
   "license": "ISC",
   "dependencies": {
-    "@opengeometry/openglyph": "^0.0.5",
+    "@opengeometry/openglyph": "^0.0.6",
     "@types/three": "^0.168.0",
     "camera-controls": "^2.9.0",
     "lil-gui": "^0.19.2",
