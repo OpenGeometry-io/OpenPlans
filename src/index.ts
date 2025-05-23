@@ -17,7 +17,7 @@ import { Event } from './utils/event';
 import { PaperFrame } from './drawing';
 import { InfoBlock } from './drawing/info-block';
 import { LogoInfoBlock } from './drawing/logo-block';
-import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
+import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block2';
 
 export class OpenPlans {
   private container: HTMLElement

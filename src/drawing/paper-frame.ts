@@ -2,7 +2,7 @@ import { Polygon, Vector3D } from "../../kernel/dist";
 import * as THREE from 'three';
 import { InfoBlock, LayoutOptions } from "./info-block";
 import { LogoInfoBlock } from "./logo-block";
-import { RowInfoBlock } from "./row-info-block";
+import { RowInfoBlock } from "./row-info-block2";
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
 export type PaperOrientation = 'portrait' | 'landscape';
@@ -35,7 +35,7 @@ export class PaperFrame extends Polygon {
 
   private blocks: InfoBlock[] = [];
   
-  private readonly Y_OFFSET = 0.010; // Offset to avoid z-fighting
+  private readonly Y_OFFSET = 0.0010; // Offset to avoid z-fighting
 
   constructor() {
     super();
