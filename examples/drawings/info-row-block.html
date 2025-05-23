@@ -40,54 +40,57 @@
       paperFrame.margin = 10;
       paperFrame.paperName = 'VerticalPaper';
 
-      infoBlock = openPlans.infoBlock();
+      // infoBlock = openPlans.infoBlock();
       
-      const logoInfoBlock = openPlans.rowInfoBlock(
-      [
-        {
-          type: 'logo',
-          width: 8,
-          height: 1,
-          image: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
-          name: 'OpenGeometry Logo',
-        }
-      ]);
+      // const logoInfoBlock = openPlans.rowInfoBlock(
+      // [
+      //   {
+      //     type: 'logo',
+      //     width: 8,
+      //     height: 1,
+      //     image: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
+      //     name: 'OpenGeometry Logo',
+      //   }
+      // ]);
       
-      const headerBlock = openPlans.rowInfoBlock([
+      // const headerBlock = openPlans.rowInfoBlock([
+      //   {
+      //     type: 'text',
+      //     width: 8,
+      //     height: 1,
+      //     text: 'OpenPlans Paper Frame Example',
+      //     fontSize: 2,
+      //     fontColor: 0x000000,
+      //   }
+      // ]);
+      const titleBlock = openPlans.rowInfoBlock(
         {
           type: 'text',
-          width: 8,
-          height: 1,
-          text: 'OpenPlans Paper Frame Example',
+          width: 5,
+          height: 1.3,
+          title: 'Studio Name',
+          // description: 'Company Description',
           fontSize: 2,
-          fontColor: 0x000000,
-        }
-      ]);
-      const titleBlock = openPlans.rowInfoBlock([
-        {
-          type: 'text',
-          width: 8,
-          height: 1,
-          text: 'Build Anything',
-          fontSize: 3,
           fontColor: 0x44460FF,
+          borderColor: 0x44460FF,
         }
-      ]);
+      );
+      titleBlock.position.set(0, 0, 0);
 
-      infoBlock.blockLayout = {
-        layout: `
-          logoInfoBlock
-          headerBlock
-          titleBlock
-        `,
-        blocks: {
-          logoInfoBlock,
-          headerBlock,
-          titleBlock
-        }
-      }
+      // infoBlock.blockLayout = {
+      //   layout: `
+      //     logoInfoBlock
+      //     headerBlock
+      //     titleBlock
+      //   `,
+      //   blocks: {
+      //     logoInfoBlock,
+      //     headerBlock,
+      //     titleBlock
+      //   }
+      // }
 
-      paperFrame.addBlock(infoBlock);
+      // paperFrame.addBlock(infoBlock);
     }
 
     function setUI() {

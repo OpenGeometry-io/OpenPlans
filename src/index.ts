@@ -389,10 +389,10 @@ export class OpenPlans {
     return paperFrame
   }
 
-  infoBlock() {
-    const infoBlock = new InfoBlock()
-    return infoBlock
-  }
+  // infoBlock() {
+  //   const infoBlock = new InfoBlock()
+  //   return infoBlock
+  // }
 
   logoInfoBlock() {
     const logoBlock = new LogoInfoBlock()
@@ -401,6 +401,7 @@ export class OpenPlans {
 
   rowInfoBlock(options: RowInfoBlockOptions) {
     const rowInfoBlock = new RowInfoBlock(options);
+    this.openThree.scene.add(rowInfoBlock);
     return rowInfoBlock;
   }
 }
