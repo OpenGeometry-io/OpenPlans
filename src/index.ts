@@ -15,8 +15,7 @@ import * as THREE from 'three';
 import { BaseWall2 } from './elements/base-wall-2';
 import { Event } from './utils/event';
 import { PaperFrame } from './drawing';
-import { InfoBlock } from './drawing/info-block';
-import { LogoInfoBlock } from './drawing/logo-block';
+import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 
 export class OpenPlans {
@@ -389,18 +388,20 @@ export class OpenPlans {
     return paperFrame
   }
 
-  infoBlock() {
-    const infoBlock = new InfoBlock()
-    return infoBlock
-  }
+  // infoBlock() {
+  //   const infoBlock = new InfoBlock()
+  //   return infoBlock
+  // }
 
-  logoInfoBlock() {
-    const logoBlock = new LogoInfoBlock()
+  logoInfoBlock(options:LogoInfoBlockOptions) {
+    const logoBlock = new LogoInfoBlock(options);
+    this.openThree.scene.add(logoBlock);
     return logoBlock
   }
 
   rowInfoBlock(options: RowInfoBlockOptions) {
     const rowInfoBlock = new RowInfoBlock(options);
+    this.openThree.scene.add(rowInfoBlock);
     return rowInfoBlock;
   }
 }
