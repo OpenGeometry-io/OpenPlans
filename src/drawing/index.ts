@@ -1,2 +1,2 @@
 export * from './paper-frame';
-export * from './row-info-block2';
+export * from './row-info-block';

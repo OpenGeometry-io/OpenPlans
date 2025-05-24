@@ -42,16 +42,17 @@
 
       // infoBlock = openPlans.infoBlock();
       
-      // const logoInfoBlock = openPlans.rowInfoBlock(
-      // [
-      //   {
-      //     type: 'logo',
-      //     width: 8,
-      //     height: 1,
-      //     image: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
-      //     name: 'OpenGeometry Logo',
-      //   }
-      // ]);
+      const logoInfoBlock = openPlans.logoInfoBlock(
+        {
+          type: 'logo',
+          width: 6,
+          height: 1.5,
+          url: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
+          name: 'OpenGeometry Logo',
+          borderColor: 0x44460FF,
+        }
+      );
+      logoInfoBlock.position.set(0, 0, 2.5);
       
       // const headerBlock = openPlans.rowInfoBlock([
       //   {
@@ -66,31 +67,42 @@
       const titleBlock = openPlans.rowInfoBlock(
         {
           type: 'text',
-          width: 5,
-          height: 1.3,
+          width: 6,
+          height: 1.5,
           title: 'Studio Name',
-          // description: 'Company Description',
-          fontSize: 2,
+          description: 'Company Description',
+          fontSize: 3,
           fontColor: 0x44460FF,
           borderColor: 0x44460FF,
         }
       );
-      titleBlock.position.set(0, 0, 0);
+      titleBlock.position.set(0, 0, 4);
 
-      // infoBlock.blockLayout = {
-      //   layout: `
-      //     logoInfoBlock
-      //     headerBlock
-      //     titleBlock
-      //   `,
-      //   blocks: {
-      //     logoInfoBlock,
-      //     headerBlock,
-      //     titleBlock
-      //   }
-      // }
+      const revBlock = openPlans.rowInfoBlock(
+        {
+          type: 'text',
+          width: 3,
+          height: 1.5,
+          title: 'Revision',
+          description: 'Rev A',
+          fontSize: 2,
+          borderColor: 0x44460FF,
+        }
+      );
+      revBlock.position.set(-1.5, 0, 5.5);
 
-      // paperFrame.addBlock(infoBlock);
+      const dateBlock = openPlans.rowInfoBlock(
+        {
+          type: 'text',
+          width: 3,
+          height: 1.5,
+          title: 'Date',
+          description: '2023-10-01',
+          fontSize: 2,
+          borderColor: 0x44460FF,
+        }
+      );
+      dateBlock.position.set(1.5, 0, 5.5);
     }
 
     function setUI() {
