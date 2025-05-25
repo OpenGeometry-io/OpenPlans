@@ -17,7 +17,7 @@ import { Event } from './utils/event';
 import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
-import { Board } from './elements/board';
+import { Board, OPBoard } from './elements/board';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -154,11 +154,11 @@ export class OpenPlans {
     return window
   }
 
-  board(): Board {
+  board(boardConfig?:OPBoard): Board {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const board = new Board()
+    const board = new Board(boardConfig!)
     this.openThree.scene.add(board)
     this.ogElements.push(board)
     return board

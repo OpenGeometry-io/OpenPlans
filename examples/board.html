@@ -8,6 +8,7 @@
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>OpenPlan Board</title>
   <meta charset="utf-8">
@@ -19,12 +20,14 @@
       margin: 0;
       overflow: hidden;
     }
+
     #app {
       width: 100%;
       height: 100vh;
     }
   </style>
 </head>
+
 <body>
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
@@ -34,6 +37,7 @@
 
     let openPlans;
     let draftBoard;
+    let preloadBoard;
 
     async function init() {
       const container = document.getElementById('app');
@@ -58,6 +62,69 @@
         'color': '0xffffff',
         'width': 20,
         'height': 20,
+        'start': {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        'Get Config': () => {
+          console.log(draftBoard.getConfig());
+        },
+        'Set Config': () => {
+          const preloadConfig = {
+            "center": {
+              "x": 32.76,
+              "y": -20.4,
+              "z": 0
+            },
+            "color": 13421772,
+            "type": "board",
+            "coordinates": [
+              [
+                14.4,
+                -25.4,
+                0
+              ],
+              [
+                14.4,
+                -35.4,
+                0
+              ],
+              [
+                51.12,
+                -35.4,
+                0
+              ],
+              [
+                51.12,
+                -25.4,
+                0
+              ]
+            ],
+            "labelName": "Draft Board X",
+            "dimensions": {
+              "start": {
+                "x": 14.4,
+                "y": 25.4,
+                "z": 0
+              },
+              "end": {
+                "x": 51.12,
+                "y": -15.399999999999999,
+                "z": 0
+              },
+              "width": 36.72,
+              "height": 10
+            }
+          };
+
+          preloadBoard = openPlans.board(preloadConfig);
+        },
+        'preloadStart': {
+          x: 14.4,
+          y: 25.4,
+          z: 0
+        }
       };
 
       boardFolder.addColor(boardControls, 'color').name('Color').onChange((value) => {
@@ -72,6 +139,19 @@
       boardFolder.add(boardControls, 'selected').name('Selected').onChange((value) => {
         draftBoard.selected = value;
       });
+      boardFolder.add(boardControls.start, 'x', -50, 50).name('Start X').onChange((value) => {
+        draftBoard.start = boardControls.start;
+      });
+      boardFolder.add(boardControls.start, 'y', -50, 50).name('Start Y').onChange((value) => {
+        draftBoard.start = boardControls.start;
+      });
+      boardFolder.add(boardControls, 'Get Config').name('Get Config');
+      
+      const preloadFolder = gui.addFolder('Preload Board');
+      preloadFolder.add(boardControls, 'Set Config').name('Load Board');
+      preloadFolder.add(boardControls.preloadStart, 'x', -50, 50).name('Preload Start X').onChange((value) => {
+        preloadBoard.start = boardControls.preloadStart;
+      });
     }
 
     (async function () {
@@ -80,4 +160,5 @@
     })();
   </script>
 </body>
+
 </html>

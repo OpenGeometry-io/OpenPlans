@@ -27,6 +27,16 @@ export class RowInfoBlock extends Rectangle {
     this.color = color;
   }
 
+  set description(text: string) {
+    this.rowOptions.description = text;
+    this.clearBlockData();
+    this.addBlockData(this.rowOptions);
+  }
+
+  set title(text: string) {
+    this.rowOptions.title = text;
+  }
+
   // TODO: Add a method to set the background color, but we need a Polygon as well if we have to do that
   // set backgroundColor(color: string) 
 
@@ -46,6 +56,22 @@ export class RowInfoBlock extends Rectangle {
   blockConfig() {
     const { width, height, backgroundColor, borderColor } = this.rowOptions;
     this.color = borderColor || 0x000000;
+  }
+
+  clearBlockData() {
+    while (this.children.length > 0) {
+      const child = this.children[0];
+      this.remove(child);
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
+        child.geometry = null;
+        child.material = null;
+      }
+    }
+    this.children = [];
   }
 
   async addBlockData(textOptions: RowInfoBlockOptions) {
