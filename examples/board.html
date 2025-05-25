@@ -58,6 +58,11 @@
         'color': '0xffffff',
         'width': 20,
         'height': 20,
+        'start': {
+          x: 0,
+          y: 0,
+          z: 0
+        }
       };
 
       boardFolder.addColor(boardControls, 'color').name('Color').onChange((value) => {
@@ -71,6 +76,12 @@
       });
       boardFolder.add(boardControls, 'selected').name('Selected').onChange((value) => {
         draftBoard.selected = value;
+      });
+      boardFolder.add(boardControls.start, 'x', -50, 50).name('Start X').onChange((value) => {
+        draftBoard.start = boardControls.start;
+      });
+      boardFolder.add(boardControls.start, 'y', -50, 50).name('Start Y').onChange((value) => {
+        draftBoard.start.y = boardControls.start;
       });
     }
 

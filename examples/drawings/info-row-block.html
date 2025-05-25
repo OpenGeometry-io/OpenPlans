@@ -25,7 +25,7 @@
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
-    let infoBlock;
+    let titleBlock, revBlock, dateBlock;
     let paperFrame;
 
     async function init() {
@@ -54,17 +54,7 @@
       );
       logoInfoBlock.position.set(0, 0, 2.5);
       
-      // const headerBlock = openPlans.rowInfoBlock([
-      //   {
-      //     type: 'text',
-      //     width: 8,
-      //     height: 1,
-      //     text: 'OpenPlans Paper Frame Example',
-      //     fontSize: 2,
-      //     fontColor: 0x000000,
-      //   }
-      // ]);
-      const titleBlock = openPlans.rowInfoBlock(
+      titleBlock = openPlans.rowInfoBlock(
         {
           type: 'text',
           width: 6,
@@ -78,7 +68,7 @@
       );
       titleBlock.position.set(0, 0, 4);
 
-      const revBlock = openPlans.rowInfoBlock(
+      revBlock = openPlans.rowInfoBlock(
         {
           type: 'text',
           width: 3,
@@ -91,7 +81,7 @@
       );
       revBlock.position.set(-1.5, 0, 5.5);
 
-      const dateBlock = openPlans.rowInfoBlock(
+      dateBlock = openPlans.rowInfoBlock(
         {
           type: 'text',
           width: 3,
@@ -129,14 +119,31 @@
         });
       });
 
-      const infoBlockFolder = gui.addFolder('Info Block');
-      const infoBlockControls = {
-        'placement': 'bottomRight',
-      }
-      infoBlockFolder.add(infoBlockControls, 'placement', ['topLeft', 'topRight', 'bottomLeft', 'bottomRight']).name('Placement').onChange((value) => {
-        infoBlock.placement = value;
-        paperFrame.removeBlock(infoBlock.options.id);
-        paperFrame.addBlock(infoBlock);
+      const studioFolder = gui.addFolder('Studio Info');
+      const studioControls = {
+        'title': 'Studio Name',
+        'description': 'Company Description',
+      };
+      studioFolder.add(studioControls, 'description').name('Studio Name').onChange((value) => {
+        titleBlock.description = value;
+      });
+
+      const revFolder = gui.addFolder('Revision Info');
+      const revControls = {
+        'title': 'Revision',
+        'description': 'Rev A',
+      };
+      revFolder.add(revControls, 'description').name('Revision').onChange((value) => {
+        revBlock.description = value;
+      });
+
+      const dateFolder = gui.addFolder('Date Info');
+      const dateControls = {
+        'title': 'Date',
+        'description': '2023-10-01',
+      };
+      dateFolder.add(dateControls, 'description').name('Date').onChange((value) => {
+        dateBlock.description = value;
       });
     }
 
