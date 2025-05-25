@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Polygon, Vector3D } from '../../kernel/dist';
+import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
-interface OPBoard {
+export interface OPBoard {
   center: {
     x: number;
     y: number;
@@ -32,6 +33,7 @@ export class Board extends Polygon {
 
   // Properties that cannot be set externally should be just private, can be accessed at runtime
   private subNodes: Map<string, THREE.Object3D> = new Map();
+  private labelDivMesh: CSS2DObject | null = null;
   
   // Properties that can be set externally start with an #, provides tight encapsulation and prevents accidental access
   #selected = false;
@@ -87,18 +89,8 @@ export class Board extends Polygon {
   }
 
   set width(value: number) {
-    // const halfWidth = value / 2;
     this.boardSet.dimensions.width = value;
-
-    // this.boardSet.coordinates[0][0] = -halfWidth;
-    // this.boardSet.coordinates[1][0] = halfWidth;
-    // this.boardSet.coordinates[2][0] = halfWidth;
-    // this.boardSet.coordinates[3][0] = -halfWidth;
-
-    // this.boardSet.dimensions.start.x = -halfWidth;
-    // this.boardSet.dimensions.end.x = halfWidth;
-
-    // this.setGeometry();
+    this.calculateCoordinatesByConfig();
   }
 
   get width() {
@@ -106,18 +98,8 @@ export class Board extends Polygon {
   }
 
   set height(value: number) {
-    // const halfHeight = value / 2;
     this.boardSet.dimensions.height = value;
-
-    // this.boardSet.coordinates[0][1] = -halfHeight;
-    // this.boardSet.coordinates[1][1] = -halfHeight;
-    // this.boardSet.coordinates[2][1] = halfHeight;
-    // this.boardSet.coordinates[3][1] = halfHeight;
-
-    // this.boardSet.dimensions.start.y = halfHeight;
-    // this.boardSet.dimensions.end.y = -halfHeight;
-
-    // this.setGeometry();
+    this.calculateCoordinatesByConfig();
   }
 
   get height() {
@@ -125,24 +107,9 @@ export class Board extends Polygon {
   }
 
   set start(value: { x: number; y: number; z: number }) {
-    console.log(value);
     this.boardSet.dimensions.start.x = value.x;
     this.boardSet.dimensions.start.y = value.y;
-
-    // Recalculate Coordinates based on start position
-    // this.boardSet.coordinates[0][0] = value.x;
-    // this.boardSet.coordinates[0][1] = value.y;
-    // this.boardSet.coordinates[1][0] = value.x + this.width;
-    // this.boardSet.coordinates[1][1] = value.y;
-    // this.boardSet.coordinates[2][0] = value.x + this.width;
-    // this.boardSet.coordinates[2][1] = value.y + this.height;
-    // this.boardSet.coordinates[3][0] = value.x;
-    // this.boardSet.coordinates[3][1] = value.y + this.height;
-
-    // this.boardSet.position.end.x = value.x + this.width;
-    // this.boardSet.position.end.y = value.y + this.height;
-
-    // this.setGeometry();
+    this.calculateCoordinatesByConfig();
   }
 
   set labelName(value: string) {
@@ -166,35 +133,41 @@ export class Board extends Polygon {
 
 
 
-  constructor() {
+  constructor(boardConfig: OPBoard) {
     super();
+
+    if (boardConfig) {
+      this.setConfig(boardConfig);
+    }
 
     this.calculateCoordinatesByConfig();
 
     // If we create XZ plane, the polygon has normals facing downwards, so trick as of now is to create XY plane 
     // and then rotate it to face upwards
     this.rotateX(-Math.PI / 2);
+    this.createLabelDivMesh();
   }
 
   private calculateCoordinatesByConfig() {
     const start = this.boardSet.dimensions.start;
+    start.y = -start.y;
 
     const width = this.boardSet.dimensions.width;
     const height = this.boardSet.dimensions.height;
     
     this.boardSet.coordinates[0][0] = start.x;
     this.boardSet.coordinates[0][1] = start.y;
-    this.boardSet.coordinates[1][0] = start.x + width;
-    this.boardSet.coordinates[1][1] = start.y;
+    this.boardSet.coordinates[1][0] = start.x;
+    this.boardSet.coordinates[1][1] = start.y - height;
     this.boardSet.coordinates[2][0] = start.x + width;
-    this.boardSet.coordinates[2][1] = start.y + height;
-    this.boardSet.coordinates[3][0] = start.x;
-    this.boardSet.coordinates[3][1] = start.y + height;
+    this.boardSet.coordinates[2][1] = start.y - height;
+    this.boardSet.coordinates[3][0] = start.x + width;
+    this.boardSet.coordinates[3][1] = start.y;
 
     // For renference only, not used in calculations
     // These two properties should not influence the coordinates, they are just for reference
     this.boardSet.center.x = start.x + width / 2;
-    this.boardSet.center.y = start.y + height / 2;
+    this.boardSet.center.y = start.y - height / 2;
     this.boardSet.center.z = start.z;
     this.boardSet.dimensions.end.x = start.x + width;
     this.boardSet.dimensions.end.y = start.y + height;
@@ -204,6 +177,10 @@ export class Board extends Polygon {
 
   setConfig(boardSet: OPBoard) {
     this.boardSet = boardSet;
+  }
+
+  getConfig(): OPBoard {
+    return this.boardSet;
   }
 
   private setGeometry() {
@@ -216,12 +193,10 @@ export class Board extends Polygon {
       new Vector3D(this.boardSet.coordinates[2][0], this.boardSet.coordinates[2][1], 0),
       new Vector3D(this.boardSet.coordinates[3][0], this.boardSet.coordinates[3][1], 0),
     ];
-    console.log(this.boardSet.coordinates);
     this.addVertices(points);
 
     // this.getBrepData();
     this.setMaterial();
-
     this.outline = true;
   }
 
@@ -230,5 +205,34 @@ export class Board extends Polygon {
       color: 0xffffff,
     });
     this.material = material;
+  }
+
+  private createLabelDivMesh() {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'label';
+    labelDiv.textContent = this.boardSet.labelName;
+
+    this.labelDivMesh = new CSS2DObject(labelDiv);
+    this.add(this.labelDivMesh);
+
+    setTimeout(() => {
+      if (!this.labelDivMesh) return;
+      const width = labelDiv.clientWidth;
+      const newWidth = width + width + 10;
+
+      labelDiv.style.width = `${newWidth}px`;
+      labelDiv.style.textAlign = 'right';
+
+      const height = labelDiv.clientHeight;
+      const newHeight = height + height + 10;
+
+      labelDiv.style.height = `${newHeight}px`;
+    
+      this.labelDivMesh.position.set(
+        this.boardSet.dimensions.start.x,
+        this.boardSet.dimensions.start.y,
+        0
+      );
+    }, 10);
   }
 }

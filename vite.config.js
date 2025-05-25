@@ -11,6 +11,7 @@ export default defineConfig({
         door: resolve(__dirname, 'examples/door.html'),
         wall: resolve(__dirname, 'examples/wall.html'),
         spaceContainer: resolve(__dirname, 'examples/spaceContainer.html'),
+        paper: resolve(__dirname, 'examples/drawings/paper.html'),
       },
       output: {
         entryFileNames: 'assets/js/[name]-[hash].js', // JS files inside assets/js
