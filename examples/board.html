@@ -1,0 +1,83 @@
+<!--
+  ### Board
+  Board can represent a actual drawing board or a virtual space where you can create and manage your drawings, designs, or plans.
+  It provides a canvas-like interface for users to interact with various elements like walls, doors, windows, and other architectural components.
+
+  Board is a container for elements. A board can be used for exporting and adding that to Paper Frame.
+  A Board also can be exported as JSON/DXF/PDF.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>OpenPlan Board</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let draftBoard;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "select";
+
+      draftBoard = openPlans.board();
+      // door.position.set(-2, 0, 0);
+
+      console.log(draftBoard.labelName);
+
+      draftBoard.labelName = "Draft Board X";
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const boardFolder = gui.addFolder('Board');
+      const boardControls = {
+        'selected': false,
+        'color': '0xffffff',
+        'width': 20,
+        'height': 20,
+      };
+
+      boardFolder.addColor(boardControls, 'color').name('Color').onChange((value) => {
+        draftBoard.boardColor = value;
+      });
+      boardFolder.add(boardControls, 'width', 5, 50).name('Width').onChange((value) => {
+        draftBoard.width = value;
+      });
+      boardFolder.add(boardControls, 'height', 10, 50).name('Height').onChange((value) => {
+        draftBoard.height = value;
+      });
+      boardFolder.add(boardControls, 'selected').name('Selected').onChange((value) => {
+        draftBoard.selected = value;
+      });
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+</html>

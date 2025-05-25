@@ -129,7 +129,7 @@ export class PaperFrame extends Polygon {
     // Setup the material for the paper frame
     const material = new THREE.MeshBasicMaterial({
       color: this.options.backgroundColor,
-      side: THREE.DoubleSide,
+      // side: THREE.DoubleSide,
     });
     this.material = material;
   }
