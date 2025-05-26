@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { Polygon, Vector3D } from '../../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { OPPolygonMesh } from './element-mesh';
 
 export interface OPBoard {
+  id?: string;
   center: {
     x: number;
     y: number;
@@ -28,17 +30,17 @@ export interface OPBoard {
   }
 }
 
-export class Board extends Polygon {
+export class Board extends OPPolygonMesh {
   public ogType = 'board';
 
   // Properties that cannot be set externally should be just private, can be accessed at runtime
-  private subNodes: Map<string, THREE.Object3D> = new Map();
+  subNodes: Map<string, THREE.Object3D> = new Map();
   private labelDivMesh: CSS2DObject | null = null;
-  
+
   // Properties that can be set externally start with an #, provides tight encapsulation and prevents accidental access
   #selected = false;
 
-  private boardSet: OPBoard = {
+  propertySet: OPBoard = {
     center: {
       x: 0,
       y: 0,
@@ -89,35 +91,36 @@ export class Board extends Polygon {
   }
 
   set width(value: number) {
-    this.boardSet.dimensions.width = value;
+    this.propertySet.dimensions.width = value;
     this.calculateCoordinatesByConfig();
   }
 
   get width() {
-    return this.boardSet.dimensions.width;
+    return this.propertySet.dimensions.width;
   }
 
   set height(value: number) {
-    this.boardSet.dimensions.height = value;
+    this.propertySet.dimensions.height = value;
     this.calculateCoordinatesByConfig();
   }
 
   get height() {
-    return this.boardSet.dimensions.height;
+    return this.propertySet.dimensions.height;
   }
 
   set start(value: { x: number; y: number; z: number }) {
-    this.boardSet.dimensions.start.x = value.x;
-    this.boardSet.dimensions.start.y = value.y;
+    this.propertySet.dimensions.start.x = value.x;
+    this.propertySet.dimensions.start.y = value.y;
+
     this.calculateCoordinatesByConfig();
   }
 
   set labelName(value: string) {
-    this.boardSet.labelName = value;
+    this.propertySet.labelName = value;
   }
 
   get labelName() {
-    return this.boardSet.labelName;
+    return this.propertySet.labelName;
   }
 
   set color(value: number) {
@@ -131,13 +134,13 @@ export class Board extends Polygon {
     return (this.material as THREE.MeshBasicMaterial).color.getHex();
   }
 
-
-
   constructor(boardConfig: OPBoard) {
     super();
 
     if (boardConfig) {
       this.setConfig(boardConfig);
+    } else {
+      this.propertySet.id = this.ogid;
     }
 
     this.calculateCoordinatesByConfig();
@@ -149,58 +152,64 @@ export class Board extends Polygon {
   }
 
   private calculateCoordinatesByConfig() {
-    const start = this.boardSet.dimensions.start;
-    start.y = -start.y;
+    const start = this.propertySet.dimensions.start;
+    // start.y = -start.y; // find out if we need to use this, this is how figma works 
 
-    const width = this.boardSet.dimensions.width;
-    const height = this.boardSet.dimensions.height;
+    const width = this.propertySet.dimensions.width;
+    const height = this.propertySet.dimensions.height;
     
-    this.boardSet.coordinates[0][0] = start.x;
-    this.boardSet.coordinates[0][1] = start.y;
-    this.boardSet.coordinates[1][0] = start.x;
-    this.boardSet.coordinates[1][1] = start.y - height;
-    this.boardSet.coordinates[2][0] = start.x + width;
-    this.boardSet.coordinates[2][1] = start.y - height;
-    this.boardSet.coordinates[3][0] = start.x + width;
-    this.boardSet.coordinates[3][1] = start.y;
+    this.propertySet.coordinates[0][0] = start.x;
+    this.propertySet.coordinates[0][1] = start.y;
+    this.propertySet.coordinates[1][0] = start.x;
+    this.propertySet.coordinates[1][1] = start.y - height;
+    this.propertySet.coordinates[2][0] = start.x + width;
+    this.propertySet.coordinates[2][1] = start.y - height;
+    this.propertySet.coordinates[3][0] = start.x + width;
+    this.propertySet.coordinates[3][1] = start.y;
 
     // For renference only, not used in calculations
     // These two properties should not influence the coordinates, they are just for reference
-    this.boardSet.center.x = start.x + width / 2;
-    this.boardSet.center.y = start.y - height / 2;
-    this.boardSet.center.z = start.z;
-    this.boardSet.dimensions.end.x = start.x + width;
-    this.boardSet.dimensions.end.y = start.y + height;
+    this.propertySet.center.x = start.x + width / 2;
+    this.propertySet.center.y = start.y - height / 2;
+    this.propertySet.center.z = start.z;
+    this.propertySet.dimensions.end.x = start.x + width;
+    this.propertySet.dimensions.end.y = start.y + height;
 
     this.setGeometry();
   }
 
-  setConfig(boardSet: OPBoard) {
-    this.boardSet = boardSet;
+  setConfig(propertySet: OPBoard) {
+    this.propertySet = propertySet;
   }
 
   getConfig(): OPBoard {
-    return this.boardSet;
+    return this.propertySet;
   }
 
-  private setGeometry() {
+  setGeometry() {
     this.resetVertices();
     this.outline = false;
 
     const points = [
-      new Vector3D(this.boardSet.coordinates[0][0], this.boardSet.coordinates[0][1], 0),
-      new Vector3D(this.boardSet.coordinates[1][0], this.boardSet.coordinates[1][1], 0),
-      new Vector3D(this.boardSet.coordinates[2][0], this.boardSet.coordinates[2][1], 0),
-      new Vector3D(this.boardSet.coordinates[3][0], this.boardSet.coordinates[3][1], 0),
+      new Vector3D(this.propertySet.coordinates[0][0], this.propertySet.coordinates[0][1], 0),
+      new Vector3D(this.propertySet.coordinates[1][0], this.propertySet.coordinates[1][1], 0),
+      new Vector3D(this.propertySet.coordinates[2][0], this.propertySet.coordinates[2][1], 0),
+      new Vector3D(this.propertySet.coordinates[3][0], this.propertySet.coordinates[3][1], 0),
     ];
     this.addVertices(points);
 
     // this.getBrepData();
     this.setMaterial();
     this.outline = true;
+
+    this.labelDivMesh?.position.set(
+      this.propertySet.dimensions.start.x,
+      this.propertySet.dimensions.start.y,
+      this.propertySet.dimensions.start.z
+    );
   }
 
-  private setMaterial() {
+  setMaterial() {
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
     });
@@ -209,30 +218,36 @@ export class Board extends Polygon {
 
   private createLabelDivMesh() {
     const labelDiv = document.createElement('div');
-    labelDiv.className = 'label';
-    labelDiv.textContent = this.boardSet.labelName;
+    labelDiv.textContent = this.propertySet.labelName;
+    labelDiv.style.fontSize = '12px';
 
     this.labelDivMesh = new CSS2DObject(labelDiv);
     this.add(this.labelDivMesh);
 
     setTimeout(() => {
-      if (!this.labelDivMesh) return;
-      const width = labelDiv.clientWidth;
-      const newWidth = width + width + 10;
+      this.setLabelPosition();
+    }, 100);
+  }
 
-      labelDiv.style.width = `${newWidth}px`;
-      labelDiv.style.textAlign = 'right';
-
-      const height = labelDiv.clientHeight;
-      const newHeight = height + height + 10;
-
-      labelDiv.style.height = `${newHeight}px`;
+  private setLabelPosition() {
+    const labelDiv = this.labelDivMesh?.element;
+    if (!labelDiv) return;
     
-      this.labelDivMesh.position.set(
-        this.boardSet.dimensions.start.x,
-        this.boardSet.dimensions.start.y,
-        0
-      );
-    }, 10);
+    const width = labelDiv.clientWidth;
+    const newWidth = width + width + 10;
+
+    labelDiv.style.width = `${newWidth}px`;
+    labelDiv.style.textAlign = 'right';
+
+    const height = labelDiv.clientHeight;
+    const newHeight = height + height + 10;
+
+    labelDiv.style.height = `${newHeight}px`;
+    
+    this.labelDivMesh?.position.set(
+      this.propertySet.dimensions.start.x,
+      this.propertySet.dimensions.start.y,
+      0
+    );
   }
 }
