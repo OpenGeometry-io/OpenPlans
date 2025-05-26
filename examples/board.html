@@ -15,10 +15,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
   <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
     }
 
     #app {
@@ -72,6 +76,7 @@
         },
         'Set Config': () => {
           const preloadConfig = {
+            "id": "draft-board-x",
             "center": {
               "x": 32.76,
               "y": -20.4,
@@ -124,6 +129,9 @@
           x: 14.4,
           y: 25.4,
           z: 0
+        },
+        'getPreloadConfig': () => {
+          console.log(preloadBoard.getConfig());
         }
       };
 
@@ -152,6 +160,7 @@
       preloadFolder.add(boardControls.preloadStart, 'x', -50, 50).name('Preload Start X').onChange((value) => {
         preloadBoard.start = boardControls.preloadStart;
       });
+      preloadFolder.add(boardControls, 'getPreloadConfig').name('Get Preload Config');
     }
 
     (async function () {
