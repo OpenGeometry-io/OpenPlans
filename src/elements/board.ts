@@ -31,14 +31,14 @@ export interface OPBoard {
 }
 
 export class Board extends OPPolygonMesh {
-  public ogType = 'board';
+  ogType = 'board';
 
   // Properties that cannot be set externally should be just private, can be accessed at runtime
   subNodes: Map<string, THREE.Object3D> = new Map();
   private labelDivMesh: CSS2DObject | null = null;
 
   // Properties that can be set externally start with an #, provides tight encapsulation and prevents accidental access
-  #selected = false;
+  _selected = false;
 
   propertySet: OPBoard = {
     center: {
@@ -83,11 +83,11 @@ export class Board extends OPPolygonMesh {
     else {
       this.outlineColor = 0x000000;
     }
-    this.#selected = value;
+    this._selected = value;
   }
 
   get selected() {
-    return this.#selected;
+    return this._selected;
   }
 
   set width(value: number) {
@@ -134,11 +134,11 @@ export class Board extends OPPolygonMesh {
     return (this.material as THREE.MeshBasicMaterial).color.getHex();
   }
 
-  constructor(boardConfig: OPBoard) {
+  constructor(boardConfig?: OPBoard) {
     super();
 
     if (boardConfig) {
-      this.setConfig(boardConfig);
+      this.setOPConfig(boardConfig);
     } else {
       this.propertySet.id = this.ogid;
     }
@@ -175,18 +175,18 @@ export class Board extends OPPolygonMesh {
     this.propertySet.dimensions.end.x = start.x + width;
     this.propertySet.dimensions.end.y = start.y + height;
 
-    this.setGeometry();
+    this.setOPGeometry();
   }
 
-  setConfig(propertySet: OPBoard) {
+  setOPConfig(propertySet: OPBoard) {
     this.propertySet = propertySet;
   }
 
-  getConfig(): OPBoard {
+  getOPConfig(): OPBoard {
     return this.propertySet;
   }
 
-  setGeometry() {
+  setOPGeometry() {
     this.resetVertices();
     this.outline = false;
 
@@ -199,7 +199,7 @@ export class Board extends OPPolygonMesh {
     this.addVertices(points);
 
     // this.getBrepData();
-    this.setMaterial();
+    this.setOPMaterial();
     this.outline = true;
 
     this.labelDivMesh?.position.set(
@@ -209,7 +209,7 @@ export class Board extends OPPolygonMesh {
     );
   }
 
-  setMaterial() {
+  setOPMaterial() {
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
     });
@@ -232,7 +232,7 @@ export class Board extends OPPolygonMesh {
   private setLabelPosition() {
     const labelDiv = this.labelDivMesh?.element;
     if (!labelDiv) return;
-    
+
     const width = labelDiv.clientWidth;
     const newWidth = width + width + 10;
 

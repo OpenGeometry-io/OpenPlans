@@ -18,6 +18,7 @@ import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
+import { OPPolyLine, PolyLine } from './shapes/op-polyline';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -158,10 +159,20 @@ export class OpenPlans {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const board = new Board(boardConfig!)
+    const board = new Board(boardConfig)
     this.openThree.scene.add(board)
     this.ogElements.push(board)
     return board
+  }
+
+  polyline(polyLineConfig?: OPPolyLine): PolyLine {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const polyline = new PolyLine(polyLineConfig)
+    this.openThree.scene.add(polyline)
+    this.ogElements.push(polyline)
+    return polyline
   }
 
   getEntitiesByType(type: string) {

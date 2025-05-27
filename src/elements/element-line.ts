@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Polygon } from '../../kernel/dist';
+import { PolyLine } from '../../kernel/dist';
 
 /**
  * If any element start moves, cast a ray and check if it interesects with the board.
@@ -7,7 +7,7 @@ import { Polygon } from '../../kernel/dist';
  * If the element is moved outside the board, remove it from the board.
  */
 
-export abstract class OPPolygonMesh extends Polygon{
+export abstract class OPLineMesh extends PolyLine{
   abstract ogType: string;
   abstract subNodes: Map<string, THREE.Object3D>;
   abstract _selected: boolean;

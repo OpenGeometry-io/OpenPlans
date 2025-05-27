@@ -7,8 +7,6 @@ import { OPWall, OPWallMesh, OPWallType } from './base-types';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { BaseElement, BaseGeometrySet } from './base-element';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-// TODO: Create Much Better Outlines
-// import * as OGLiner from './../helpers/OpenOutliner';
 
 // move this to base type later
 interface BaseWall2Set extends BaseGeometrySet {
