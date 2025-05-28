@@ -34,6 +34,9 @@
   <script type="module">
     import { OpenPlans } from './../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(0);
 
     let polyline;
     let openPlans;
@@ -43,9 +46,14 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.pencil.mode = "select";
+      openPlans.pencil.mode = "cursor";
 
       // draftBoard = openPlans.board();
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
     }
 
     function setUI() {
@@ -73,6 +81,9 @@
           polyline.selected = value;
         }
       });
+
+
+      document.body.appendChild(stats.dom);
     }
 
     (async function () {

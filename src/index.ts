@@ -57,6 +57,7 @@ export class OpenPlans {
     this.og = new OpenGeometry(this.container, this.openThree.scene, this.openThree.threeCamera)
     await this.og.setup(wasmURL)
     this.pencil = this.og.pencil
+    console.log(this.pencil)
 
     await Glyphs.loadFaces('Source_Code_Pro_Regular');
     Glyphs.scene = this.openThree.scene
@@ -170,6 +171,7 @@ export class OpenPlans {
       throw new Error('Pencil not initialized')
     }
     const polyline = new PolyLine(polyLineConfig)
+    polyline.pencil = this.pencil;
     this.openThree.scene.add(polyline)
     this.ogElements.push(polyline)
     return polyline
