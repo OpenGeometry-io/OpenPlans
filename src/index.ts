@@ -18,10 +18,13 @@ import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
+import { OPPolyLine, PolyLine } from './shapes/op-polyline';
 
 export class OpenPlans {
   private container: HTMLElement
   private openThree: OpenThree
+  static sOThree: OpenThree;
+
   private pencil: Pencil | undefined
   private planCamera: PlanCamera
 
@@ -37,6 +40,8 @@ export class OpenPlans {
 
     this.container = container
     this.openThree = new OpenThree(container, this.callback)
+    OpenPlans.sOThree = this.openThree;
+
     this.planCamera = this.openThree.planCamera
     
     this.openThree.planCamera.controls.addEventListener("update", () => {
@@ -47,6 +52,12 @@ export class OpenPlans {
   callback() {
     if (this.og?.labelRenderer) {
       this.og.update(this.openThree.scene, this.openThree.threeCamera)
+    }
+
+    for (const element of this.ogElements) {
+      if (element.ogType === 'OPPolyLine') {
+        element.calulateAnchorEdges(true);
+      }
     }
 
     this.onRender.trigger();
@@ -158,10 +169,21 @@ export class OpenPlans {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const board = new Board(boardConfig!)
+    const board = new Board(boardConfig)
     this.openThree.scene.add(board)
     this.ogElements.push(board)
     return board
+  }
+
+  polyline(polyLineConfig?: OPPolyLine): PolyLine {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const polyline = new PolyLine(polyLineConfig)
+    polyline.pencil = this.pencil;
+    this.openThree.scene.add(polyline)
+    this.ogElements.push(polyline)
+    return polyline
   }
 
   getEntitiesByType(type: string) {
@@ -415,5 +437,16 @@ export class OpenPlans {
     this.openThree.scene.add(rowInfoBlock);
     return rowInfoBlock;
   }
-}
 
+  static toScreenPosition(pos: THREE.Vector3): { x: number; y: number } {
+    const vector = pos.clone().project(OpenPlans.sOThree.threeCamera);
+  
+    const halfWidth = OpenPlans.sOThree.renderer.domElement.clientWidth / 2;
+    const halfHeight = OpenPlans.sOThree.renderer.domElement.clientHeight / 2;
+  
+    return {
+      x: vector.x * halfWidth + halfWidth,
+      y: -vector.y * halfHeight + halfHeight
+    };
+  }
+}
