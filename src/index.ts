@@ -23,6 +23,8 @@ import { OPPolyLine, PolyLine } from './shapes/op-polyline';
 export class OpenPlans {
   private container: HTMLElement
   private openThree: OpenThree
+  static sOThree: OpenThree;
+
   private pencil: Pencil | undefined
   private planCamera: PlanCamera
 
@@ -38,6 +40,8 @@ export class OpenPlans {
 
     this.container = container
     this.openThree = new OpenThree(container, this.callback)
+    OpenPlans.sOThree = this.openThree;
+
     this.planCamera = this.openThree.planCamera
     
     this.openThree.planCamera.controls.addEventListener("update", () => {
@@ -50,6 +54,12 @@ export class OpenPlans {
       this.og.update(this.openThree.scene, this.openThree.threeCamera)
     }
 
+    for (const element of this.ogElements) {
+      if (element.ogType === 'OPPolyLine') {
+        element.calulateAnchorEdges(true);
+      }
+    }
+
     this.onRender.trigger();
   }
 
@@ -57,7 +67,6 @@ export class OpenPlans {
     this.og = new OpenGeometry(this.container, this.openThree.scene, this.openThree.threeCamera)
     await this.og.setup(wasmURL)
     this.pencil = this.og.pencil
-    console.log(this.pencil)
 
     await Glyphs.loadFaces('Source_Code_Pro_Regular');
     Glyphs.scene = this.openThree.scene
@@ -428,5 +437,16 @@ export class OpenPlans {
     this.openThree.scene.add(rowInfoBlock);
     return rowInfoBlock;
   }
-}
 
+  static toScreenPosition(pos: THREE.Vector3): { x: number; y: number } {
+    const vector = pos.clone().project(OpenPlans.sOThree.threeCamera);
+  
+    const halfWidth = OpenPlans.sOThree.renderer.domElement.clientWidth / 2;
+    const halfHeight = OpenPlans.sOThree.renderer.domElement.clientHeight / 2;
+  
+    return {
+      x: vector.x * halfWidth + halfWidth,
+      y: -vector.y * halfHeight + halfHeight
+    };
+  }
+}

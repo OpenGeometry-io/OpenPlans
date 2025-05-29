@@ -167,7 +167,7 @@ export class Board extends OPPolygonMesh {
     this.propertySet.coordinates[3][0] = start.x + width;
     this.propertySet.coordinates[3][1] = start.y;
 
-    // For renference only, not used in calculations
+    // For reference only, not used in calculations
     // These two properties should not influence the coordinates, they are just for reference
     this.propertySet.center.x = start.x + width / 2;
     this.propertySet.center.y = start.y - height / 2;
