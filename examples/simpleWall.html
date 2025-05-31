@@ -6,7 +6,7 @@
 <html lang="en">
 
 <head>
-  <title>OpenPlan Board</title>
+  <title>OpenPlans Simple Wall</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -38,8 +38,7 @@
     const stats = new Stats();
     stats.showPanel(0);
 
-    let polyline;
-    let polygon;
+    let wall;
     let openPlans;
 
     async function init() {
@@ -60,45 +59,25 @@
     function setUI() {
       const gui = new GUI();
 
-      const polyLineFolder = gui.addFolder('Poly Line');
-      const polyLineControls = {
-        'Create Polyline': () => {
-          polyline = openPlans.polyline();
-          polyline.insertPoint(0, 0, 0);
-          polyline.insertPoint(5, 0, 4);
-          // polyline.insertPoint(10, 0, 0);
-          // polyline.insertPoint(5, 0, -4);
-          // polyline.insertPoint(0, 0, 0);
-          
-          console.log('Is Closed:', polyline.isClosed);
-          console.log(polyline.getOPConfig());
+      const simpleWallFolder = gui.addFolder('Simple Wall');
+      const simpleWallControls = {
+        'Create Wall': () => {
+          wall = openPlans.simpleWall();
+          wall.insertPoint(0, 0, 0);
+          wall.insertPoint(5, 0, 4);
+          // wall.insertPoint(10, 0, 0);
+          // wall.insertPoint(5, 0, -4);
+
+          console.log('Is Closed:', wall.isClosed);
+          console.log(wall.getOPConfig());
         },
         'selected': false,
       };
 
-      polyLineFolder.add(polyLineControls, 'Create Polyline').name('Create Polyline');
-      polyLineFolder.add(polyLineControls, 'selected').name('Selected').onChange((value) => {
-        if (polyline) {
-          polyline.selected = value;
-        }
-      });
-
-      // Polygon and Extrude
-      const polygonFolder = gui.addFolder('Polygon');
-      const polygonControls = {
-        'Create Polygon': () => {
-          polygon = openPlans.polygon();
-          polygon.insertPoint(0, 0, 0);
-          polygon.insertPoint(5, 0, 4);
-          polygon.insertPoint(10, 0, 0);
-          polygon.insertPoint(5, 0, -4);
-        },
-        'selected': false,
-      };
-      polygonFolder.add(polygonControls, 'Create Polygon').name('Create Polygon');
-      polygonFolder.add(polygonControls, 'selected').name('Selected').onChange((value) => {
-        if (polygon) {
-          polygon.selected = value;
+      simpleWallFolder.add(simpleWallControls, 'Create Wall');
+      simpleWallFolder.add(simpleWallControls, 'selected').name('Selected').onChange((value) => {
+        if (wall) {
+          wall.selected = value;
         }
       });
 

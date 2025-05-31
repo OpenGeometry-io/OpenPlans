@@ -1,46 +1,46 @@
-/**
- * Simple PolyLine class from Kernel
- */
 import * as THREE from 'three';
-import { OPLineMesh } from "../elements/element-line";
 import { Vector3D } from '../../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
+import { OPPolygonMesh } from './../elements/element-mesh';
 import { getKeyByValue } from '../utils/helper';
 
-export interface OPPolyLine {
+export interface OPPolygon {
   id?: string;
+  center: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  color: number;
+  type: 'polygon';
+  coordinates: Array<[number, number, number]>;
   labelName: string;
-  type: 'polyline';
   dimensions: {
     start: {
       x: number;
       y: number;
       z: number;
-    };
+    },
     end: {
       x: number;
       y: number;
       z: number;
-    };
+    },
     width: number;
-  };
-  color: number;
-  coordinates: Array<[number, number, number]>;
+    height: number;
+  }
 }
 
-export class PolyLine extends OPLineMesh {
-  ogType: string = "OPPolyLine";
+export class Polygon extends OPPolygonMesh {
+  ogType = 'polygon';
 
+  // Editing Properties
   subNodes: Map<string, THREE.Object3D> = new Map();
   subEdges: Map<string, HTMLDivElement> = new Map();
 
-  /**
-   * This map is used to store editor nodes, such as anchor points.
-   * The key is a string identifier for the node, and the value is index of the node in the coordinates array.
-   */
   editorNodes: Map<string, number> = new Map();
   editorEdges: Map<string, number> = new Map();
   activeNode: string | null = null;
@@ -50,45 +50,65 @@ export class PolyLine extends OPLineMesh {
   initialCursorPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   brepRaw: string | null = null;
 
-  _selected: boolean = false;
+  // Properties that can be set externally start with an #, provides tight encapsulation and prevents accidental access
+  _selected = false;
   _pencil: Pencil | null = null;
 
-  propertySet: OPPolyLine = {
-    type: 'polyline',
-    labelName: 'Poly Line',
+  propertySet: OPPolygon = {
+    center: {
+      x: 0,
+      y: 0,
+      z: 0,
+    },
+    color: 0xcccccc,
+    type: 'polygon',
+    /*
+      Anti-clockwise coordinates of the board, starting from top left corner.
+      Ends in top right corner.
+      The coordinates are in the XY plane, so Z is always 0.
+    */
+    coordinates: [],
+    labelName: 'Polygon',
     dimensions: {
       start: {
         x: 0,
         y: 0,
-        z: 0,
+        z: 0
       },
       end: {
-        x: 1,
-        y: 0,
+        x: 10,
+        y: -10,
         z: 0,
       },
-      width: 1,
-    },
-    color: 0x000000,
-    coordinates: []
+      width: 20,
+      height: 20
+    }
   };
 
   set selected(value: boolean) {
     if (value) {
-      this.material = new THREE.LineBasicMaterial({ color: 0x4460FF });
+      // this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
+
       this.addAnchorPointsOnSelection();
       this.addAnchorEdgesOnSelection();
     }
-    else {
-      this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
-      this.clearAnchorPoints();
-      this.clearAnchorEdges();
-    }
+    // else {
+    //   this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
+    //   this.clearAnchorPoints();
+    //   this.clearAnchorEdges();
+    // }
     this._selected = value;
   }
 
   get selected() {
     return this._selected;
+  }
+
+  set start(value: { x: number; y: number; z: number }) {
+    this.propertySet.dimensions.start.x = value.x;
+    this.propertySet.dimensions.start.y = value.y;
+
+    this.calculateCoordinatesByConfig();
   }
 
   set labelName(value: string) {
@@ -97,6 +117,17 @@ export class PolyLine extends OPLineMesh {
 
   get labelName() {
     return this.propertySet.labelName;
+  }
+
+  set color(value: number) {
+    const material = new THREE.MeshBasicMaterial({
+      color: value,
+    });
+    this.material = material;
+  }
+
+  get color() {
+    return (this.material as THREE.MeshBasicMaterial).color.getHex();
   }
 
   set pencil(pencil: Pencil) {
@@ -117,18 +148,25 @@ export class PolyLine extends OPLineMesh {
     } else {
       throw new Error("Pencil is not set for this PolyLine.");
     }
-  }
+    }
 
-  constructor(polylineConfig?: OPPolyLine) {
+  constructor(polygonConfig?: OPPolygon) {
     super();
 
-    if (polylineConfig) {
-      this.setOPConfig(polylineConfig);
+    if (polygonConfig) {
+      this.setOPConfig(polygonConfig);
     } else {
       this.propertySet.id = this.ogid;
     }
 
     this.calculateCoordinatesByConfig();
+
+    // If we create XZ plane, the polygon has normals facing downwards, so trick as of now is to create XY plane 
+    // and then rotate it to face upwards
+    // this.rotateX(-Math.PI / 2);
+    
+    // Not Needed for Polygon
+    // this.createLabelDivMesh();
   }
 
   insertPoint(x: number, y: number, z: number ) {
@@ -137,39 +175,53 @@ export class PolyLine extends OPLineMesh {
   }
 
   private calculateCoordinatesByConfig() {
-    if (this.propertySet.coordinates.length <= 0) return;
 
-    this.propertySet.dimensions.start.x = this.propertySet.coordinates[0][0];
-    this.propertySet.dimensions.start.y = this.propertySet.coordinates[0][1];
-    this.propertySet.dimensions.start.z = this.propertySet.coordinates[0][2];
+    const coordinates = this.propertySet.coordinates;
 
-    this.propertySet.dimensions.end.x = this.propertySet.coordinates[this.propertySet.coordinates.length - 1][0];
-    this.propertySet.dimensions.end.y = this.propertySet.coordinates[this.propertySet.coordinates.length - 1][1];
-    this.propertySet.dimensions.end.z = this.propertySet.coordinates[this.propertySet.coordinates.length - 1][2];
+    if (coordinates.length < 3) return;
 
     this.setOPGeometry();
-    this.setOPMaterial();
   }
 
-  setOPConfig(config: OPPolyLine) {
-    this.propertySet = config;
+  setOPConfig(propertySet: OPPolygon) {
+    this.propertySet = propertySet;
   }
 
-  getOPConfig(): OPPolyLine {
+  getOPConfig(): OPPolygon {
     return this.propertySet;
   }
 
   setOPGeometry() {
-    const { coordinates } = this.propertySet;
+    this.resetVertices();
+    this.outline = false;
 
-    const points = coordinates.map(coord => new Vector3D(coord[0], coord[1], coord[2]));
-    this.addMultiplePoints(points);
+    const coordinates = this.propertySet.coordinates;
+    const points: Vector3D[] = [];
+    for (let i = 0; i < coordinates.length; i++) {
+      const point = new Vector3D(
+        coordinates[i][0],
+        coordinates[i][1],
+        coordinates[i][2]
+      );
+      points.push(point);
+    }
+
+    this.addVertices(points);
+    
+    this.getBrepData();
+    this.setOPMaterial();
+    this.outline = true;
   }
 
   setOPMaterial() {
-    this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+    });
+    this.material = material;
   }
 
+  // Editor
   addAnchorPointsOnSelection() {
     for (const coord of this.propertySet.coordinates) {
       const anchorId = `pointAnchor${generateUUID()}`;
@@ -252,8 +304,6 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  
-
   addAnchorStyles() {
     const style = document.createElement('style');
     style.textContent = `
@@ -274,67 +324,31 @@ export class PolyLine extends OPLineMesh {
     document.head.appendChild(style);
   }
 
-  clearAnchorPoints() {
-    this.subNodes.forEach((anchorMesh, anchorId) => {
-      anchorMesh.removeFromParent();
-      this.editorNodes.delete(anchorId);
-
-      const anchorDiv = document.getElementById(anchorId);
-      if (anchorDiv) {
-        anchorDiv.removeEventListener('mousedown', (event) => this.onMouseDown(event));
-        anchorDiv.removeEventListener('mouseup', (event) => this.onMouseUp(event));
-        anchorDiv.removeEventListener('mousemove', (event) => this.onMouseMove(event));
-        anchorDiv.removeEventListener('mouseover', (event) => this.onMouseHover(event));
+  calculateAnchor(force: boolean = false) {
+    if (this.activeNode) {
+      const index = this.editorNodes.get(this.activeNode);
+      if (index !== undefined) {
+        const anchorMesh = this.subNodes.get(this.activeNode);
+        if (anchorMesh) {
+          const coords = this.propertySet.coordinates[index];
+          if (coords) {
+            anchorMesh.position.set(coords[0], 0, coords[2]);
+          }
+        }
       }
-    });
-    this.subNodes.clear();
-    this.activeNode = null;
-  }
-
-  clearAnchorEdges() {
-    for (const [edgeId, edgeDiv] of this.subEdges.entries()) {
-      edgeDiv.removeEventListener('mousedown', (event) => this.onMouseDown(event));
-      edgeDiv.removeEventListener('mouseup', (event) => this.onMouseUp(event));
-      edgeDiv.removeEventListener('mousemove', (event) => this.onMouseMove(event));
-      edgeDiv.removeEventListener('mouseover', (event) => this.onMouseHover(event));
-      
-      edgeDiv.remove();
-      this.editorEdges.delete(edgeId);
     }
-    this.subEdges.clear();
-    this.activeEdge = null;
-  }
 
-  onMouseHover(event: MouseEvent) {
-    const anchorId = (event.target as HTMLElement).id;
-    if (!anchorId.startsWith('pointAnchor')) return;
-  }
-
-  onMouseDown(event: MouseEvent) {
-    const anchorId = (event.target as HTMLElement).id;
-    if (anchorId.startsWith('pointAnchor')) {
-      this.activeNode = anchorId;
+    if (force) {
+      for (const [nodeId, index] of this.editorNodes.entries()) {
+        const anchorMesh = this.subNodes.get(nodeId);
+        if (anchorMesh) {
+          const coords = this.propertySet.coordinates[index];
+          if (coords) {
+            anchorMesh.position.set(coords[0], 0, coords[2]);
+          }
+        }
+      }
     }
-    else if (anchorId.startsWith('edgeAnchor')) {
-      this.activeEdge = anchorId;
-      this.pencil.fireCursor(event);
-    }
-    else {
-      this.activeNode = null;
-      this.activeEdge = null;
-    }
-  }
-
-  onMouseUp(event: MouseEvent) {
-    if (!this.activeNode && !this.activeEdge) return;
-    this.activeNode = null;
-    this.activeEdge = null;
-
-    this.brepRaw = this.getBrepData();
-  }
-
-  onMouseMove(event: MouseEvent) {
-    if (!this.activeNode && !this.activeEdge) return;
   }
 
   calulateAnchorEdges(force: boolean = false) {
@@ -436,31 +450,54 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  calculateAnchor(force: boolean = false) {
-    if (this.activeNode) {
-      const index = this.editorNodes.get(this.activeNode);
-      if (index !== undefined) {
-        const anchorMesh = this.subNodes.get(this.activeNode);
-        if (anchorMesh) {
-          const coords = this.propertySet.coordinates[index];
-          if (coords) {
-            anchorMesh.position.set(coords[0], 0, coords[2]);
-          }
-        }
-      }
-    }
+  clearAnchorPoints() {
+    this.subNodes.forEach((anchorMesh, anchorId) => {
+      anchorMesh.removeFromParent();
+      this.editorNodes.delete(anchorId);
 
-    if (force) {
-      for (const [nodeId, index] of this.editorNodes.entries()) {
-        const anchorMesh = this.subNodes.get(nodeId);
-        if (anchorMesh) {
-          const coords = this.propertySet.coordinates[index];
-          if (coords) {
-            anchorMesh.position.set(coords[0], 0, coords[2]);
-          }
-        }
+      const anchorDiv = document.getElementById(anchorId);
+      if (anchorDiv) {
+        anchorDiv.removeEventListener('mousedown', (event) => this.onMouseDown(event));
+        anchorDiv.removeEventListener('mouseup', (event) => this.onMouseUp(event));
+        anchorDiv.removeEventListener('mousemove', (event) => this.onMouseMove(event));
+        anchorDiv.removeEventListener('mouseover', (event) => this.onMouseHover(event));
       }
+    });
+    this.subNodes.clear();
+    this.activeNode = null;
+  }
+
+  // Editor Mouse Events
+  onMouseHover(event: MouseEvent) {
+    const anchorId = (event.target as HTMLElement).id;
+    if (!anchorId.startsWith('pointAnchor')) return;
+  }
+
+  onMouseDown(event: MouseEvent) {
+    const anchorId = (event.target as HTMLElement).id;
+    if (anchorId.startsWith('pointAnchor')) {
+      this.activeNode = anchorId;
     }
+    else if (anchorId.startsWith('edgeAnchor')) {
+      this.activeEdge = anchorId;
+      this.pencil.fireCursor(event);
+    }
+    else {
+      this.activeNode = null;
+      this.activeEdge = null;
+    }
+  }
+
+  onMouseUp(event: MouseEvent) {
+    if (!this.activeNode && !this.activeEdge) return;
+    this.activeNode = null;
+    this.activeEdge = null;
+
+    this.brepRaw = this.getBrepData();
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (!this.activeNode) return;
   }
 
   handlePencilCursorMove(coords: THREE.Vector3) {

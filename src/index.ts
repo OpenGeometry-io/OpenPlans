@@ -19,6 +19,8 @@ import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
 import { OPPolyLine, PolyLine } from './shapes/op-polyline';
+import { OPPolygon, Polygon } from './shapes/op-polygon';
+import { SimpleWall } from './elements/op-wall';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -55,7 +57,11 @@ export class OpenPlans {
     }
 
     for (const element of this.ogElements) {
-      if (element.ogType === 'OPPolyLine') {
+      if (
+        element.ogType === 'OPPolyLine' || 
+        element.ogType === 'OPPolygon' ||
+        element.ogType === 'OPWall'
+      ) {
         element.calulateAnchorEdges(true);
       }
     }
@@ -101,6 +107,17 @@ export class OpenPlans {
     } else {
       this.pencil.mode = 'select';
     }
+  }
+
+  simpleWall(): SimpleWall {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const wall = new SimpleWall();
+    wall.pencil = this.pencil;
+    this.openThree.scene.add(wall)
+    this.ogElements.push(wall)
+    return wall
   }
 
   wall(): BaseWall {
@@ -184,6 +201,17 @@ export class OpenPlans {
     this.openThree.scene.add(polyline)
     this.ogElements.push(polyline)
     return polyline
+  }
+
+  polygon(polygonConfig?: OPPolygon): Polygon {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const polygon = new Polygon(polygonConfig)
+    polygon.pencil = this.pencil;
+    this.openThree.scene.add(polygon)
+    this.ogElements.push(polygon)
+    return polygon
   }
 
   getEntitiesByType(type: string) {

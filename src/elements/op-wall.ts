@@ -9,11 +9,13 @@ import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
 import { getKeyByValue } from '../utils/helper';
+import { Polygon } from '../shapes/op-polygon';
 
-export interface OPPolyLine {
+// TODO: Create Types for Wall Material and Wall Type for better reusability
+export interface OPWall {
   id?: string;
   labelName: string;
-  type: 'polyline';
+  type: 'wall';
   dimensions: {
     start: {
       x: number;
@@ -28,11 +30,19 @@ export interface OPPolyLine {
     width: number;
   };
   color: number;
+  wallType: 'exterior' | 'interior' | 'partition' | 'curtain';
+  wallHeight: number;
+  wallThickness: number;
+  wallMaterial: 'concrete' | 'brick' | 'wood' | 'glass' | 'metal' | 'other';
   coordinates: Array<[number, number, number]>;
 }
 
-export class PolyLine extends OPLineMesh {
-  ogType: string = "OPPolyLine";
+export class SimpleWall extends OPLineMesh {
+  ogType: string = "OPWall";
+
+  // Wall Child Nodes
+  // string is edge number in brep, Object3D is the wall mesh
+  subChild: Map<number, THREE.Object3D> = new Map();
 
   subNodes: Map<string, THREE.Object3D> = new Map();
   subEdges: Map<string, HTMLDivElement> = new Map();
@@ -53,9 +63,9 @@ export class PolyLine extends OPLineMesh {
   _selected: boolean = false;
   _pencil: Pencil | null = null;
 
-  propertySet: OPPolyLine = {
-    type: 'polyline',
-    labelName: 'Poly Line',
+  propertySet: OPWall = {
+    type: 'wall',
+    labelName: 'Poly Wall',
     dimensions: {
       start: {
         x: 0,
@@ -70,7 +80,11 @@ export class PolyLine extends OPLineMesh {
       width: 1,
     },
     color: 0x000000,
-    coordinates: []
+    coordinates: [],
+    wallType: 'exterior',
+    wallHeight: 0,
+    wallThickness: 0.2,
+    wallMaterial: 'concrete',
   };
 
   set selected(value: boolean) {
@@ -119,11 +133,11 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  constructor(polylineConfig?: OPPolyLine) {
+  constructor(polyWallConfig?: OPWall) {
     super();
 
-    if (polylineConfig) {
-      this.setOPConfig(polylineConfig);
+    if (polyWallConfig) {
+      this.setOPConfig(polyWallConfig);
     } else {
       this.propertySet.id = this.ogid;
     }
@@ -134,6 +148,10 @@ export class PolyLine extends OPLineMesh {
   insertPoint(x: number, y: number, z: number ) {
     this.propertySet.coordinates.push([x, y, z]);
     this.calculateCoordinatesByConfig();
+
+    this.brepRaw = this.getBrepData();
+    console.log("Brep Raw Data: ", this.brepRaw);
+    this.createWallAroundLine();
   }
 
   private calculateCoordinatesByConfig() {
@@ -151,11 +169,55 @@ export class PolyLine extends OPLineMesh {
     this.setOPMaterial();
   }
 
-  setOPConfig(config: OPPolyLine) {
+  createWallAroundLine(force: boolean = false) {
+    if (!this.brepRaw) return;
+    const brep = JSON.parse(this.brepRaw);
+
+    const edges_index = brep.edges;
+    const wallWidth = this.propertySet.dimensions.width;
+
+    for (let i = 0; i < edges_index.length; i++) {
+      if (force && this.subChild.has(i)) {
+        const wallPoly = this.subChild.get(i);
+        if (wallPoly) {
+          wallPoly.removeFromParent();
+          this.subChild.delete(i);
+        }
+      }
+
+      if (this.subChild.has(i)) continue;
+
+      const edge = edges_index[i];
+      const startCoord = this.propertySet.coordinates[edge[0]];
+      const endCoord = this.propertySet.coordinates[edge[1]];
+      
+      const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(
+        new THREE.Vector3(startCoord[0], startCoord[1], startCoord[2]),
+        new THREE.Vector3(endCoord[0], endCoord[1], endCoord[2]),
+        wallWidth / 2
+      );
+      const wallVertices = [
+        [startLeft.x, startLeft.y, startLeft.z],
+        [startRight.x, startRight.y, startRight.z],
+        [endRight.x, endRight.y, endRight.z],
+        [endLeft.x, endLeft.y, endLeft.z],
+      ];
+      
+      console.log("Wall Vertices: ", wallVertices);
+
+      const wallPoly = new Polygon();
+      wallVertices.map(coord => wallPoly.insertPoint(coord[0], coord[1], coord[2]));
+      this.subChild.set(i, wallPoly);
+      this.add(wallPoly);
+    }
+    console.log("------------------------");
+  }
+
+  setOPConfig(config: OPWall) {
     this.propertySet = config;
   }
 
-  getOPConfig(): OPPolyLine {
+  getOPConfig(): OPWall {
     return this.propertySet;
   }
 
@@ -331,6 +393,7 @@ export class PolyLine extends OPLineMesh {
     this.activeEdge = null;
 
     this.brepRaw = this.getBrepData();
+    this.createWallAroundLine(true);
   }
 
   onMouseMove(event: MouseEvent) {
@@ -520,5 +583,38 @@ export class PolyLine extends OPLineMesh {
         }
       }
     }
+  }
+
+
+  // Helper for Wall
+  createPolyVerticesByOffset() {
+    const wallThickness = this.propertySet.wallThickness;
+
+    const innerPolyVertices = this.createOffset(wallThickness / 2);
+    const outerPolyVertices = this.createOffset(-wallThickness / 2);
+    const wallVertices = [...innerPolyVertices, ...outerPolyVertices.reverse()];
+    console.log("Wall Vertices: ", wallVertices);
+    return wallVertices;
+  }
+
+
+  getOuterCoordinates(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
+    const perpendicular = this.getPerpendicularVector(start, end);
+    const startLeft = start.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    const startRight = start.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
+    const endLeft = end.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    const endRight = end.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
+    return {
+      startLeft,
+      startRight,
+      endLeft,
+      endRight,
+    };
+  }
+
+  getPerpendicularVector(start: THREE.Vector3, end: THREE.Vector3) {
+    const vector = new THREE.Vector3().subVectors(end, start);
+    const perpendicular = new THREE.Vector3().crossVectors(vector, new THREE.Vector3(0, 1, 0));
+    return perpendicular.normalize();
   }
 }
