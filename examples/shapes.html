@@ -13,7 +13,8 @@
   <meta name="author" content="Vishwajeet Mane">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -39,6 +40,7 @@
     stats.showPanel(0);
 
     let polyline;
+    let polygon;
     let openPlans;
 
     async function init() {
@@ -65,8 +67,8 @@
           polyline = openPlans.polyline();
           polyline.insertPoint(0, 0, 0);
           polyline.insertPoint(5, 0, 4);
-          polyline.insertPoint(10, 0, 0);
-          polyline.insertPoint(5, 0, -4);
+          // polyline.insertPoint(10, 0, 0);
+          // polyline.insertPoint(5, 0, -4);
           // polyline.insertPoint(0, 0, 0);
           
           console.log('Is Closed:', polyline.isClosed);
@@ -82,6 +84,74 @@
         }
       });
 
+      // Polygon and Extrude
+      const polygonFolder = gui.addFolder('Polygon');
+      const polygonControls = {
+        'Create Polygon': () => {
+
+          const testPoints = [
+            {
+                "x": 9.5,
+                "y": 0,
+                "z": 10
+            },
+            {
+                "x": 9.5,
+                "y": 0,
+                "z": 1.0
+            },
+            {
+                "x": 4.9,
+                "y": 0,
+                "z": 4.6
+            },
+            {
+                "x": -0.31,
+                "y": 0,
+                "z": 0.39
+            },
+            {
+                "x": 0.31,
+                "y": 0,
+                "z": -0.39
+            },
+            {
+                "x": 5.0,
+                "y": 0,
+                "z": 3.35
+            },
+            {
+                "x": 10.5,
+                "y": 0,
+                "z": -1.04
+            },
+            {
+                "x": 10.5,
+                "y": 0,
+                "z": 10
+            }
+          ];
+          polygon = openPlans.polygon();
+          // WORKS
+          // polygon.insertPoint(0, 0, 0);
+          // polygon.insertPoint(5, 0, 4);
+          // polygon.insertPoint(10, 0, 0);
+          // polygon.insertPoint(5, 0, -4);
+
+          // TEST for Wall Breaking Polygon
+          testPoints.forEach(point => {
+            polygon.insertPoint(point.x, point.y, point.z);
+            console.log(`Inserted Point: (${point.x}, ${point.y}, ${point.z})`);
+          });
+        },
+        'selected': false,
+      };
+      polygonFolder.add(polygonControls, 'Create Polygon').name('Create Polygon');
+      polygonFolder.add(polygonControls, 'selected').name('Selected').onChange((value) => {
+        if (polygon) {
+          polygon.selected = value;
+        }
+      });
 
       document.body.appendChild(stats.dom);
     }

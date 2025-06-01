@@ -10,10 +10,16 @@ import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
 import { getKeyByValue } from '../utils/helper';
 
-export interface OPPolyLine {
+import { Polygon } from '../shapes/op-polygon';
+// import { Polygon } from '../../kernel/dist';
+
+// TODO: Create Types for Wall Material and Wall Type for better reusability
+export type WallMaterial = 'concrete' | 'brick' | 'wood' | 'glass' | 'metal' | 'other';
+
+export interface OPWall {
   id?: string;
   labelName: string;
-  type: 'polyline';
+  type: 'wall';
   dimensions: {
     start: {
       x: number;
@@ -28,11 +34,19 @@ export interface OPPolyLine {
     width: number;
   };
   color: number;
+  wallType: 'exterior' | 'interior' | 'partition' | 'curtain';
+  wallHeight: number;
+  wallThickness: number;
+  wallMaterial: WallMaterial;
   coordinates: Array<[number, number, number]>;
 }
 
-export class PolyLine extends OPLineMesh {
-  ogType: string = "OPPolyLine";
+export class SimpleWall extends OPLineMesh {
+  ogType: string = "OPWall";
+
+  // Wall Child Nodes
+  // string is edge number in brep, Object3D is the wall mesh
+  subChild: Map<string, THREE.Object3D> = new Map();
 
   subNodes: Map<string, THREE.Object3D> = new Map();
   subEdges: Map<string, HTMLDivElement> = new Map();
@@ -53,9 +67,9 @@ export class PolyLine extends OPLineMesh {
   _selected: boolean = false;
   _pencil: Pencil | null = null;
 
-  propertySet: OPPolyLine = {
-    type: 'polyline',
-    labelName: 'Poly Line',
+  propertySet: OPWall = {
+    type: 'wall',
+    labelName: 'Poly Wall',
     dimensions: {
       start: {
         x: 0,
@@ -70,7 +84,11 @@ export class PolyLine extends OPLineMesh {
       width: 1,
     },
     color: 0x000000,
-    coordinates: []
+    coordinates: [],
+    wallType: 'exterior',
+    wallHeight: 0,
+    wallThickness: 1,
+    wallMaterial: 'concrete',
   };
 
   set selected(value: boolean) {
@@ -119,21 +137,26 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  constructor(polylineConfig?: OPPolyLine) {
+  constructor(polyWallConfig?: OPWall) {
     super();
-
-    if (polylineConfig) {
-      this.setOPConfig(polylineConfig);
+    if (polyWallConfig) {
+      this.setOPConfig(polyWallConfig);
+      this.calculateCoordinatesByConfig();
+      
+      this.brepRaw = this.getBrepData();
+      this.createWallAroundLine();
     } else {
       this.propertySet.id = this.ogid;
+      this.calculateCoordinatesByConfig();
     }
-
-    this.calculateCoordinatesByConfig();
   }
 
   insertPoint(x: number, y: number, z: number ) {
     this.propertySet.coordinates.push([x, y, z]);
     this.calculateCoordinatesByConfig();
+
+    this.brepRaw = this.getBrepData();
+    this.createWallAroundLine();
   }
 
   private calculateCoordinatesByConfig() {
@@ -151,23 +174,121 @@ export class PolyLine extends OPLineMesh {
     this.setOPMaterial();
   }
 
-  setOPConfig(config: OPPolyLine) {
+  // Helper for Wall
+  createPolyVerticesByOffset() {
+    const wallThickness = this.propertySet.wallThickness;
+
+    const innerPolyData = this.createOffset(wallThickness / 2);
+    
+    if (!innerPolyData) return;
+
+    const isInnerCCW = innerPolyData.flag;
+    const innerPolyVertices = innerPolyData.treated;
+    // Inner should always be true
+    if (!isInnerCCW) {
+      innerPolyVertices.reverse();
+    }
+
+    const outerPolyData = this.createOffset(-wallThickness / 2);
+    const isOuterCCW = outerPolyData.flag;
+    const outerPolyVertices = outerPolyData.treated;
+    // Outer should always be false
+    if (isOuterCCW) {
+      outerPolyVertices.reverse();
+    }
+
+    if (!innerPolyVertices || !outerPolyVertices) return;
+    const wallVertices = [...innerPolyVertices, ...outerPolyVertices];
+    return wallVertices;
+  }
+
+  createWallAroundLine(force: boolean = false) {
+    if (!this.brepRaw) return;
+    const polyVertices = this.createPolyVerticesByOffset();
+
+    if (!polyVertices || polyVertices.length === 0) {
+      return;
+    }
+
+    if (polyVertices.length < 3) {
+      return;
+    }
+
+    if (this.subChild.has('wallPoly')) {
+      const existingPoly = this.subChild.get('wallPoly');
+      if (existingPoly) {
+        this.remove(existingPoly);
+        existingPoly.removeFromParent();
+      }
+    }
+
+    // POLYGON from OpenPlans
+    const wallVertices: Array<[number, number, number]> = [];
+    polyVertices.map(coord => {
+      wallVertices.push([coord.x, coord.y, coord.z]);
+    });
+    const wallPoly = new Polygon();
+    wallPoly.insertMultiplePoints(wallVertices);
+    this.subChild.set('wallPoly', wallPoly);
+    this.add(wallPoly);
+  }
+
+  setOPConfig(config: OPWall) {
     this.propertySet = config;
   }
 
-  getOPConfig(): OPPolyLine {
+  getOPConfig(): OPWall {
     return this.propertySet;
   }
 
   setOPGeometry() {
     const { coordinates } = this.propertySet;
-
     const points = coordinates.map(coord => new Vector3D(coord[0], coord[1], coord[2]));
     this.addMultiplePoints(points);
   }
 
   setOPMaterial() {
-    this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
+    const material = this.propertySet.wallMaterial;
+    switch (material) {
+      case 'concrete':
+        const texture = this.createTexture('./../public/wallCrossTexture.jpg');
+        console.log("Texture", texture);
+        this.material = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
+        break;
+      case 'brick':
+        const brickTexture = this.createTexture('./../public/wallDotTexture.jpg');
+        this.material = new THREE.MeshStandardMaterial({ map: brickTexture, color: this.propertySet.color, side: THREE.DoubleSide });
+        break;
+      default:
+        this.material = new THREE.MeshStandardMaterial({ color: this.propertySet.color, side: THREE.DoubleSide });
+        break;
+    }
+  }
+
+  set wallMaterial(material: WallMaterial) {
+    this.propertySet.wallMaterial = material;
+    this.setOPMaterial();
+  }
+
+  private createTexture(url: string, start: number = 0, end: number = 1): THREE.Texture {
+    const texture = new THREE.TextureLoader().load(
+      url,
+      (tex) => {
+        // console.log("Texture Loaded", tex);
+      },
+      undefined, // Optional: onProgress callback
+      (err) => {
+        console.error("Texture failed to load", err);
+      }
+    );
+    // texture.wrapS = THREE.RepeatWrapping;
+    // texture.repeat.set(
+    //   (end - start) * 4,
+    //   1
+    // );
+    // texture.colorSpace = THREE.SRGBColorSpace;
+    // texture.flipY = false;
+    return texture;
   }
 
   addAnchorPointsOnSelection() {
@@ -252,8 +373,6 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  
-
   addAnchorStyles() {
     const style = document.createElement('style');
     style.textContent = `
@@ -331,6 +450,7 @@ export class PolyLine extends OPLineMesh {
     this.activeEdge = null;
 
     this.brepRaw = this.getBrepData();
+    this.createWallAroundLine(true);
   }
 
   onMouseMove(event: MouseEvent) {

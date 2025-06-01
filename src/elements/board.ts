@@ -209,6 +209,15 @@ export class Board extends OPPolygonMesh {
     );
   }
 
+  dispose() {
+    this.geometry.dispose();
+    this.labelDivMesh?.element.remove();
+    this.labelDivMesh = null;
+    this.clear();
+    this.subNodes.clear();
+    this.removeFromParent();
+  }
+
   setOPMaterial() {
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,

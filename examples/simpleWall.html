@@ -1,0 +1,150 @@
+<!--
+  Multiple Shapes Using OpenPlans
+  1. Polyline - A series of connected line segments with start and end.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Simple Wall</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(0);
+
+    let wall;
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "cursor";
+
+      // draftBoard = openPlans.board();
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      const simpleWallFolder = gui.addFolder('Simple Wall');
+      const simpleWallControls = {
+        'Create Wall': () => {
+          wall = openPlans.simpleWall();
+          wall.insertPoint(0, 0, 0);
+          wall.insertPoint(5, 0, 4);
+          wall.insertPoint(10, 0, 0);
+          wall.insertPoint(10, 0, 10);
+        },
+        'createWallWithConfig': () => {
+          const wallConfig = {
+            "type": "wall",
+            "labelName": "Poly Wall",
+            "dimensions": {
+                "start": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "end": {
+                    "x": 10,
+                    "y": 0,
+                    "z": 10
+                },
+                "width": 1
+            },
+            "color": 0,
+            "coordinates": [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  5,
+                  0,
+                  4
+                ],
+                [
+                  7.457602787156577,
+                  0,
+                  -4.653907370982839
+                ],
+                [
+                  10,
+                  0,
+                  10
+                ]
+            ],
+            "wallType": "exterior",
+            "wallHeight": 0,
+            "wallThickness": 1,
+            "wallMaterial": "concrete",
+            "id": "e98c9b2b-4257-45ff-a9b9-7bf0ae3cf55d",
+          };
+
+          wall = openPlans.simpleWall(wallConfig);
+        },
+        'selected': false,
+        'Get Config': () => {
+          if (wall) {
+            console.log(wall.getOPConfig());
+          } else {
+            console.warn('No wall created yet.');
+          }
+        }
+      };
+
+      simpleWallFolder.add(simpleWallControls, 'Create Wall');
+      simpleWallFolder.add(simpleWallControls, 'createWallWithConfig').name('Create Wall with Config');
+      simpleWallFolder.add(simpleWallControls, 'selected').name('Selected').onChange((value) => {
+        if (wall) {
+          wall.selected = value;
+        }
+      });
+      simpleWallFolder.add(simpleWallControls, 'Get Config').name('Get Config');
+
+      document.body.appendChild(stats.dom);
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

@@ -11,28 +11,28 @@ export type OPWallType = 'concrete' | 'wood' | 'brick';
 
 
 export interface OPWall {
-  id: number;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  },
-  color: number;
-  type: OPWallType;
-  anchor: {
+  id?: string;
+  labelName: string;
+  type: 'wall';
+  dimensions: {
     start: {
       x: number;
       y: number;
       z: number;
-    },
+    };
     end: {
       x: number;
       y: number;
       z: number;
-    }
-  },
-  thickness: number;
-  halfThickness: number;
+    };
+    width: number;
+  };
+  color: number;
+  wallType: 'exterior' | 'interior' | 'partition' | 'curtain';
+  wallHeight: number;
+  wallThickness: number;
+  wallMaterial: 'concrete' | 'brick' | 'wood' | 'glass' | 'metal' | 'other';
+  coordinates: Array<[number, number, number]>;
 }
 
 export interface OPDoor {
