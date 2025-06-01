@@ -69,7 +69,7 @@ export class PolyLine extends OPLineMesh {
       },
       width: 1,
     },
-    color: 0x000000,
+    color: 0x4460FF,
     coordinates: []
   };
 
