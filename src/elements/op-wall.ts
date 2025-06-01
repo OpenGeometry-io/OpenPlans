@@ -229,6 +229,11 @@ export class SimpleWall extends OPLineMesh {
     });
     const wallPoly = new Polygon();
     wallPoly.insertMultiplePoints(wallVertices);
+    wallPoly.material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
     this.subChild.set('wallPoly', wallPoly);
     this.add(wallPoly);
   }
@@ -248,47 +253,12 @@ export class SimpleWall extends OPLineMesh {
   }
 
   setOPMaterial() {
-    const material = this.propertySet.wallMaterial;
-    switch (material) {
-      case 'concrete':
-        const texture = this.createTexture('./../public/wallCrossTexture.jpg');
-        console.log("Texture", texture);
-        this.material = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide });
-        break;
-      case 'brick':
-        const brickTexture = this.createTexture('./../public/wallDotTexture.jpg');
-        this.material = new THREE.MeshStandardMaterial({ map: brickTexture, color: this.propertySet.color, side: THREE.DoubleSide });
-        break;
-      default:
-        this.material = new THREE.MeshStandardMaterial({ color: this.propertySet.color, side: THREE.DoubleSide });
-        break;
-    }
+    this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color, depthWrite: false });
+    this.renderOrder = 1;
   }
 
   set wallMaterial(material: WallMaterial) {
     this.propertySet.wallMaterial = material;
-    this.setOPMaterial();
-  }
-
-  private createTexture(url: string, start: number = 0, end: number = 1): THREE.Texture {
-    const texture = new THREE.TextureLoader().load(
-      url,
-      (tex) => {
-        // console.log("Texture Loaded", tex);
-      },
-      undefined, // Optional: onProgress callback
-      (err) => {
-        console.error("Texture failed to load", err);
-      }
-    );
-    // texture.wrapS = THREE.RepeatWrapping;
-    // texture.repeat.set(
-    //   (end - start) * 4,
-    //   1
-    // );
-    // texture.colorSpace = THREE.SRGBColorSpace;
-    // texture.flipY = false;
-    return texture;
   }
 
   addAnchorPointsOnSelection() {
