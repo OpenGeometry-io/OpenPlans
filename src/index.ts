@@ -109,11 +109,11 @@ export class OpenPlans {
     }
   }
 
-  simpleWall(): SimpleWall {
+  simpleWall(config: OPWall): SimpleWall {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const wall = new SimpleWall();
+    const wall = new SimpleWall(config);
     wall.pencil = this.pencil;
     this.openThree.scene.add(wall)
     this.ogElements.push(wall)
@@ -260,131 +260,8 @@ export class OpenPlans {
 
   convertImpleniaToOGFormat(sourceJson: any) {
     const ogJSON = convertToOGFormat(sourceJson);
-    this.generateGeometry(ogJSON);
+    // this.generateGeometry(ogJSON);
   }
-
-  /**
-   * 
-   * @param graph This is the graph that will be used to generate the geometry.
-   * @returns 
-   */
-  public generateGeometry(graph: BuildingData): void {
-    const floors = graph.floors;
-
-    // Just doing for first floor
-    for (let i = 0; i < 1; i++) {
-      const floor = floors[i];
-      const rooms = floor.OG_DATA;
-      for (let j = 0; j < rooms.length; j++) {
-        const roomId = rooms[j];
-        const room = graph.rooms.find((r) => r.OG_ID === roomId);
-        if (!room) return;
-
-        // ROOM/SPACE visualization
-        const roomCoords = room.coordinates;
-        // console.log(`Room coordinates for ${room.USER_DATA}: ${roomCoords}`);
-        const roomSet: OPSpace = {
-          id: j,
-          position: { x: 0, y: 0, z: 0 },
-          color: 0xff0000,
-          type: 'internal',
-          coordinates: roomCoords,
-          labelName: room.USER_DATA
-        }
-
-        if (!this.pencil) return;
-        const roomElement = new BaseSpace(this.pencil, roomSet);
-        this.openThree.scene.add(roomElement);
-        this.ogElements.push(roomElement);
-
-        const roomElements = room.OG_DATA;
-        for (let k = 0; k < roomElements.length; k++) {
-          const elementFromRoom = roomElements[k];
-          const elementType = elementFromRoom.OG_TYPE;
-          switch (elementType) {
-            case 'OG_WALL':
-              const wall = graph.walls.find((w) => w.OG_ID === elementFromRoom.OG_ID);
-              if (!wall) return;
-              if (wall.type === 'internal') {
-                // Generate wall geometry
-                const start = wall.start;
-                const end = wall.end;
-                const thickness = wall.thickness;
-                
-                if (!this.pencil) return;
-
-                const wallSet: OPWall = {
-                  id: k,
-                  position: { x: 0, y: 0, z: 0 },
-                  color: 0xedf2f4,
-                  type: 'concrete',
-                  anchor: {
-                    start: {
-                      x: start[0],
-                      y: start[1],
-                      z: start[2]
-                    },
-                    end: {
-                      x: end[0],
-                      y: end[1],
-                      z: end[2]
-                    }
-                  },
-                  thickness: thickness,
-                  halfThickness: thickness / 2
-                }
-                const wallElement = new BaseWall(0xedf2f4, this.pencil, wallSet);
-                this.openThree.scene.add(wallElement);
-
-                this.ogElements.push(wallElement);
-              }
-              break;
-            case 'OG_DOOR':
-              const door = graph.doors.find((d) => d.OG_ID === elementFromRoom.OG_ID);
-              if (!door) return;
-              if (door.type === 'internal') {
-                // Generate door geometry
-                const start = door.start;
-                const end = door.end;
-                const thickness = door.thickness;
-                const hingeThickness = door.hingeThickness;
-                
-                if (!this.pencil) return;
-                const doorSet: OPDoor = {
-                  id: k,
-                  position: { x: 0, y: 0, z: 0 },
-                  doorColor: 0x00000,
-                  anchor: {
-                    start: {
-                      x: -1,
-                      y: 0,
-                      z: 1
-                    },
-                    end: {
-                      x: 1,
-                      y: 0,
-                      z: 0
-                    }
-                  },
-                  thickness: thickness / 2,
-                  halfThickness: thickness / 2 / 2,
-                  hingeColor: 0x000000,
-                  hingeThickness: hingeThickness,
-                }
-                const doorElement = new BaseDoor(this.pencil, doorSet);
-                this.openThree.scene.add(doorElement);
-
-                this.ogElements.push(doorElement);
-              }
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    }
-  }
-
 
   public startEditingSpaces() {
     const spaces = this.getEntitiesByType('space');

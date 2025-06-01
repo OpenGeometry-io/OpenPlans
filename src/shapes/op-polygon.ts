@@ -169,6 +169,13 @@ export class Polygon extends OPPolygonMesh {
     // this.createLabelDivMesh();
   }
 
+  insertMultiplePoints(points: Array<[number, number, number]>) {
+    for (const point of points) {
+      this.propertySet.coordinates.push([point[0], point[1], point[2]]);
+    }
+    this.calculateCoordinatesByConfig();
+  }
+
   insertPoint(x: number, y: number, z: number ) {
     this.propertySet.coordinates.push([x, y, z]);
     this.calculateCoordinatesByConfig();
@@ -205,9 +212,7 @@ export class Polygon extends OPPolygonMesh {
       );
       points.push(point);
     }
-
     this.addVertices(points);
-    
     this.getBrepData();
     this.setOPMaterial();
     this.outline = true;
