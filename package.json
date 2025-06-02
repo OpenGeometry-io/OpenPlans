@@ -15,14 +15,13 @@
   "keywords": [],
   "license": "ISC",
   "dependencies": {
-    "@opengeometry/openglyph": "^0.0.6",
-    "@types/three": "^0.168.0",
-    "camera-controls": "^2.9.0",
-    "lil-gui": "^0.19.2",
-    "three": "^0.168.0"
+    "@opengeometry/openglyph": "^0.0.6"
   },
   "peerDependencies": {
-    "three": "^0.168.0"
+    "three": "^0.168.0",
+    "@types/three": "^0.168.0",
+    "camera-controls": "^2.9.0",
+    "lil-gui": "^0.19.2"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
