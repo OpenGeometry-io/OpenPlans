@@ -1,6 +1,6 @@
 {
   "name": "@opengeometry/openplans",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Vishwajeet Mane",
   "description": "OpenPlans is a robust tool for creating 2D plans and 2D models of anything you can imagine",
   "main": "./src/index.ts",
