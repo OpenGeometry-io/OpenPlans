@@ -1,6 +1,6 @@
 {
   "name": "@opengeometry/openplans",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "author": "Vishwajeet Mane",
   "description": "Create 2D Drawings with OpenPlans",
   "main": "./index.js",
@@ -12,9 +12,9 @@
     "clean": "rimraf dist",
     "build-examples": "vite build",
     "build": "npm run clean && rollup -c",
-    "cpy-pkg": "cp package.json dist/package.json && cp README.md dist/README.md",
-    "prepare": "npm run build && npm run cpy-pkg",
-    "publish": "cd dist && npm publish --access public"
+    "cpy-pkg-json": "cp package.json dist/package.json && cp README.md dist/README.md",
+    "pre-prepare": "npm run build && npm run cpy-pkg-json",
+    "release": "npm run pre-prepare && cd dist && npm publish"
   },
   "keywords": [
     "openplans",
@@ -46,5 +46,8 @@
     "stats.js": "^0.17.0",
     "tslib": "^2.8.1",
     "vite": "^5.4.7"
+  },
+  "publishConfig": {
+    "directory": "dist"
   }
 }
