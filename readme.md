@@ -1,3 +1,5 @@
+![OpenPlans Version](https://img.shields.io/github/package-json/v/OpenGeometry-io/OpenPlans?color=4460FF)
+
 ## 🚧 Under Heavy Development 🚧  
 
 **This project is currently a work in progress!**  
