@@ -117,6 +117,20 @@ export class SimpleWall extends OPLineMesh {
     return this.propertySet.labelName;
   }
 
+  set wallThickness(value: number) {
+    this.propertySet.wallThickness = value;
+    this.createWallAroundLine(true);
+  }
+
+  set wallColor(value: number) {
+    this.propertySet.color = value;
+    for (const child of this.subChild.values()) {
+      if (child instanceof Polygon) {
+        child.material = new THREE.MeshBasicMaterial({ color: value, depthWrite: false, side: THREE.DoubleSide });
+      }
+    }
+  }
+
   set pencil(pencil: Pencil) {
     this._pencil = pencil;
 
@@ -151,6 +165,12 @@ export class SimpleWall extends OPLineMesh {
     }
   }
 
+  /**
+   * Add a point to the wall line.
+   * @param x number
+   * @param y number
+   * @param z number
+   */
   insertPoint(x: number, y: number, z: number ) {
     this.propertySet.coordinates.push([x, y, z]);
     this.calculateCoordinatesByConfig();

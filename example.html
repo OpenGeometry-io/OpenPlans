@@ -31,17 +31,24 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      // TODO: Remove Error with Selection when no element present
-      // openPlans.pencil.mode = "select";
       openPlans.pencil.mode = "view";
+      
+      // const door1 = openPlans.door();
+      const wall1 = openPlans.simpleWall();
+      wall1.labelName = "Wall 1";
+      wall1.wallThickness = 0.2;
+      wall1.insertPoint(1, 0, 0);
+      wall1.insertPoint(5, 0, 0);
+      wall1.insertPoint(5, 0, 5);
+
+      const wall2 = openPlans.simpleWall();
+      wall2.labelName = "Wall 2";
+      wall2.wallThickness = 0.2;
+      wall2.insertPoint(-1, 0, 0);
+      wall2.insertPoint(-5, 0, 0);
+      wall2.insertPoint(-5, 0, -5);
 
       const door1 = openPlans.door();
-      const wall1 = openPlans.wall();
-      wall1.position.set(2, 0, 0);
-      wall1.updateMatrixWorld();
-
-      const wall2 = openPlans.wall();
-      wall2.position.set(-2, 0, 0);
     }
 
     function setUI() {
@@ -70,11 +77,11 @@
       const wallControls = {
         'color': '#edf2f4',
       } 
-      const walls = openPlans.getEntitiesByType('wall');
+      const walls = openPlans.getEntitiesByType('OPWall');
       walls.forEach((wall) => {
-        const subWall = wallFolder.addFolder(wall.name);
+        const subWall = wallFolder.addFolder(wall.labelName);
         subWall.addColor(wallControls, 'color').name('Color').onChange((value) => {
-          wall.material.color.set(value);
+          wall.wallColor = value;
         });
       });
     }

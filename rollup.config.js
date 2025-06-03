@@ -1,7 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
-import terser from '@rollup/plugin-terser';
 import { defineConfig } from 'rollup';
 
 export default defineConfig({
@@ -19,7 +18,7 @@ export default defineConfig({
     resolve(),
     commonjs(),
     typescript({
-      tsconfig: './tsconfig.json',
+      tsconfig: './tsconfig.json',      // Use the tsconfig file for TypeScript options
       declaration: true,                // Enable type declaration files
       declarationDir: 'dist/types',     // Place declaration files in dist/types
       outDir: 'dist',                   // Place all JS files in dist

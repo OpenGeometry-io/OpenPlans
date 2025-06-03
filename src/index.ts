@@ -3,7 +3,6 @@ import { Pencil, PencilMode } from '../kernel/dist/src/pencil';
 import { BaseDoor } from './elements/base-door';
 import { BaseSpace } from './elements/base-spaces';
 import { OPDoor, OPSpace, OPWall } from './elements/base-types';
-import { BaseWall } from './elements/base-wall';
 import { BaseWindow } from './elements/base-window';
 import { DoubleWindow } from './elements/double-window';
 import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
@@ -12,7 +11,6 @@ import convertToOGFormat from './parser/ImpleniaConverter';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 import * as THREE from 'three';
-import { BaseWall2 } from './elements/base-wall-2';
 import { Event } from './utils/event';
 import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
@@ -118,26 +116,6 @@ export class OpenPlans {
     this.openThree.scene.add(wall)
     this.ogElements.push(wall)
     return wall
-  }
-
-  wall(): BaseWall {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized')
-    }
-    const wall = new BaseWall(0xedf2f4, this.pencil)
-    this.openThree.scene.add(wall)
-    this.ogElements.push(wall)
-    return wall
-  }
-  
-  wall2(): BaseWall2 {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized');
-    }
-    const wall = new BaseWall2(this.pencil);
-    this.openThree.scene.add(wall);
-    this.ogElements.push(wall);
-    return wall;
   }
 
   door(): BaseDoor {
