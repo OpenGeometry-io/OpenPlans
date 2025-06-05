@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Polygon, Vector3D } from '../../kernel/dist';
+import { Vector3D } from '../../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { OPPolygonMesh } from './element-mesh';
 
@@ -30,6 +30,7 @@ export interface OPBoard {
   }
 }
 
+// TODO: Use Polygon Shape instead of Polygon Mesh, which will provide us with editing capabilities
 export class Board extends OPPolygonMesh {
   ogType = 'board';
 

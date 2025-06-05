@@ -4,10 +4,10 @@ import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
-import { OPPolygonMesh } from './../elements/element-mesh';
-import { getKeyByValue } from '../utils/helper';
+import { OPPolygonMesh } from '../elements/element-mesh';
+import { getKeyByValue } from '../utils/map-helper';
 
-export interface OPPolygon {
+export interface IPolygonBuilder {
   id?: string;
   center: {
     x: number;
@@ -34,7 +34,7 @@ export interface OPPolygon {
   }
 }
 
-export class Polygon extends OPPolygonMesh {
+export class PolygonBuilder extends OPPolygonMesh {
   ogType = 'polygon';
 
   // Editing Properties
@@ -54,7 +54,7 @@ export class Polygon extends OPPolygonMesh {
   _selected = false;
   _pencil: Pencil | null = null;
 
-  propertySet: OPPolygon = {
+  propertySet: IPolygonBuilder = {
     center: {
       x: 0,
       y: 0,
@@ -150,7 +150,7 @@ export class Polygon extends OPPolygonMesh {
     }
     }
 
-  constructor(polygonConfig?: OPPolygon) {
+  constructor(polygonConfig?: IPolygonBuilder) {
     super();
 
     if (polygonConfig) {
@@ -190,11 +190,11 @@ export class Polygon extends OPPolygonMesh {
     this.setOPGeometry();
   }
 
-  setOPConfig(propertySet: OPPolygon) {
+  setOPConfig(propertySet: IPolygonBuilder) {
     this.propertySet = propertySet;
   }
 
-  getOPConfig(): OPPolygon {
+  getOPConfig(): IPolygonBuilder {
     return this.propertySet;
   }
 

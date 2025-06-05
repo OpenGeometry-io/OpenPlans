@@ -1,13 +1,14 @@
+/**
+ * Space is somewhat equivalent to a room in a building
+ * It can be bounded by walls on all sides
+ * It can also be a free space without walls
+ */
 import { Polygon, Vector3D } from "../../kernel/dist";
 import { Pencil } from "../../kernel/dist/src/pencil";
 import * as THREE from 'three';
 import { GlyphNode, Glyphs } from "@opengeometry/openglyph";
 import { OPSpace } from "./base-types";
 import { Event } from "../utils/event";
-
-// Space is somehwat equivalent to a room in a building
-// It is a 2D Polygon which we can directly use from kernel and construct each time a new vertex is added
-// can be extruded as well
 
 interface SpaceContainerMesh {
   id: number;

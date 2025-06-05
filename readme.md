@@ -1,4 +1,4 @@
-![OpenPlans Version](https://img.shields.io/github/package-json/v/OpenGeometry-io/OpenPlans?color=4460FF)
+![OpenPlans Version](https://img.shields.io/github/package-json/v/opengeometry-io/openplans?style=for-the-badge&color=4460FF)
 
 ## 🚧 Under Heavy Development 🚧  
 
@@ -15,16 +15,15 @@ OpenPlans can be used in Two Ways
 #### 2. Headless Floorplan Generation
 
 #### Feature List
-- Docs - 
+- Triangulation
+- Shapes - Rectangles, Circles, Polygons
+- Extrusion
+- Offset
+- Boolean Operations (In Progress)
 
-
-#### Dev Config
-- We're using vite for development
-- PORT: `5555`
-- `npm run dev` at root for opening the development server
-- Changes will be autoreflected on `http://localhost:5555/`
+#### Developer Guide
+You can find the developer guide [here](https://github.com/OpenGeometry-io/OpenPlans/blob/main/developer.md)
 
 - Docusaurus is being used for documentation
 - `cd docs`
 - `npm run start` to make any changes
-

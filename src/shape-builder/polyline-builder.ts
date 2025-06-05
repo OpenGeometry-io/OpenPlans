@@ -8,9 +8,14 @@ import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
-import { getKeyByValue } from '../utils/helper';
+import { getKeyByValue } from '../utils/map-helper';
 
-export interface OPPolyLine {
+export const VERTEX_EDITING = 0x1;
+export const EDGE_EDITING = 0x2;
+export const FACE_EDITING = 0x3;
+export const SELECTION_EDITING = 0x4;
+
+export interface IPolylineBuilder {
   id?: string;
   labelName: string;
   type: 'polyline';
@@ -31,7 +36,7 @@ export interface OPPolyLine {
   coordinates: Array<[number, number, number]>;
 }
 
-export class PolyLine extends OPLineMesh {
+export class PolylineBuilder extends OPLineMesh {
   ogType: string = "OPPolyLine";
 
   subNodes: Map<string, THREE.Object3D> = new Map();
@@ -46,6 +51,9 @@ export class PolyLine extends OPLineMesh {
   activeNode: string | null = null;
   activeEdge: string | null = null;
 
+  // TODO: Should editing capacity be set like this or should it be a property of the OpenPlans instance
+  _editingCapacity: number = VERTEX_EDITING | EDGE_EDITING | FACE_EDITING | SELECTION_EDITING;
+
   // remodel
   initialCursorPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   brepRaw: string | null = null;
@@ -53,7 +61,7 @@ export class PolyLine extends OPLineMesh {
   _selected: boolean = false;
   _pencil: Pencil | null = null;
 
-  propertySet: OPPolyLine = {
+  propertySet: IPolylineBuilder = {
     type: 'polyline',
     labelName: 'Poly Line',
     dimensions: {
@@ -119,7 +127,15 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  constructor(polylineConfig?: OPPolyLine) {
+  set editingCapacity(value: number) {
+    this._editingCapacity = value;
+  }
+
+  get editingCapacity() {
+    return this._editingCapacity;
+  }
+
+  constructor(polylineConfig?: IPolylineBuilder) {
     super();
 
     if (polylineConfig) {
@@ -151,11 +167,11 @@ export class PolyLine extends OPLineMesh {
     this.setOPMaterial();
   }
 
-  setOPConfig(config: OPPolyLine) {
+  setOPConfig(config: IPolylineBuilder): void {
     this.propertySet = config;
   }
 
-  getOPConfig(): OPPolyLine {
+  getOPConfig(): IPolylineBuilder {
     return this.propertySet;
   }
 
@@ -252,7 +268,6 @@ export class PolyLine extends OPLineMesh {
     }
   }
 
-  
 
   addAnchorStyles() {
     const style = document.createElement('style');

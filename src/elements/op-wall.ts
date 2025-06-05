@@ -8,9 +8,9 @@ import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
-import { getKeyByValue } from '../utils/helper';
+import { getKeyByValue } from '../utils/map-helper';
 
-import { Polygon } from '../shapes/op-polygon';
+import { PolygonBuilder } from '../shape-builder/polygon-builder';
 // import { Polygon } from '../../kernel/dist';
 
 // TODO: Create Types for Wall Material and Wall Type for better reusability
@@ -125,7 +125,7 @@ export class SimpleWall extends OPLineMesh {
   set wallColor(value: number) {
     this.propertySet.color = value;
     for (const child of this.subChild.values()) {
-      if (child instanceof Polygon) {
+      if (child instanceof PolygonBuilder) {
         child.material = new THREE.MeshBasicMaterial({ color: value, depthWrite: false, side: THREE.DoubleSide });
       }
     }
@@ -247,7 +247,7 @@ export class SimpleWall extends OPLineMesh {
     polyVertices.map(coord => {
       wallVertices.push([coord.x, coord.y, coord.z]);
     });
-    const wallPoly = new Polygon();
+    const wallPoly = new PolygonBuilder();
     wallPoly.insertMultiplePoints(wallVertices);
     wallPoly.material = new THREE.MeshBasicMaterial({
       color: 0xffffff,

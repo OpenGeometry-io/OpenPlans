@@ -12,12 +12,16 @@ import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 import * as THREE from 'three';
 import { Event } from './utils/event';
+
+// Shape Builders
+import { IPolylineBuilder, PolylineBuilder } from './shape-builder/polyline-builder';
+import { IPolygonBuilder, PolygonBuilder } from './shape-builder/polygon-builder';
+
+// Elements
 import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
-import { OPPolyLine, PolyLine } from './shapes/op-polyline';
-import { OPPolygon, Polygon } from './shapes/op-polygon';
 import { SimpleWall } from './elements/op-wall';
 
 export class OpenPlans {
@@ -34,8 +38,6 @@ export class OpenPlans {
   private onRender: Event<void> = new Event<void>();
 
   constructor(container: HTMLElement) {
-    console.log('OpenPlans constructor')
-
     this.callback = this.callback.bind(this)
 
     this.container = container
@@ -170,26 +172,26 @@ export class OpenPlans {
     return board
   }
 
-  polyline(polyLineConfig?: OPPolyLine): PolyLine {
+  polylineBuilder(polyLineConfig?: IPolylineBuilder): PolylineBuilder {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const polyline = new PolyLine(polyLineConfig)
-    polyline.pencil = this.pencil;
-    this.openThree.scene.add(polyline)
-    this.ogElements.push(polyline)
-    return polyline
+    const polylineBuilder = new PolylineBuilder(polyLineConfig)
+    polylineBuilder.pencil = this.pencil;
+    this.openThree.scene.add(polylineBuilder)
+    this.ogElements.push(polylineBuilder)
+    return polylineBuilder
   }
 
-  polygon(polygonConfig?: OPPolygon): Polygon {
+  polygonBuilder(polygonConfig?: IPolygonBuilder): PolygonBuilder {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const polygon = new Polygon(polygonConfig)
-    polygon.pencil = this.pencil;
-    this.openThree.scene.add(polygon)
-    this.ogElements.push(polygon)
-    return polygon
+    const polygonBuilder = new PolygonBuilder(polygonConfig)
+    polygonBuilder.pencil = this.pencil;
+    this.openThree.scene.add(polygonBuilder)
+    this.ogElements.push(polygonBuilder)
+    return polygonBuilder
   }
 
   getEntitiesByType(type: string) {
