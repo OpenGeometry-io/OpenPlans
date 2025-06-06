@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>OpenPlan Window</title>
+  <title>OpenPlan Double Window</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -21,7 +21,7 @@
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
   <script type="module">
-    import { OpenPlans } from './../src/index.ts';
+    import { OpenPlans } from './../../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
@@ -33,7 +33,7 @@
 
       openPlans.pencil.mode = "select";
 
-      const window = openPlans.window();
+      const window = openPlans.doubleWindow();
       // window.position.set(-2, 0, 0);
     }
 
@@ -44,7 +44,7 @@
         'rotation': 1,
         'color': '#adb5bd',
         'quadrant': 1,
-        'windowLength': 2,
+        'windowLength': 4,
       };
       const windows = openPlans.getEntitiesByType('window');
       windows.forEach((window) => {
@@ -58,7 +58,7 @@
         subwindow.add(windowControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
           window.windowQudrant = value;
         });
-        subwindow.add(windowControls, 'windowLength', 2, 5).name('Length').onChange((value) => {
+        subwindow.add(windowControls, 'windowLength', 4, 8).name('Length').onChange((value) => {
           window.windowLength = value;
         });
       });

@@ -33,7 +33,7 @@
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
   <script type="module">
-    import { OpenPlans } from './../src/index.ts';
+    import { OpenPlans } from './../../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
     import Stats from 'stats.js';
     const stats = new Stats();
@@ -63,11 +63,11 @@
       const simpleWallFolder = gui.addFolder('Simple Wall');
       const simpleWallControls = {
         'Create Wall': () => {
-          wall = openPlans.simpleWall();
+          wall = openPlans.baseWall();
           wall.insertPoint(0, 0, 0);
           wall.insertPoint(5, 0, 4);
-          wall.insertPoint(10, 0, 0);
-          wall.insertPoint(10, 0, 10);
+          // wall.insertPoint(10, 0, 0);
+          // wall.insertPoint(10, 0, 10);
         },
         'createWallWithConfig': () => {
           const wallConfig = {
@@ -111,12 +111,12 @@
             ],
             "wallType": "exterior",
             "wallHeight": 0,
-            "wallThickness": 1,
+            "wallThickness": 2,
             "wallMaterial": "concrete",
             "id": "e98c9b2b-4257-45ff-a9b9-7bf0ae3cf55d",
           };
 
-          wall = openPlans.simpleWall(wallConfig);
+          wall = openPlans.baseWall(wallConfig);
         },
         'selected': false,
         'Get Config': () => {

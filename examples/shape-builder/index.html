@@ -6,7 +6,7 @@
 <html lang="en">
 
 <head>
-  <title>OpenPlan Board</title>
+  <title>OpenPlans Shapes</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -33,7 +33,7 @@
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
   <script type="module">
-    import { OpenPlans } from './../src/index.ts';
+    import { OpenPlans } from './../../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
     import Stats from 'stats.js';
     const stats = new Stats();
@@ -64,7 +64,7 @@
       const polyLineFolder = gui.addFolder('Poly Line');
       const polyLineControls = {
         'Create Polyline': () => {
-          polyline = openPlans.polyline();
+          polyline = openPlans.polylineBuilder();
           polyline.insertPoint(0, 0, 0);
           polyline.insertPoint(5, 0, 4);
           // polyline.insertPoint(10, 0, 0);
@@ -131,18 +131,21 @@
                 "z": 10
             }
           ];
-          polygon = openPlans.polygon();
+          polygon = openPlans.polygonBuilder();
           // WORKS
           // polygon.insertPoint(0, 0, 0);
           // polygon.insertPoint(5, 0, 4);
           // polygon.insertPoint(10, 0, 0);
           // polygon.insertPoint(5, 0, -4);
 
-          // TEST for Wall Breaking Polygon
-          testPoints.forEach(point => {
-            polygon.insertPoint(point.x, point.y, point.z);
-            console.log(`Inserted Point: (${point.x}, ${point.y}, ${point.z})`);
-          });
+          // TEST for Wall Breaking Polygon - BREAKS
+          // testPoints.forEach(point => {
+          //   polygon.insertPoint(point.x, point.y, point.z);
+          //   console.log(`Inserted Point: (${point.x}, ${point.y}, ${point.z})`);
+          // });
+
+          // TEST for the same above points using insertMultiplePoints - WORKS
+          polygon.insertMultiplePoints(testPoints.map(point => [point.x, point.y, point.z]));
         },
         'selected': false,
       };

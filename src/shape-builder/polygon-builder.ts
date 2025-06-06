@@ -4,8 +4,8 @@ import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { Pencil } from '../../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
-import { OPPolygonMesh } from '../elements/element-mesh';
 import { getKeyByValue } from '../utils/map-helper';
+import { PolygonShape } from '../shape/polygon-shape';
 
 export interface IPolygonBuilder {
   id?: string;
@@ -34,7 +34,7 @@ export interface IPolygonBuilder {
   }
 }
 
-export class PolygonBuilder extends OPPolygonMesh {
+export class PolygonBuilder extends PolygonShape {
   ogType = 'polygon';
 
   // Editing Properties
@@ -173,6 +173,7 @@ export class PolygonBuilder extends OPPolygonMesh {
     for (const point of points) {
       this.propertySet.coordinates.push([point[0], point[1], point[2]]);
     }
+    console.log('Inserted multiple points:', this.propertySet.coordinates);
     this.calculateCoordinatesByConfig();
   }
 

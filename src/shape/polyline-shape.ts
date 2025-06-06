@@ -7,13 +7,12 @@ import { PolyLine } from '../../kernel/dist';
  * If the element is moved outside the board, remove it from the board.
  */
 
-export abstract class OPLineMesh extends PolyLine{
+export abstract class PolyLineShape extends PolyLine{
   abstract ogType: string;
   abstract subNodes: Map<string, THREE.Object3D>;
   abstract _selected: boolean;
 
-  // TODO: Find a way to make this better and more generic
-  abstract propertySet: any;
+  abstract propertySet: Record<string, any>;
 
   abstract setOPConfig(config: Record<string, any>): void;
   abstract getOPConfig(): Record<string, any>;

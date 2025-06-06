@@ -2,7 +2,7 @@
  * Simple PolyLine class from Kernel
  */
 import * as THREE from 'three';
-import { OPLineMesh } from "../elements/element-line";
+import { PolyLineShape } from "../shape/polyline-shape";
 import { Vector3D } from '../../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
@@ -41,8 +41,8 @@ export interface OPWall {
   coordinates: Array<[number, number, number]>;
 }
 
-export class SimpleWall extends OPLineMesh {
-  ogType: string = "OPWall";
+export class BaseWall extends PolyLineShape {
+  ogType: string = "baseWall";
 
   // Wall Child Nodes
   // string is edge number in brep, Object3D is the wall mesh

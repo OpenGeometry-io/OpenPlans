@@ -1,6 +1,5 @@
-Elements extends one major ShapeBuilder which acts as a base for that element.
-Since ShapeBuilder comes with Editing Capabilities, that ShapeBuilder would modify the element as well.
-Rule - Every Element is extended from a ShapeBuilder.
+Elements extends one major Shape and has one or more ShapeBuilder.
+Major shape is the base shape and commands the element's geometry.
 
 # Element 
 List of Elements

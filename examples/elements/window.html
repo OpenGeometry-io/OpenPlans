@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>OpenPlan Door</title>
+  <title>OpenPlan Window</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -21,7 +21,7 @@
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
   <script type="module">
-    import { OpenPlans } from './../src/index.ts';
+    import { OpenPlans } from './../../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
@@ -33,29 +33,33 @@
 
       openPlans.pencil.mode = "select";
 
-      const door = openPlans.door();
-      door.position.set(-2, 0, 0);
+      const window = openPlans.window();
+      // window.position.set(-2, 0, 0);
     }
 
     function setUI() {
       const gui = new GUI();
-      const doorFolder = gui.addFolder('Door');
-      const doorControls = {
+      const windowFolder = gui.addFolder('window');
+      const windowControls = {
         'rotation': 1,
         'color': '#adb5bd',
         'quadrant': 1,
+        'windowLength': 2,
       };
-      const doors = openPlans.getEntitiesByType('door');
-      doors.forEach((door) => {
-        const subDoor = doorFolder.addFolder(door.name);
-        subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
-          door.doorColor = value;
+      const windows = openPlans.getEntitiesByType('window');
+      windows.forEach((window) => {
+        const subwindow = windowFolder.addFolder(window.name);
+        subwindow.addColor(windowControls, 'color').name('Color').onChange((value) => {
+          window.windowColor = value;
         });
-        subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
-          door.doorRotation = value;
+        subwindow.add(windowControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+          window.windowRotation = value;
         });
-        subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
-          door.doorQudrant = value;
+        subwindow.add(windowControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+          window.windowQudrant = value;
+        });
+        subwindow.add(windowControls, 'windowLength', 2, 5).name('Length').onChange((value) => {
+          window.windowLength = value;
         });
       });
     }

@@ -21,9 +21,17 @@
         text-align: center;
       }
 
-      #container {
-        display: block;
-        padding: 20px;
+      .container-holder {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+      }
+
+      .container {
+        flex: 1 1 300px;
+        max-width: 500px;
+        box-sizing: border-box;
       }
 
       .container-card {
@@ -49,35 +57,49 @@
   </head>
   <body>
     <h1>OpenPlans Examples</h1>
-    <div id="container">
-      <div class="container-card">
-        <h2>Simple Door</h2>
-        <a href="./examples/door.html">View Example</a>
+
+    <div class="container-holder">
+
+      <div class="container">
+        <h2>Shape Builder</h2>
+        <div class="container-card">
+          <h2>Shapes</h2>
+          <a href="./examples/shape-builder/index.html">View Example</a>
+        </div>
       </div>
-      <div class="container-card">
-        <h2>Simple Window</h2>
-        <a href="./examples/window.html">View Example</a>
+
+      <div class="container">
+        <h2>Elements</h2>
+        <div class="container-card">
+          <h2>Simple Door</h2>
+          <a href="./examples/elements/door.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>Simple Window</h2>
+          <a href="./examples/elements/window.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>Double Window</h2>
+          <a href="./examples/elements/doubleWindow.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>Wall</h2>
+          <a href="./examples/elements/simpleWall.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>JSON Generated Plans</h2>
+          <a href="./examples/object-Generated-Plans/jsonGeneratedPlans.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>Paper Frame</h2>
+          <a href="./examples/drawings/paper.html">View Example</a>
+        </div>
+        <div class="container-card">
+          <h2>Drawing Board</h2>
+          <a href="./examples/elements/board.html">View Example</a>
+        </div>
       </div>
-      <div class="container-card">
-        <h2>Wall</h2>
-        <a href="./examples/wall.html">View Example</a>
-      </div>
-      <div class="container-card">
-        <h2>Space</h2>
-        <a href="./examples/spaceContainer.html">View Example</a>
-      </div>
-      <div class="container-card">
-        <h2>JSON Generated Plans</h2>
-        <a href="./examples/object-Generated-Plans/jsonGeneratedPlans.html">View Example</a>
-      </div>
-      <div class="container-card">
-        <h2>Paper Frame</h2>
-        <a href="./examples/drawings/paper.html">View Example</a>
-      </div>
-      <div class="container-card">
-        <h2>Drawing Board</h2>
-        <a href="./examples/board.html">View Example</a>
-      </div>
-    </div>
+    
+    </div> 
   </body>
 </html>

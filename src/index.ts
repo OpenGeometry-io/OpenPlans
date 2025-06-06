@@ -2,7 +2,6 @@ import { OpenGeometry } from '../kernel/dist';
 import { Pencil, PencilMode } from '../kernel/dist/src/pencil';
 import { BaseDoor } from './elements/base-door';
 import { BaseSpace } from './elements/base-spaces';
-import { OPDoor, OPSpace, OPWall } from './elements/base-types';
 import { BaseWindow } from './elements/base-window';
 import { DoubleWindow } from './elements/double-window';
 import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
@@ -22,13 +21,14 @@ import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
-import { SimpleWall } from './elements/op-wall';
+import { BaseWall } from './elements/base-wall';
+import { IBaseWall } from './base-type';
 
 export class OpenPlans {
   private container: HTMLElement
   private openThree: OpenThree
   static sOThree: OpenThree;
-
+ 
   private pencil: Pencil | undefined
   private planCamera: PlanCamera
 
@@ -58,9 +58,9 @@ export class OpenPlans {
 
     for (const element of this.ogElements) {
       if (
-        element.ogType === 'OPPolyLine' || 
-        element.ogType === 'OPPolygon' ||
-        element.ogType === 'OPWall'
+        element.ogType === 'polyline' || 
+        element.ogType === 'polygon' ||
+        element.ogType === 'baseWall'
       ) {
         element.calulateAnchorEdges(true);
       }
@@ -83,37 +83,11 @@ export class OpenPlans {
     });
   }
 
-  drawDoorByPencil(enabled: boolean) {
-    if (!this.pencil) return
-
-    if (enabled) {
-      this.pencil.mode = 'cursor';
-      this.pencil.onCursorDown.add((coords) => {
-        console.log('Cursor Down', coords);
-      });
-    } else {
-      this.pencil.mode = 'select';
-    }
-  }
-
-  drawDoubleWindowByPencil(enabled: boolean) {
-    if (!this.pencil) return
-
-    if (enabled) {
-      this.pencil.mode = 'cursor';
-      this.pencil.onCursorDown.add((coords) => {
-        console.log('Cursor Down', coords);
-      });
-    } else {
-      this.pencil.mode = 'select';
-    }
-  }
-
-  simpleWall(config: OPWall): SimpleWall {
+  baseWall(config: IBaseWall): BaseWall {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const wall = new SimpleWall(config);
+    const wall = new BaseWall(config);
     wall.pencil = this.pencil;
     this.openThree.scene.add(wall)
     this.ogElements.push(wall)
@@ -172,6 +146,13 @@ export class OpenPlans {
     return board
   }
 
+  /***** Shape Builders *****/
+
+  /**
+   * Create Polyline using Interactive Builder
+   * @param polyLineConfig 
+   * @returns 
+   */
   polylineBuilder(polyLineConfig?: IPolylineBuilder): PolylineBuilder {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
@@ -193,6 +174,8 @@ export class OpenPlans {
     this.ogElements.push(polygonBuilder)
     return polygonBuilder
   }
+
+  /***** Utilities *****/
 
   getEntitiesByType(type: string) {
     return this.ogElements.filter((el) => el.ogType === type)
@@ -305,11 +288,6 @@ export class OpenPlans {
     this.ogElements.push(paperFrame)
     return paperFrame
   }
-
-  // infoBlock() {
-  //   const infoBlock = new InfoBlock()
-  //   return infoBlock
-  // }
 
   logoInfoBlock(options:LogoInfoBlockOptions) {
     const logoBlock = new LogoInfoBlock(options);
