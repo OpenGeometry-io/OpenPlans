@@ -1,6 +1,5 @@
 import { OpenGeometry } from '../kernel/dist';
 import { Pencil, PencilMode } from '../kernel/dist/src/pencil';
-import { BaseDoor } from './elements/base-door';
 import { BaseSpace } from './elements/base-spaces';
 import { BaseWindow } from './elements/base-window';
 import { DoubleWindow } from './elements/double-window';
@@ -23,7 +22,7 @@ import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
 import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
-import { OPDoor, SimpleDoor } from './elements/simple-door';
+import { OPDoor, BaseDoor } from './elements/base-door';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -106,24 +105,13 @@ export class OpenPlans {
     return wall
   }
 
-  simpleDoor(config: OPDoor): SimpleDoor {
+  baseDoor(config: OPDoor): BaseDoor {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const door = new SimpleDoor(config);
+    const door = new BaseDoor(config);
     door.pencil = this.pencil;
     // door.doorColor = 0xadb5bd;
-    this.openThree.scene.add(door)
-    this.ogElements.push(door)
-    return door
-  }
-
-  door(): BaseDoor {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized')
-    }
-    const door = new BaseDoor(this.pencil)
-    door.doorColor = 0xadb5bd;
     this.openThree.scene.add(door)
     this.ogElements.push(door)
     return door

@@ -1,213 +1,142 @@
 import {
-  Polygon
+  Polygon,
+  Vector3D
 } from '../../kernel/dist';
 import * as THREE from 'three';
 import { Pencil } from '../../kernel/dist/src/pencil';
-import { OPDoor } from './base-types';
+import { PolyLineShape } from '../shape/polyline-shape';
+import { PolygonBuilder } from '../shape-builder/polygon-builder';
 
-/**
- * TODO: Door Needs To Have A Start And End Point like Walls
- * It's much better to have a start and end point for the door
- */
+export type DoorType = 'GLASS' | 'WOOD' | 'DOUBLEDOOR' | 'SLIDING' | 'FOLDING' | 'DOUBLEACTION' | 'OTHER';
+export type DoorMaterial = 'GLASS' | 'WOOD' | 'METAL' | 'PLASTIC' | 'COMPOSITE' | 'OTHER';
 
-const DoorSet = {
-  id: 0,
-  position: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  anchor: {
+export interface OPDoor {
+  id?: string;
+  labelName: string;
+  type: 'door';
+  dimensions: {
     start: {
-      x: -1,
-      y: 0,
-      z: 0,
-    },
+      x: number;
+      y: number;
+      z: number;
+    };
     end: {
-      x: 1,
-      y: 0,
-      z: 0,
-    }
-  },
-  thickness: 0.25 / 2,
-  halfThickness: 0.125 / 2,
-  hingeColor: 0x000000,
-  hingeThickness: 0.125,
-  doorColor: 0x000000,
+      x: number;
+      y: number;
+      z: number;
+    };
+    length: number;
+  };
+  doorPosition: [number, number, number];
+  doorType: DoorType;
+  doorHeight: number;
+  doorThickness: number;
+  doorMaterial: string;
+  doorColor: number;
+  hingeColor: number;
+  doorRotation: number;
+  doorQuadrant: number;
+  coordinates: Array<[number, number, number]>;
 }
 
-interface ShadowMesh {
-  hinge: THREE.Mesh;
-  door: THREE.Mesh;
-}
+export class BaseDoor extends PolyLineShape {
+  ogType: string = 'baseDoor';
 
-interface DoorSetMesh {
-  id: number;
-  shadowMesh: ShadowMesh;
-  startSphere: THREE.Mesh;
-  endSphere: THREE.Mesh;
-}
+  subChild: Map<string, THREE.Object3D> = new Map();
 
+  subNodes: Map<string, THREE.Object3D> = new Map();
+  subEdges: Map<string, THREE.Object3D> = new Map();
 
-export class BaseDoor extends Polygon {
-  public ogType = 'door';
-  mesh: Polygon | null = null;
+  editorNodes: Map<string, number> = new Map();
+  editorEdges: Map<string, number> = new Map();
+  activeNode: string | null = null;
+  activeEdge: string | null = null;
 
-  private doorSetMesh: DoorSetMesh = {} as DoorSetMesh;
-  private doorSet: OPDoor;
-  private doorMesh : { [key: string]: THREE.Mesh | THREE.Line } = {};
+  initialCursorPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  brepRaw: string | null = null;
+  
+  _selected: boolean = false;
+  _pencil: Pencil | null = null;
 
-  activeSphere: string | undefined;
-  isEditing = false;
-  activeId: string | undefined;
+  propertySet: OPDoor = {
+    type: 'door',
+    labelName: 'Simple Door',
+    dimensions: {
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0, y: 0, z: 0 },
+      length: 2,
+    },
+    doorPosition: [0, 0, 0],
+    doorType: 'WOOD',
+    doorHeight: 0,
+    doorThickness: 0.2,
+    doorMaterial: 'WOOD',
+    doorColor: 0x8B4513,
+    hingeColor: 0x000000,
+    doorRotation: 1.5,
+    doorQuadrant: 1,
+    // Coordinates is a calulated property, not set by user
+    coordinates: [],
+  };
 
-  constructor(private pencil: Pencil, private initialDoorSet?: OPDoor) {
-    super();
-    if (this.initialDoorSet) {
-      this.doorSet = this.initialDoorSet;
-    } else {
-      this.doorSet = DoorSet;
-    }
-
-    this.setGeometry();
-    // this.setupEvents();
+  set selected(value: boolean) {
+    // if (value) {
+    //   this.material = new THREE.LineBasicMaterial({ color: 0x4460FF });
+    //   this.addAnchorPointsOnSelection();
+    //   this.addAnchorEdgesOnSelection();
+    // }
+    // else {
+    //   this.material = new THREE.LineBasicMaterial({ color: this.propertySet.color });
+    //   this.clearAnchorPoints();
+    //   this.clearAnchorEdges();
+    // }
+    // this._selected = value;
   }
 
-  /**
-   * If A User Has A Wall Set, We Will Use It
-   */
-  setupSet() {
-    if (!this.doorSetMesh) return;
+  get selected() {
+    return this._selected;
   }
 
-  private setGeometry() {
-    if (!this.doorSetMesh) return;
-
-    const { start, end } = this.doorSet.anchor;
-    const hingeThickness = this.doorSet.hingeThickness;
-
-    const hingeGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-hingeThickness, 0, -hingeThickness),
-      new THREE.Vector3(-hingeThickness, 0, hingeThickness),
-      new THREE.Vector3(hingeThickness, 0, hingeThickness ),
-      new THREE.Vector3(hingeThickness, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0, -hingeThickness)
-    ]);
-    hingeGeo.setIndex([
-      0, 1, 2,
-      0, 4, 5,
-      4, 2, 3,
-    ]);
-    hingeGeo.computeVertexNormals();
-    const hingeMat = new THREE.MeshBasicMaterial({ color: this.doorSet.hingeColor, side: THREE.DoubleSide });
-    const hinge = new THREE.Mesh(hingeGeo, hingeMat);
-    hinge.position.set(start.x + hingeThickness, start.y, start.z);
-    hinge.name = 'hingeStart';
-    this.add(hinge);
-
-    // Hinge End
-    const hingeEnd = hinge.clone().rotateZ(Math.PI);
-    hingeEnd.position.set(end.x - hingeThickness, end.y, end.z);
-    hingeEnd.name = 'hingeEnd';
-    this.add(hingeEnd);
-
-    // Door
-    const doorThickness = this.doorSet.thickness / 2;
-    const doorGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(start.x + doorThickness * 2, start.y, start.z - doorThickness),
-      new THREE.Vector3(start.x + doorThickness * 2, start.y, start.z + doorThickness),
-      new THREE.Vector3(end.x - doorThickness * 2, end.y, end.z + doorThickness),
-      new THREE.Vector3(end.x - doorThickness * 2, end.y, end.z - doorThickness),
-    ]);
-    doorGeo.setIndex([ 0, 1, 2, 0, 2, 3 ]);
-    doorGeo.computeVertexNormals();
-    doorGeo.computeBoundingBox();
-    const doorMat = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-    const door = new THREE.Mesh(doorGeo, doorMat);
-    door.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
-
-    const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
-    const hingeClipMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
-    const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
-    hingeClipMesh.position.set(0, 0, -hingeThickness);
-    hinge.add(hingeClipMesh);
-
-    const doorGroup = new THREE.Group();
-    doorGroup.position.set(0, 0, 0);
-    hingeClipMesh.add(doorGroup);
-    doorGroup.add(door);
-    doorGroup.rotation.y = Math.PI / -1.2;
-    doorGroup.name = 'doorGroup';
-    
-    // this.add(door);
-    // door.name = 'doorGroup';
-
-    const doorEdge = new THREE.EdgesGeometry(doorGeo);
-    const doorEdgeMat = new THREE.LineBasicMaterial({ color: 0x000000 });
-    const doorEdgeMesh = new THREE.LineSegments(doorEdge, doorEdgeMat);
-    doorEdgeMesh.name = 'doorEdge';
-    door.add(doorEdgeMesh);
-
-    const doorArcStart = new THREE.SphereGeometry(0.01, 32, 32);
-    const doorArcStartMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const doorArcStartMesh = new THREE.Mesh(doorArcStart, doorArcStartMat);
-    // doorArcStartMesh.position.set(end.x - doorThickness * 2, start.y, start.z);
-    doorArcStartMesh.name = 'doorArcStart';
-    // hingeEnd.add(doorArcStartMesh);
-
-    const doorArcEnd = new THREE.SphereGeometry(0.02, 32, 32);
-    const doorArcEndMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    const doorArcEndMesh = new THREE.Mesh(doorArcEnd, doorArcEndMat);
-    doorArcEndMesh.position.set(start.x + doorThickness * 2, start.y, start.z - doorThickness);
-    // door.add(doorArcEndMesh);
-    
-    const circle = new THREE.EllipseCurve(
-      0, 0, 
-      hinge.position.x - hingeEnd.position.x, hinge.position.x - hingeEnd.position.x,
-      Math.PI, Math.PI / 1.2,
-      true
-    );
-    const circleMat = new THREE.LineBasicMaterial({ color: 0x000000 });
-    const circleGeo = new THREE.BufferGeometry().setFromPoints(circle.getPoints(32));
-    const circleMesh = new THREE.Line(circleGeo, circleMat);
-    circleMesh.position.set(0, 0, -hingeThickness);
-    circleMesh.rotateX(Math.PI / 2);
-    hinge.add(circleMesh);
-    this.doorMesh['circle'] = circleMesh;
-    this.doorMesh['door'] = door;
-    this.doorMesh['hinge'] = hinge;
-    this.doorMesh['hingeEnd'] = hingeEnd;
-
-    this.name = `door`+this.ogid;
+  set labelName(value: string) {
+    this.propertySet.labelName = value;
   }
 
-  set doorRotation(value: number) {
-    const door = this.getObjectByName('doorGroup');
-    if (!door) return;
-    if (value < 1 || value > 2) return;
-    door.rotation.y = -Math.PI / value;
+  get labelName() {
+    return this.propertySet.labelName;
+  }
 
-    const circle = this.doorMesh['circle'];
-    if (!circle) return;
-
-    const circleGeo = new THREE.EllipseCurve(
-      0, 0, 
-      this.doorMesh['hinge'].position.x - this.doorMesh['hingeEnd'].position.x, this.doorMesh['hinge'].position.x - this.doorMesh['hingeEnd'].position.x,
-      Math.PI, Math.PI / value,
-      true,
-    );
-    circle.geometry.dispose();
-    circle.geometry = new THREE.BufferGeometry().setFromPoints(circleGeo.getPoints(32));
+  set doorThickness(value: number) {
+    this.propertySet.doorThickness = value;
   }
 
   set doorColor(value: number) {
-    const door = this.doorMesh['door'];
-    if (!door) return;
-    (door.material as THREE.MeshBasicMaterial).color.set(value);
+    this.propertySet.doorColor = value;
+    const doorPolygon = this.subChild.get('doorPolygon');
+    if (doorPolygon && doorPolygon instanceof PolygonBuilder) {
+      const material = new THREE.MeshBasicMaterial({
+        color: value,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      doorPolygon.material = material;
+    }
   }
 
-  set doorQudrant(value: number) {
+  set doorRotation(value: number) {
+    this.propertySet.doorRotation = value;
+
+    const doorGroup = this.subChild.get('doorGroup');
+    if (!doorGroup) return;
+    if (value < 1 || value > 2) return;
+    doorGroup.rotation.y = Math.PI / -value;
+
+    // const hingeArc = this.subChild.get('hingeArc');
+    // if (!hingeArc) return;
+
+    this.createHingeDoorArc();
+  }
+
+  set doorQuadrant(value: number) {
     if (value < 1 || value > 4) return;
     switch (value) {
       case 1:
@@ -231,128 +160,226 @@ export class BaseDoor extends Polygon {
     }
   }
 
-  private handleElementSelected(mesh: THREE.Mesh) {
-    this.isEditing = true;
-    if (mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
-      this.activeId = mesh.name;
+  set hingeColor(value: number) {
+    this.propertySet.hingeColor = value;
+  }
+
+  set doorPosition(point: [number, number, number]) {
+    this.propertySet.doorPosition = point;
+    this.position.set(point[0], point[1], point[2]);
+  }
+
+  set pencil(pencil: Pencil) {
+    // this._pencil = pencil;
+
+    // this.pencil.onCursorMove.add((coords) => {
+    //   this.handlePencilCursorMove(coords);
+    // });
+
+    // this.pencil.onCursorDown.add((coords) => {
+    //   this.initialCursorPos = coords;
+    // });
+  }
+
+  constructor(baseDoorConfig?: OPDoor) {
+    super();
+    if (baseDoorConfig) {
+      this.setOPConfig(baseDoorConfig);
+      this.calculateCoordinatesByConfig();
+
+      this.brepRaw = this.getBrepData();
+      this.createDoorAndHinge();
+
+      this.doorPosition = this.propertySet.doorPosition;
+      this.doorQuadrant = this.propertySet.doorQuadrant;
+    } else {
+      this.propertySet.id = this.ogid;
+      this.calculateCoordinatesByConfig();
+
+      this.brepRaw = this.getBrepData();
+      this.createDoorAndHinge();
     }
-    this.pencil.mode = "cursor";
   }
 
-  private handleCursorMove(cursorPosition: THREE.Vector3) {
-    if (!this.isEditing) return;
+  calculateCoordinatesByConfig() {
+    this.propertySet.dimensions.start.x = -this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.start.y = 0;
+    this.propertySet.dimensions.start.z = 0;
 
-    if (this.activeId) {
-      const worldToLocal = this.worldToLocal(cursorPosition);
-      // this.wallSetMesh[this.activeId].position.set(worldToLocal.x, 0, worldToLocal.z);
+    this.propertySet.dimensions.end.x = this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.end.y = 0;
+    this.propertySet.dimensions.end.z = 0;
+
+    // Clear previous coordinates
+    this.propertySet.coordinates = [];
+    this.propertySet.coordinates.push(
+      [this.propertySet.dimensions.start.x, this.propertySet.dimensions.start.y, this.propertySet.dimensions.start.z],
+      [this.propertySet.dimensions.end.x, this.propertySet.dimensions.end.y, this.propertySet.dimensions.end.z],
+    );
+
+    this.setOPGeometry();
+    this.setOPMaterial();
+  }
+
+  private createHingeDoorArc() {
+    const hingeArc = this.subChild.get('hingeArc');
+    if (hingeArc) {
+      hingeArc.removeFromParent();
+      this.subChild.delete('hingeArc');
     }
-  }
 
-  setupEvents() {
-    this.pencil.onElementSelected.add((mesh) => {
-      if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
-        this.handleElementSelected(mesh);
-      }
-    });
+    const { start, end } = this.propertySet.dimensions;
+    const thickness = this.propertySet.doorThickness / 2;
 
-    this.pencil.onElementHover.add((mesh) => {
-      if (mesh.name === 'wall'+this.ogid || mesh.name === 'start'+this.ogid || mesh.name === 'end'+this.ogid) {
-        // TODO: Change Cursor Colors on Hover
-      }
-    });
-
-    this.pencil.onCursorMove.add((point) => {
-      this.handleCursorMove(point);
-    });
-
-    this.pencil.onCursorDown.add((point) => {
-      if (!this.isEditing) return;
-      setTimeout(() => {
-        // this.isEditing = false;
-        // this.activeId = undefined;
-        // this.pencil.mode = "select";
-        // if (!this.wallSetMesh) return;
-
-        // const startSphere = `start`+this.ogid;
-        // const endSphere = `end`+this.ogid;
-
-        // const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(
-        //   this.wallSetMesh[startSphere].position,
-        //   this.wallSetMesh[endSphere].position,
-        //   this.wallSet.halfThickness
-        // );
-
-        // const vertices = [
-        //   new Vector3D(startLeft.x, startLeft.y, startLeft.z),
-        //   new Vector3D(startRight.x, startRight.y, startRight.z),
-        //   new Vector3D(endRight.x, endRight.y, endRight.z),
-        //   new Vector3D(endLeft.x, endLeft.y, endLeft.z),
-        // ];
-
-        // this.resetVertices();
-        // this.addVertices(vertices);
-        // this.material = new THREE.MeshToonMaterial({ wireframe: true, color: 0x000000 });
-      }, 100);
-    });
-  }
-
-  set halfThickness(value: number) {
+    const arc = new THREE.EllipseCurve(
+      0, 0, 
+      start.x - end.x, start.x - end.x - thickness,
+      Math.PI, Math.PI / this.propertySet.doorRotation,
+      true
+    );
+    const arcMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const arcGeo = new THREE.BufferGeometry().setFromPoints(arc.getPoints(32));
+    const arcMesh = new THREE.Line(arcGeo, arcMat);
+    arcMesh.position.set(0, 0, -thickness);
+    arcMesh.rotateX(Math.PI / 2);
+    this.subChild.set('hingeArc', arcMesh);
     
+    const hingeLeft = this.subChild.get('hingeLeftPolygon');
+    hingeLeft?.add(arcMesh);
   }
 
-  generateShadowGeometry(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
-    const { startLeft, startRight, endLeft, endRight } = this.getOuterCoordinates(start, end, halfThickness);
+  private createDoorAndHinge() {
+    const { start, end } = this.propertySet.dimensions;
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      startRight.x, startRight.y, startRight.z,
-      startLeft.x, startLeft.y, startLeft.z,
-      endRight.x, endRight.y, endRight.z,
+    const { hingeLeft, hingeRight } = this.createHingePolygon();
+    hingeLeft.position.set(start.x, start.y, start.z);
+    hingeRight.position.set(end.x, end.y, end.z);
 
-      startLeft.x, startLeft.y, startLeft.z,
-      endLeft.x, endLeft.y, endLeft.z,
-      endRight.x, endRight.y, endRight.z,
-    ]), 3));
-    geometry.computeVertexNormals();
-    // TODO: Add UVs
-    geometry.attributes.uv = new THREE.BufferAttribute(new Float32Array([
-      0, 0,
-      1, 0,
-      0, 1,
-      1, 0,
-      1, 1,
-      0, 1,
-    ]), 2);
-    geometry.attributes.uv.needsUpdate = true;
-    return geometry;
+    const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
+    const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
+    hingeClipMesh.position.set(0, 0, -this.propertySet.doorThickness);
+    this.subChild.set('hingeClipMesh', hingeClipMesh);
+    hingeLeft.add(hingeClipMesh);
+
+    const doorPolygon = this.createDoorPolygon();
+    doorPolygon.position.set(start.x, start.y, start.z - this.propertySet.doorThickness / 2);
+    
+    const doorGroup = new THREE.Group();
+    doorGroup.position.set(0, 0, 0);
+    hingeClipMesh.add(doorGroup);
+    doorGroup.add(doorPolygon);
+    doorGroup.rotation.y = Math.PI / -this.propertySet.doorRotation;
+    this.subChild.set('doorGroup', doorGroup);
+
+    this.createHingeDoorArc();
   }
 
-  getOuterCoordinates(start: THREE.Vector3, end: THREE.Vector3, halfThickness: number) {
-    const perpendicular = this.getPerpendicularVector(start, end);
-    const startLeft = start.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
-    const startRight = start.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
-    const endLeft = end.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
-    const endRight = end.clone().add(perpendicular.clone().multiplyScalar(-halfThickness));
+  private createHingePolygon() {
+    const doorThickness = this.propertySet.doorThickness;
+    const halfDoorThickness = doorThickness / 2;
+    const points: Array<[number, number, number]> = [];
+    points.push(
+      [-halfDoorThickness, 0, -doorThickness],
+      [-halfDoorThickness, 0, doorThickness],
+      [halfDoorThickness, 0, doorThickness],
+      [halfDoorThickness, 0, 0],
+      [0, 0, 0],
+      [0, 0, -doorThickness]
+    )
+    const hingePolygon = new PolygonBuilder();
+    hingePolygon.insertMultiplePoints(points);
+    hingePolygon.material = new THREE.MeshBasicMaterial({
+      color: this.propertySet.hingeColor,
+      side: THREE.DoubleSide,
+      depthWrite: true
+    });
+    this.subChild.set('hingeLeftPolygon', hingePolygon);
+    this.add(hingePolygon);
+
+    const hingeRight = hingePolygon.clone().rotateZ(Math.PI);
+    this.subChild.set('hingeRightPolygon', hingeRight);
+    this.add(hingeRight);
+
     return {
-      startLeft,
-      startRight,
-      endLeft,
-      endRight,
+      hingeLeft: hingePolygon,
+      hingeRight: hingeRight,
     };
   }
 
-  getPerpendicularVector(start: THREE.Vector3, end: THREE.Vector3) {
-    const vector = new THREE.Vector3().subVectors(end, start);
-    const perpendicular = new THREE.Vector3().crossVectors(vector, new THREE.Vector3(0, 1, 0));
-    return perpendicular.normalize();
+  private createDoorPolygon() {
+    const { start, end } = this.propertySet.dimensions;
+    const thickness = this.propertySet.doorThickness / 2;
+    const points: Array<[number, number, number]> = [];
+    // points.push(
+    //   [start.x + thickness, start.y, start.z - thickness],
+    //   [start.x + thickness, start.y, start.z + thickness],
+    //   [end.x - thickness, end.y, end.z + thickness],
+    //   [end.x - thickness, end.y, end.z - thickness]
+    // );
+    points.push(
+      [start.x, start.y, start.z - thickness],
+      [start.x, start.y, start.z + thickness],
+      [end.x, end.y, end.z + thickness],
+      [end.x, end.y, end.z - thickness]
+    );
+
+    console.log('Door points:', points);
+    
+    const doorPolygon = new PolygonBuilder();
+    doorPolygon.insertMultiplePoints(points);
+    doorPolygon.material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+    });
+    this.subChild.set('doorPolygon', doorPolygon);
+    
+    this.add(doorPolygon);
+    
+    return doorPolygon;
   }
 
-  get area() {
-    const wallDim = {
-      area: 4,
-      perimeter: 0
-    };
+  setOPConfig(config: OPDoor): void {
+    this.propertySet = config;
+  }
 
-    return wallDim.area;
+  getOPConfig(): OPDoor {
+    return this.propertySet;
+  }
+
+  setOPGeometry(): void {
+    const { coordinates } = this.propertySet;
+    const points = coordinates.map(coord => new Vector3D(coord[0], coord[1], coord[2]));
+    this.addMultiplePoints(points);
+  }
+
+  setOPMaterial() {
+    this.material = new THREE.LineBasicMaterial({ color: 0x000000, depthWrite: false });
+    this.renderOrder = 1;
+  }
+
+  set wallMaterial(material: DoorMaterial) {
+    this.propertySet.doorMaterial = material;
+  }
+
+  dispose() {
+    this.geometry.dispose();
+    this.clear();
+    this.subChild.forEach((child) => {
+      if (child instanceof PolygonBuilder) {
+        child.dispose();
+      }
+
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        child.material.dispose();
+      }
+      this.remove(child);
+    });
+    this.subChild.clear();
+    this.removeFromParent();
+
+    super.dispose();
   }
 }

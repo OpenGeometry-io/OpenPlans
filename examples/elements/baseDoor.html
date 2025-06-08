@@ -37,7 +37,7 @@
 
       openPlans.pencil.mode = "select";
 
-      door = openPlans.simpleDoor();
+      door = openPlans.baseDoor();
       door.doorPosition = [-2, 0, 0];
     }
 
@@ -109,7 +109,7 @@
             "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"
           };
           
-          door = openPlans.simpleDoor(preloadConfig);
+          door = openPlans.baseDoor(preloadConfig);
           console.log('Preloaded Door:', door);
         }
       };
