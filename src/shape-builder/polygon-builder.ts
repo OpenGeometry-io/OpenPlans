@@ -173,7 +173,6 @@ export class PolygonBuilder extends PolygonShape {
     for (const point of points) {
       this.propertySet.coordinates.push([point[0], point[1], point[2]]);
     }
-    console.log('Inserted multiple points:', this.propertySet.coordinates);
     this.calculateCoordinatesByConfig();
   }
 

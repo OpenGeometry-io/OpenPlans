@@ -129,9 +129,14 @@ export class SimpleDoor extends PolyLineShape {
     if (!doorGroup) return;
     if (value < 1 || value > 2) return;
     doorGroup.rotation.y = Math.PI / -value;
+
+    // const hingeArc = this.subChild.get('hingeArc');
+    // if (!hingeArc) return;
+
+    this.createHingeDoorArc();
   }
 
-  set doorQudrant(value: number) {
+  set doorQuadrant(value: number) {
     if (value < 1 || value > 4) return;
     switch (value) {
       case 1:
@@ -184,6 +189,9 @@ export class SimpleDoor extends PolyLineShape {
 
       this.brepRaw = this.getBrepData();
       this.createDoorAndHinge();
+
+      this.doorPosition = this.propertySet.doorPosition;
+      this.doorQuadrant = this.propertySet.doorQuadrant;
     } else {
       this.propertySet.id = this.ogid;
       this.calculateCoordinatesByConfig();
@@ -194,13 +202,13 @@ export class SimpleDoor extends PolyLineShape {
   }
 
   calculateCoordinatesByConfig() {
-    this.propertySet.dimensions.start.x = this.propertySet.doorPosition[0] - this.propertySet.dimensions.length / 2;
-    this.propertySet.dimensions.start.y = this.propertySet.doorPosition[1];
-    this.propertySet.dimensions.start.z = this.propertySet.doorPosition[2];
+    this.propertySet.dimensions.start.x = -this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.start.y = 0;
+    this.propertySet.dimensions.start.z = 0;
 
-    this.propertySet.dimensions.end.x = this.propertySet.doorPosition[0] + this.propertySet.dimensions.length / 2;
-    this.propertySet.dimensions.end.y = this.propertySet.doorPosition[1];
-    this.propertySet.dimensions.end.z = this.propertySet.doorPosition[2];
+    this.propertySet.dimensions.end.x = this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.end.y = 0;
+    this.propertySet.dimensions.end.z = 0;
 
     // Clear previous coordinates
     this.propertySet.coordinates = [];
@@ -211,6 +219,33 @@ export class SimpleDoor extends PolyLineShape {
 
     this.setOPGeometry();
     this.setOPMaterial();
+  }
+
+  private createHingeDoorArc() {
+    const hingeArc = this.subChild.get('hingeArc');
+    if (hingeArc) {
+      hingeArc.removeFromParent();
+      this.subChild.delete('hingeArc');
+    }
+
+    const { start, end } = this.propertySet.dimensions;
+    const thickness = this.propertySet.doorThickness / 2;
+
+    const arc = new THREE.EllipseCurve(
+      0, 0, 
+      start.x - end.x, start.x - end.x - thickness,
+      Math.PI, Math.PI / this.propertySet.doorRotation,
+      true
+    );
+    const arcMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const arcGeo = new THREE.BufferGeometry().setFromPoints(arc.getPoints(32));
+    const arcMesh = new THREE.Line(arcGeo, arcMat);
+    arcMesh.position.set(0, 0, -thickness);
+    arcMesh.rotateX(Math.PI / 2);
+    this.subChild.set('hingeArc', arcMesh);
+    
+    const hingeLeft = this.subChild.get('hingeLeftPolygon');
+    hingeLeft?.add(arcMesh);
   }
 
   private createDoorAndHinge() {
@@ -227,22 +262,22 @@ export class SimpleDoor extends PolyLineShape {
     this.subChild.set('hingeClipMesh', hingeClipMesh);
     hingeLeft.add(hingeClipMesh);
 
+    const doorPolygon = this.createDoorPolygon();
+    doorPolygon.position.set(start.x, start.y, start.z - this.propertySet.doorThickness / 2);
+    
     const doorGroup = new THREE.Group();
     doorGroup.position.set(0, 0, 0);
     hingeClipMesh.add(doorGroup);
-
-    const doorPolygon = this.createDoorPolygon();
-    doorPolygon.position.set(start.x, start.y, start.z - this.propertySet.doorThickness / 2);
-    this.subChild.set('doorGroup', doorGroup);
     doorGroup.add(doorPolygon);
     doorGroup.rotation.y = Math.PI / -this.propertySet.doorRotation;
+    this.subChild.set('doorGroup', doorGroup);
+
+    this.createHingeDoorArc();
   }
 
   private createHingePolygon() {
-    const { start, end } = this.propertySet.dimensions;
     const doorThickness = this.propertySet.doorThickness;
     const halfDoorThickness = doorThickness / 2;
-    console.log('Creating hinge polygon with start:', start, 'end:', end, 'doorThickness:', doorThickness, 'halfDoorThickness:', halfDoorThickness);
     const points: Array<[number, number, number]> = [];
     points.push(
       [-halfDoorThickness, 0, -doorThickness],
@@ -289,6 +324,8 @@ export class SimpleDoor extends PolyLineShape {
       [end.x, end.y, end.z - thickness]
     );
 
+    console.log('Door points:', points);
+    
     const doorPolygon = new PolygonBuilder();
     doorPolygon.insertMultiplePoints(points);
     doorPolygon.material = new THREE.MeshBasicMaterial({

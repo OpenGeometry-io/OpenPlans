@@ -23,7 +23,7 @@ import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
 import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
-import { SimpleDoor } from './elements/simple-door';
+import { OPDoor, SimpleDoor } from './elements/simple-door';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -106,11 +106,11 @@ export class OpenPlans {
     return wall
   }
 
-  simpleDoor(): SimpleDoor {
+  simpleDoor(config: OPDoor): SimpleDoor {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
     }
-    const door = new SimpleDoor();
+    const door = new SimpleDoor(config);
     door.pencil = this.pencil;
     // door.doorColor = 0xadb5bd;
     this.openThree.scene.add(door)

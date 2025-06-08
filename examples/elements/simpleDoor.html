@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>OpenPlan Door</title>
   <meta charset="utf-8">
@@ -11,12 +12,14 @@
       margin: 0;
       overflow: hidden;
     }
+
     #app {
       width: 100%;
       height: 100vh;
     }
   </style>
 </head>
+
 <body>
   <div id="app" style="width: 100%; height: 100vh;">
   </div>
@@ -57,7 +60,7 @@
           door.doorRotation = value;
         });
         subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
-          door.doorQudrant = value;
+          door.doorQuadrant = value;
         });
         subDoor.add({ config: () => {
           const config = door.getOPConfig();
@@ -67,7 +70,62 @@
           console.log('Disposing door:', door.ogid);
           openPlans.disposeElement(door.ogid);
         }}, 'dispose').name('Dispose');
-        });
+      });
+
+      const preloadFolder = gui.addFolder('Preload Door');
+      const preloadControls = {
+        'doorRotation': 1,
+        'preloadDoor': () => {
+          const preloadConfig = {
+            "type": "door",
+            "labelName": "Edited Door",
+            "dimensions": {
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "length": 2
+            },
+            "doorPosition": [
+              3,
+              0,
+              3
+            ],
+            "doorType": "WOOD",
+            "doorHeight": 0,
+            "doorThickness": 0.2,
+            "doorMaterial": "WOOD",
+            "doorColor": 9127187,
+            "hingeColor": 0,
+            "doorRotation": 1,
+            "doorQuadrant": 2,
+            "coordinates": [],
+            "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"
+          };
+          
+          door = openPlans.simpleDoor(preloadConfig);
+          console.log('Preloaded Door:', door);
+        }
+      };
+
+      preloadFolder.add(preloadControls, 'preloadDoor').name('Load Door By Config');
+      preloadFolder.add(preloadControls, 'doorRotation', 1, 2).name('Door Rotation').onChange((value) => {
+        if (door) {
+          door.doorRotation = value;
+        }
+      });
+      preloadFolder.add({ config: () => {
+        if (door) {
+          const config = door.getOPConfig();
+          console.log('Preloaded Door Config:', config);
+        }
+      }}, 'config').name('Get Preload Config');
     }
 
     (async function () {
@@ -76,4 +134,5 @@
     })();
   </script>
 </body>
+
 </html>
