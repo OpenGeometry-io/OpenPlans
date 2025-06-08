@@ -27,7 +27,10 @@ export interface OPBoard {
     },
     width: number;
     height: number;
-  }
+  },
+  // A Board can have multiple layers which are used to organize elements on the board
+  // For example, a board can have a layer for walls, a layer for furniture, etc.
+  layers?: string[];
 }
 
 // TODO: Use Polygon Shape instead of Polygon Mesh, which will provide us with editing capabilities

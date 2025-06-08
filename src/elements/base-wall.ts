@@ -631,4 +631,23 @@ export class BaseWall extends PolyLineShape {
       }
     }
   }
+
+  dispose(): void {
+    this.clearAnchorPoints();
+    this.clearAnchorEdges();
+
+    for (const child of this.subChild.values()) {
+      if (child instanceof PolygonBuilder) {
+        child.dispose();
+      }
+    }
+    this.subChild.clear();
+    
+    if (this.pencil) {
+      this.pencil.onCursorMove.remove((coords => this.handlePencilCursorMove(coords)));
+      this.pencil.onCursorDown.remove((coords => this.initialCursorPos = coords));
+    }
+
+    super.dispose();
+  }
 }

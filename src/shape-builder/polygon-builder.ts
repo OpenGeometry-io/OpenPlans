@@ -564,4 +564,22 @@ export class PolygonBuilder extends PolygonShape {
       }
     }
   }
+
+  dispose(): void {
+    console.log("Disposing PolygonBuilder");
+    this.clearAnchorPoints();
+    this.subEdges.forEach((edgeDiv, edgeId) => {
+      edgeDiv.removeEventListener('mousedown', (event) => this.onMouseDown(event));
+      edgeDiv.removeEventListener('mouseup', (event) => this.onMouseUp(event));
+      edgeDiv.removeEventListener('mousemove', (event) => this.onMouseMove(event));
+      edgeDiv.removeEventListener('mouseover', (event) => this.onMouseHover(event));
+      edgeDiv.remove();
+      this.editorEdges.delete(edgeId);
+    });
+    this.subEdges.clear();
+    this._pencil = null;
+
+    // Disposing OG - Polygon
+    super.dispose();
+  }
 }

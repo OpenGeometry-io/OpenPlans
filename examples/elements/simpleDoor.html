@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>OpenPlan Door</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let door;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "select";
+
+      door = openPlans.simpleDoor();
+      door.doorPosition = [-2, 0, 0];
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const doorFolder = gui.addFolder('Door');
+      const doorControls = {
+        'rotation': 1,
+        'color': '#adb5bd',
+        'quadrant': 1,
+      };
+      const doors = openPlans.getEntitiesByType('baseDoor');
+      doors.forEach((door) => {
+        console.log('Door:', door);
+        const subDoor = doorFolder.addFolder(door.labelName);
+        subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
+          door.doorColor = value;
+        });
+        subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+          door.doorRotation = value;
+        });
+        subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+          door.doorQudrant = value;
+        });
+        subDoor.add({ config: () => {
+          const config = door.getOPConfig();
+          console.log('Door Config:', config);
+        }}, 'config').name('Get Config');
+        subDoor.add({ dispose: () => {
+          console.log('Disposing door:', door.ogid);
+          openPlans.disposeElement(door.ogid);
+        }}, 'dispose').name('Dispose');
+        });
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+</html>

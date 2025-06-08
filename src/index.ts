@@ -23,6 +23,7 @@ import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
 import { Board, OPBoard } from './elements/board';
 import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
+import { SimpleDoor } from './elements/simple-door';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -83,6 +84,17 @@ export class OpenPlans {
     });
   }
 
+  disposeElement(ogid: string) {
+    const element = this.ogElements.find((el) => el.ogid === ogid);
+    if (element) {
+      element.dispose();
+      this.openThree.scene.remove(element);
+      this.ogElements.splice(this.ogElements.indexOf(element), 1);
+    } else {
+      console.warn(`Element with ogid ${ogid} not found`);
+    }
+  }
+
   baseWall(config: IBaseWall): BaseWall {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
@@ -92,6 +104,18 @@ export class OpenPlans {
     this.openThree.scene.add(wall)
     this.ogElements.push(wall)
     return wall
+  }
+
+  simpleDoor(): SimpleDoor {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const door = new SimpleDoor();
+    door.pencil = this.pencil;
+    // door.doorColor = 0xadb5bd;
+    this.openThree.scene.add(door)
+    this.ogElements.push(door)
+    return door
   }
 
   door(): BaseDoor {

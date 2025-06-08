@@ -536,4 +536,18 @@ export class PolylineBuilder extends PolyLineShape {
       }
     }
   }
+
+  dispose(): void {
+    console.log("Disposing OP - Polyline");
+    this.clearAnchorPoints();
+    this.clearAnchorEdges();
+
+    this.subNodes.clear();
+    this.subEdges.clear();
+    this.editorNodes.clear();
+    this.editorEdges.clear();
+
+    this.geometry.dispose();
+    super.dispose();
+  }
 }

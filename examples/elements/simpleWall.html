@@ -125,6 +125,16 @@
           } else {
             console.warn('No wall created yet.');
           }
+        },
+        'Get All Walls': () => {
+          const walls = openPlans.getEntitiesByType('baseWall');
+          console.log('All Walls:', walls);
+        },
+        'dispose': () => {
+          if (wall) {
+            console.log('Disposing Wall:', wall.ogid);
+            openPlans.disposeElement(wall.ogid);
+          }
         }
       };
 
@@ -136,6 +146,7 @@
         }
       });
       simpleWallFolder.add(simpleWallControls, 'Get Config').name('Get Config');
+      simpleWallFolder.add(simpleWallControls, 'Get All Walls').name('Get All Walls');
 
       document.body.appendChild(stats.dom);
     }
