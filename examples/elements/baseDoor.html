@@ -35,7 +35,7 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.pencil.mode = "select";
+      openPlans.pencil.mode = "cursor";
 
       door = openPlans.baseDoor();
       door.doorPosition = [-2, 0, 0];
@@ -48,6 +48,8 @@
         'rotation': 1,
         'color': '#adb5bd',
         'quadrant': 1,
+        'doorLength': 2,
+        'selected': false
       };
       const doors = openPlans.getEntitiesByType('baseDoor');
       doors.forEach((door) => {
@@ -62,6 +64,12 @@
         subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
           door.doorQuadrant = value;
         });
+        subDoor.add(doorControls, 'doorLength', 2, 5).name('Length').onChange((value) => {
+          door.doorLength = value;
+        });
+        subDoor.add(doorControls, 'selected').name('Selected').onChange((value) => {
+          door.selected = value;
+        });
         subDoor.add({ config: () => {
           const config = door.getOPConfig();
           console.log('Door Config:', config);
@@ -75,6 +83,7 @@
       const preloadFolder = gui.addFolder('Preload Door');
       const preloadControls = {
         'doorRotation': 1,
+        'selected': false,
         'preloadDoor': () => {
           const preloadConfig = {
             "type": "door",
@@ -118,6 +127,11 @@
       preloadFolder.add(preloadControls, 'doorRotation', 1, 2).name('Door Rotation').onChange((value) => {
         if (door) {
           door.doorRotation = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'selected').name('Selected').onChange((value) => {
+        if (door) {
+          door.selected = value;
         }
       });
       preloadFolder.add({ config: () => {

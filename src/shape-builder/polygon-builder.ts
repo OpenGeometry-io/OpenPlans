@@ -578,6 +578,8 @@ export class PolygonBuilder extends PolygonShape {
     this.subEdges.clear();
     this._pencil = null;
 
+    this.geometry.dispose();
+    (this.material as THREE.Material).dispose();
     // Disposing OG - Polygon
     super.dispose();
   }

@@ -66,9 +66,10 @@
           wall = openPlans.baseWall();
           wall.insertPoint(0, 0, 0);
           wall.insertPoint(5, 0, 4);
-          // wall.insertPoint(10, 0, 0);
+          wall.insertPoint(10, 0, 0);
           // wall.insertPoint(10, 0, 10);
         },
+        'wallThickness': 1,
         'createWallWithConfig': () => {
           const wallConfig = {
             "type": "wall",
@@ -115,10 +116,9 @@
             "wallMaterial": "concrete",
             "id": "e98c9b2b-4257-45ff-a9b9-7bf0ae3cf55d",
           };
-
           wall = openPlans.baseWall(wallConfig);
         },
-        'selected': false,
+        'edit': false,
         'Get Config': () => {
           if (wall) {
             console.log(wall.getOPConfig());
@@ -140,9 +140,14 @@
 
       simpleWallFolder.add(simpleWallControls, 'Create Wall');
       simpleWallFolder.add(simpleWallControls, 'createWallWithConfig').name('Create Wall with Config');
-      simpleWallFolder.add(simpleWallControls, 'selected').name('Selected').onChange((value) => {
+      simpleWallFolder.add(simpleWallControls, 'edit').name('Edit').onChange((value) => {
         if (wall) {
           wall.selected = value;
+        }
+      });
+      simpleWallFolder.add(simpleWallControls, 'wallThickness', 0.1, 5).name('Wall Thickness').onChange((value) => {
+        if (wall) {
+          wall.wallThickness = value;
         }
       });
       simpleWallFolder.add(simpleWallControls, 'Get Config').name('Get Config');

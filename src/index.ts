@@ -60,7 +60,8 @@ export class OpenPlans {
       if (
         element.ogType === 'polyline' || 
         element.ogType === 'polygon' ||
-        element.ogType === 'baseWall'
+        element.ogType === 'baseWall' ||
+        element.ogType === 'baseDoor'
       ) {
         element.calulateAnchorEdges(true);
       }
@@ -111,7 +112,6 @@ export class OpenPlans {
     }
     const door = new BaseDoor(config);
     door.pencil = this.pencil;
-    // door.doorColor = 0xadb5bd;
     this.openThree.scene.add(door)
     this.ogElements.push(door)
     return door
