@@ -50,6 +50,7 @@
         'color': '#adb5bd',
         'quadrant': 1,
         'doorLength': 2,
+        'doorThickness': 0.2,
         'selected': false
       };
       const doors = openPlans.getEntitiesByType('baseDoor');
@@ -67,6 +68,9 @@
         });
         subDoor.add(doorControls, 'doorLength', 2, 5).name('Length').onChange((value) => {
           door.doorLength = value;
+        });
+        subDoor.add(doorControls, 'doorThickness', 0.1, 1).name('Thickness').onChange((value) => {
+          door.doorThickness = value;
         });
         subDoor.add(doorControls, 'selected').name('Selected').onChange((value) => {
           door.selected = value;
@@ -113,7 +117,7 @@
             "doorMaterial": "WOOD",
             "doorColor": 9127187,
             "hingeColor": 0,
-            "doorRotation": 1,
+            "doorRotation": 1.5,
             "doorQuadrant": 2,
             "coordinates": [],
             "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"

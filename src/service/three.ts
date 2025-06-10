@@ -88,7 +88,9 @@ export class OpenThree {
 
     // Utils like Grid, Lights and Etc
     const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
-    const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
+    // const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
+    
+    const openGrid = new THREE.GridHelper(100, 100);
     // @ts-ignore
     this.scene.add(openGrid)
   }

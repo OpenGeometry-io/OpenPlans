@@ -1,7 +1,7 @@
 import { OpenGeometry } from '../kernel/dist';
 import { Pencil, PencilMode } from '../kernel/dist/src/pencil';
 import { BaseSpace } from './elements/base-spaces';
-import { BaseWindow } from './elements/base-window';
+
 import { DoubleWindow } from './elements/double-window';
 import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
 import { BuildingData } from './parser/IGraph';
@@ -23,6 +23,7 @@ import { Board, OPBoard } from './elements/board';
 import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
 import { OPDoor, BaseDoor } from './elements/base-door';
+import { OPWindow, BaseWindow } from './elements/base-window';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -61,7 +62,8 @@ export class OpenPlans {
         element.ogType === 'polyline' || 
         element.ogType === 'polygon' ||
         element.ogType === 'baseWall' ||
-        element.ogType === 'baseDoor'
+        element.ogType === 'baseDoor' ||
+        element.ogType === 'baseWindow'
       ) {
         element.calulateAnchorEdges(true);
       }
@@ -106,6 +108,17 @@ export class OpenPlans {
     return wall
   }
 
+  baseSingleWindow(config: OPWindow): BaseWindow {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized')
+    }
+    const window = new BaseWindow(config);
+    window.pencil = this.pencil;
+    this.openThree.scene.add(window)
+    this.ogElements.push(window)
+    return window
+  }
+
   baseDoor(config: OPDoor): BaseDoor {
     if (!this.pencil) {
       throw new Error('Pencil not initialized')
@@ -115,17 +128,6 @@ export class OpenPlans {
     this.openThree.scene.add(door)
     this.ogElements.push(door)
     return door
-  }
-
-  window(): BaseWindow {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized')
-    }
-    const window = new BaseWindow(this.pencil)
-    // window.windowColor = 0xadb5bd;
-    this.openThree.scene.add(window)
-    this.ogElements.push(window)
-    return window
   }
 
   space(): BaseSpace {

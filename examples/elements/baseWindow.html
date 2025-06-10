@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlan | Base Single Window</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let window;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "cursor";
+      // openPlans.pencil.mode = "select";
+
+      window = openPlans.baseSingleWindow();
+      // window.windowPosition = [-4, 0, 0];
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const windowFolder = gui.addFolder('window');
+      const windowControls = {
+        'color': '#adb5bd',
+        'windowLength': 2,
+        'windowThickness': 0.2,
+        'selected': false,
+        'hingeThickness': 0.1,
+      };
+      const windows = openPlans.getEntitiesByType('baseWindow');
+      windows.forEach((window) => {
+        console.log('window:', window);
+        const subwindow = windowFolder.addFolder(window.labelName);
+        subwindow.addColor(windowControls, 'color').name('Color').onChange((value) => {
+          window.windowColor = value;
+        });
+        subwindow.add(windowControls, 'windowLength', 2, 5).name('Length').onChange((value) => {
+          window.windowLength = value;
+        });
+        subwindow.add(windowControls, 'windowThickness', 0.1, 1).name('Thickness').onChange((value) => {
+          window.windowThickness = value;
+        });
+        subwindow.add(windowControls, 'hingeThickness', 0.1, 0.5).name('Hinge Thickness').onChange((value) => {
+          window.hingeThickness = value;
+        });
+        subwindow.add(windowControls, 'selected').name('Selected').onChange((value) => {
+          window.selected = value;
+        });
+        subwindow.add({ config: () => {
+          const config = window.getOPConfig();
+          console.log('window Config:', config);
+        }}, 'config').name('Get Config');
+        subwindow.add({ dispose: () => {
+          console.log('Disposing window:', window.ogid);
+          openPlans.disposeElement(window.ogid);
+        }}, 'dispose').name('Dispose');
+      });
+
+      const preloadFolder = gui.addFolder('Preload window');
+      const preloadControls = {
+        'windowLength': 2,
+        'selected': false,
+        'preloadwindow': () => {
+          const preloadConfig = {
+            "type": "baseWindow",
+            "labelName": "Edited Window",
+            "dimensions": {
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "length": 2
+            },
+            "windowPosition": [
+              3,
+              0,
+              3
+            ],
+            "windowHeight": 0,
+            "windowThickness": 0.2,
+            "windowColor": 0xadb5bd,
+            "hingeColor": 0,
+            "coordinates": [],
+            "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"
+          };
+          
+          window = openPlans.baseSingleWindow(preloadConfig);
+          console.log('Preloaded window:', window);
+        }
+      };
+
+      preloadFolder.add(preloadControls, 'preloadwindow').name('Load window By Config');
+      preloadFolder.add(preloadControls, 'windowLength', 2, 5).name('Preload Length').onChange((value) => {
+        if (window) {
+          window.windowLength = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'selected').name('Selected').onChange((value) => {
+        if (window) {
+          window.selected = value;
+        }
+      });
+      preloadFolder.add({ config: () => {
+        if (window) {
+          const config = window.getOPConfig();
+          console.log('Preloaded window Config:', config);
+        }
+      }}, 'config').name('Get Preload Config');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

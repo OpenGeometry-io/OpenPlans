@@ -1,5 +1,4 @@
 import {
-  Polygon,
   Vector3D
 } from '../../kernel/dist';
 import * as THREE from 'three';
@@ -8,7 +7,6 @@ import { PolyLineShape } from '../shape/polyline-shape';
 import { PolygonBuilder } from '../shape-builder/polygon-builder';
 import { generateUUID } from 'three/src/math/MathUtils.js';
 import { OpenPlans } from '..';
-import { getKeyByValue } from '../utils/map-helper';
 
 export type DoorType = 'GLASS' | 'WOOD' | 'DOUBLEDOOR' | 'SLIDING' | 'FOLDING' | 'DOUBLEACTION' | 'OTHER';
 export type DoorMaterial = 'GLASS' | 'WOOD' | 'METAL' | 'PLASTIC' | 'COMPOSITE' | 'OTHER';
@@ -46,7 +44,6 @@ export class BaseDoor extends PolyLineShape {
   ogType: string = 'baseDoor';
 
   subChild: Map<string, THREE.Object3D> = new Map();
-  doorMainGroup: THREE.Group = new THREE.Group();
 
   subNodes: Map<string, THREE.Object3D> = new Map();
   subEdges: Map<string, HTMLDivElement> = new Map();
@@ -86,13 +83,11 @@ export class BaseDoor extends PolyLineShape {
   set selected(value: boolean) {
     if (value) {
       this.material = new THREE.LineBasicMaterial({ color: 0x4460FF, depthWrite: false });
-      // this.addAnchorPointsOnSelection();
       this.addAnchorEdgesOnSelection();
     }
     else {
       this.material = new THREE.LineBasicMaterial({ color: 0x000000, depthWrite: false });
-      // this.clearAnchorPoints();
-      // this.clearAnchorEdges();
+      this.clearAnchorEdges();
     }
     this._selected = value;
   }
@@ -111,6 +106,10 @@ export class BaseDoor extends PolyLineShape {
 
   set doorThickness(value: number) {
     this.propertySet.doorThickness = value;
+
+    this.calculateCoordinatesByConfig();
+    this.brepRaw = this.getBrepData();
+    this.createDoorAndHinge();
   }
 
   set doorColor(value: number) {
@@ -139,16 +138,20 @@ export class BaseDoor extends PolyLineShape {
 
   set doorQuadrant(value: number) {
     if (value < 1 || value > 4) return;
+    this.propertySet.doorQuadrant = value;
+
     switch (value) {
       case 1:
         this.rotation.set(0, 0, 0);
         break;
       case 2:
-        this.doorMainGroup.rotation.set(0, 0, 0);
-        this.doorMainGroup.rotateZ(Math.PI);
+        this.rotation.set(0, 0, 0);
+        this.rotateZ(Math.PI);
         break;
       case 3:
-        
+        this.rotation.set(0, 0, 0);
+        this.rotateY(Math.PI);
+        this.rotateZ(Math.PI / 2);
         break;
       case 4:
         this.rotation.set(0, 0, 0);
@@ -207,8 +210,8 @@ export class BaseDoor extends PolyLineShape {
       this.brepRaw = this.getBrepData();
       this.createDoorAndHinge();
 
-      // this.doorPosition = this.propertySet.doorPosition;
-      // this.doorQuadrant = this.propertySet.doorQuadrant;
+      this.doorPosition = this.propertySet.doorPosition;
+      this.doorQuadrant = this.propertySet.doorQuadrant;
     } else {
       this.propertySet.id = this.ogid;
       this.calculateCoordinatesByConfig();
@@ -216,18 +219,16 @@ export class BaseDoor extends PolyLineShape {
       this.brepRaw = this.getBrepData();
       this.createDoorAndHinge();
     }
-
-    this.add(this.doorMainGroup);
   }
 
   calculateCoordinatesByConfig() {
     this.propertySet.dimensions.start.x = -this.propertySet.dimensions.length / 2;
     this.propertySet.dimensions.start.y = 0;
-    this.propertySet.dimensions.start.z = this.propertySet.doorPosition[2];
+    this.propertySet.dimensions.start.z = 0;
 
     this.propertySet.dimensions.end.x = this.propertySet.dimensions.length / 2;
     this.propertySet.dimensions.end.y = 0;
-    this.propertySet.dimensions.end.z = this.propertySet.doorPosition[2];
+    this.propertySet.dimensions.end.z = 0;
 
     // Clear previous coordinates
     this.propertySet.coordinates = [];
@@ -359,13 +360,11 @@ export class BaseDoor extends PolyLineShape {
       depthWrite: true
     });
     this.subChild.set('hingeLeftPolygon', hingePolygon);
-    // this.add(hingePolygon);
-    this.doorMainGroup.add(hingePolygon);
+    this.add(hingePolygon);
 
     const hingeRight = hingePolygon.clone().rotateZ(Math.PI);
     this.subChild.set('hingeRightPolygon', hingeRight);
-    // this.add(hingeRight);
-    this.doorMainGroup.add(hingeRight);
+    this.add(hingeRight);
 
     return {
       hingeLeft: hingePolygon,
