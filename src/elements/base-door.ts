@@ -46,6 +46,7 @@ export class BaseDoor extends PolyLineShape {
   ogType: string = 'baseDoor';
 
   subChild: Map<string, THREE.Object3D> = new Map();
+  doorMainGroup: THREE.Group = new THREE.Group();
 
   subNodes: Map<string, THREE.Object3D> = new Map();
   subEdges: Map<string, HTMLDivElement> = new Map();
@@ -143,13 +144,11 @@ export class BaseDoor extends PolyLineShape {
         this.rotation.set(0, 0, 0);
         break;
       case 2:
-        this.rotation.set(0, 0, 0);
-        this.rotateZ(Math.PI);
+        this.doorMainGroup.rotation.set(0, 0, 0);
+        this.doorMainGroup.rotateZ(Math.PI);
         break;
       case 3:
-        this.rotation.set(0, 0, 0);
-        this.rotateX(Math.PI);
-        this.rotateZ(Math.PI);
+        
         break;
       case 4:
         this.rotation.set(0, 0, 0);
@@ -166,15 +165,15 @@ export class BaseDoor extends PolyLineShape {
 
   set doorPosition(point: [number, number, number]) {
     this.propertySet.doorPosition = point;
-    this.calculateCoordinatesByConfig();
+    this.position.set(point[0], point[1], point[2]);
+
+    this.set_position(new Vector3D(point[0], point[1], point[2]));
+
     this.brepRaw = this.getBrepData();
-    this.createDoorAndHinge();
   }
 
   set pencil(pencil: Pencil) {
     this._pencil = pencil;
-
-    console.log('Setting pencil for BaseDoor:', pencil);
     this.pencil.onCursorMove.add((coords) => {
       this.handlePencilCursorMove(coords);
     });
@@ -217,16 +216,16 @@ export class BaseDoor extends PolyLineShape {
       this.brepRaw = this.getBrepData();
       this.createDoorAndHinge();
     }
+
+    this.add(this.doorMainGroup);
   }
 
   calculateCoordinatesByConfig() {
-    console.log('Calculating coordinates by config:', this.propertySet);
-
-    this.propertySet.dimensions.start.x = this.propertySet.doorPosition[0] - this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.start.x = -this.propertySet.dimensions.length / 2;
     this.propertySet.dimensions.start.y = 0;
     this.propertySet.dimensions.start.z = this.propertySet.doorPosition[2];
 
-    this.propertySet.dimensions.end.x = this.propertySet.doorPosition[0] + this.propertySet.dimensions.length / 2;
+    this.propertySet.dimensions.end.x = this.propertySet.dimensions.length / 2;
     this.propertySet.dimensions.end.y = 0;
     this.propertySet.dimensions.end.z = this.propertySet.doorPosition[2];
 
@@ -236,7 +235,7 @@ export class BaseDoor extends PolyLineShape {
       [this.propertySet.dimensions.start.x, this.propertySet.dimensions.start.y, this.propertySet.dimensions.start.z],
       [this.propertySet.dimensions.end.x, this.propertySet.dimensions.end.y, this.propertySet.dimensions.end.z],
     );
-    console.log('Door coordinates:', this.propertySet.coordinates);
+
     this.setOPGeometry();
     this.setOPMaterial();
   }
@@ -290,7 +289,6 @@ export class BaseDoor extends PolyLineShape {
 
   private createDoorAndHinge() {
     const { start, end } = this.propertySet.dimensions;
-
     const { hingeLeft, hingeRight } = this.createHingePolygon();
     hingeLeft.position.set(start.x, start.y, start.z);
     hingeRight.position.set(end.x, end.y, end.z);
@@ -302,6 +300,7 @@ export class BaseDoor extends PolyLineShape {
 
     const length = this.propertySet.dimensions.length;
     const thickness = this.propertySet.doorThickness / 2;
+
     doorPolygon.position.set(length / 2, 0, thickness);
 
     // flip
@@ -360,11 +359,13 @@ export class BaseDoor extends PolyLineShape {
       depthWrite: true
     });
     this.subChild.set('hingeLeftPolygon', hingePolygon);
-    this.add(hingePolygon);
+    // this.add(hingePolygon);
+    this.doorMainGroup.add(hingePolygon);
 
     const hingeRight = hingePolygon.clone().rotateZ(Math.PI);
     this.subChild.set('hingeRightPolygon', hingeRight);
-    this.add(hingeRight);
+    // this.add(hingeRight);
+    this.doorMainGroup.add(hingeRight);
 
     return {
       hingeLeft: hingePolygon,
@@ -405,8 +406,6 @@ export class BaseDoor extends PolyLineShape {
     });
     this.subChild.set('doorPolygon', doorPolygon);
     
-    this.add(doorPolygon);
-    
     return doorPolygon;
   }
 
@@ -440,58 +439,59 @@ export class BaseDoor extends PolyLineShape {
     if (!brep_raw) return;
     this.brepRaw = brep_raw;
     const brep = JSON.parse(brep_raw);
-    console.log('Brep data:', brep);
 
     const edges_index = brep.edges;
     const brep_points = brep.vertices;
 
-    for (let i = 0; i < edges_index.length; i++) {
-      const edge = edges_index[i];
-      const startPoint = brep_points[edge[0]];
-      const endPoint = brep_points[edge[1]];
-
-      const anchorEdgeId = `edgeAnchor${generateUUID()}`;
-      this.editorEdges.set(anchorEdgeId, i);
-
-      const anchorEdgeDiv = document.createElement('div');
-      anchorEdgeDiv.id = anchorEdgeId;
-      anchorEdgeDiv.className = 'anchor-edge';
-      anchorEdgeDiv.style.position = 'absolute';
-
-      anchorEdgeDiv.addEventListener('mousedown', (event) => this.onMouseDown(event));
-      anchorEdgeDiv.addEventListener('mouseup', (event) => this.onMouseUp(event));
-      anchorEdgeDiv.addEventListener('mousemove', (event) => this.onMouseMove(event));
-      anchorEdgeDiv.addEventListener('mouseover', (event) => this.onMouseHover(event));
-      
-      const screenPointX = OpenPlans.toScreenPosition(new THREE.Vector3(startPoint.x, startPoint.y, startPoint.z));
-      const screenPointY = OpenPlans.toScreenPosition(new THREE.Vector3(endPoint.x, endPoint.y, endPoint.z));
-
-      const dx = screenPointY.x - screenPointX.x;
-      const dy = screenPointY.y - screenPointX.y;
-      const length = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-      anchorEdgeDiv.style.width = `${length}px`;
-      anchorEdgeDiv.style.left = `${screenPointX.x}px`;
-      anchorEdgeDiv.style.top = `${screenPointX.y}px`;
-      anchorEdgeDiv.style.transform = `rotate(${angle}deg)`;
-      anchorEdgeDiv.style.transformOrigin = '0 0';
-
-      const edgeStyle = document.createElement('style');
-      edgeStyle.textContent = `
-        .anchor-edge {
-          border-top: 1px solid rgb(0, 81, 255);
-        }
-        .anchor-edge:hover {
-          border-top: 1px solid rgba(0, 213, 64, 0.84);
-          cursor: col-resize;
-        }
-      `;
-      document.head.appendChild(edgeStyle);
-
-      document.body.appendChild(anchorEdgeDiv);
-      this.subEdges.set(anchorEdgeId, anchorEdgeDiv);
+    if (edges_index.length === 0) {
+      console.warn('No edges found in the brep data.');
+      return;
     }
+
+    const startPoint = brep_points[edges_index[0][0]];
+    const endPoint = brep_points[edges_index[0][1]];
+
+    const anchorEdgeId = `edgeAnchor${generateUUID()}`;
+    this.editorEdges.set(anchorEdgeId, 0);
+
+    const anchorEdgeDiv = document.createElement('div');
+    anchorEdgeDiv.id = anchorEdgeId;
+    anchorEdgeDiv.className = 'anchor-edge';
+    anchorEdgeDiv.style.position = 'absolute';
+
+    anchorEdgeDiv.addEventListener('mousedown', (event) => this.onMouseDown(event));
+    anchorEdgeDiv.addEventListener('mouseup', (event) => this.onMouseUp(event));
+    anchorEdgeDiv.addEventListener('mousemove', (event) => this.onMouseMove(event));
+    anchorEdgeDiv.addEventListener('mouseover', (event) => this.onMouseHover(event));
+  
+    const screenPointX = OpenPlans.toScreenPosition(new THREE.Vector3(startPoint.x, startPoint.y, startPoint.z));
+    const screenPointY = OpenPlans.toScreenPosition(new THREE.Vector3(endPoint.x, endPoint.y, endPoint.z));
+
+    const dx = screenPointY.x - screenPointX.x;
+    const dy = screenPointY.y - screenPointX.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    anchorEdgeDiv.style.width = `${length}px`;
+    anchorEdgeDiv.style.left = `${screenPointX.x}px`;
+    anchorEdgeDiv.style.top = `${screenPointX.y}px`;
+    anchorEdgeDiv.style.transform = `rotate(${angle}deg)`;
+    anchorEdgeDiv.style.transformOrigin = '0 0';
+
+    const edgeStyle = document.createElement('style');
+    edgeStyle.textContent = `
+      .anchor-edge {
+        border-top: 1px solid rgb(0, 81, 255);
+      }
+      .anchor-edge:hover {
+        border-top: 1px solid rgba(0, 213, 64, 0.84);
+        cursor: col-resize;
+      }
+    `;
+    document.head.appendChild(edgeStyle);
+
+    document.body.appendChild(anchorEdgeDiv);
+    this.subEdges.set(anchorEdgeId, anchorEdgeDiv);
   }
 
   onMouseHover(event: MouseEvent) {
@@ -506,7 +506,6 @@ export class BaseDoor extends PolyLineShape {
     }
     else if (anchorId.startsWith('edgeAnchor')) {
       this.activeEdge = anchorId;
-      console.log('Active edge:', this.activeEdge);
       this.pencil.fireCursor(event);
     }
     else {
@@ -530,76 +529,13 @@ export class BaseDoor extends PolyLineShape {
 
   handlePencilCursorMove(coords: THREE.Vector3) {
     if (this.activeEdge) {
-      console.log('Active edge:', this.activeEdge);
       this.doorPosition = [coords.x, coords.y, coords.z];
-      this.calulateAnchorEdges(true);
+      this.calulateAnchorEdges();
     }
   }
 
   calulateAnchorEdges(force: boolean = false) {
     // Do not update the active edge but the ones that are connected to it
-    if (this.activeEdge) {
-      const index = this.editorEdges.get(this.activeEdge);
-      if (index === undefined) return;
-      const brep_raw = this.brepRaw;
-      if (!brep_raw) return;
-      const brep = JSON.parse(brep_raw);
-      const edges_index = brep.edges;
-      const edgeStart = index-1;
-      const edgeEnd = index+1;
-
-      // If edge start is 0, it means we are at the first edge
-      if (edgeStart > -1) {
-        const startCoord = this.propertySet.coordinates[edges_index[edgeStart][0]];
-        const endCoord = this.propertySet.coordinates[edges_index[edgeStart][1]];
-        
-        const startPoint = new THREE.Vector3(startCoord[0], startCoord[1], startCoord[2]);
-        const endPoint = new THREE.Vector3(endCoord[0], endCoord[1], endCoord[2]);
-        const screenPointX = OpenPlans.toScreenPosition(new THREE.Vector3(startPoint.x, startPoint.y, startPoint.z));
-        const screenPointY = OpenPlans.toScreenPosition(new THREE.Vector3(endPoint.x, endPoint.y, endPoint.z));
-        const dx = screenPointY.x - screenPointX.x;
-        const dy = screenPointY.y - screenPointX.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        const edgeAnchorId = getKeyByValue(this.editorEdges, edgeStart);
-        if (!edgeAnchorId) return;
-        const edgeDiv = this.subEdges.get(edgeAnchorId);
-        if (!edgeDiv) return;
-
-        edgeDiv.style.width = `${length}px`;
-        edgeDiv.style.left = `${screenPointX.x}px`;
-        edgeDiv.style.top = `${screenPointX.y}px`;
-        edgeDiv.style.transform = `rotate(${angle}deg)`;
-        edgeDiv.style.transformOrigin = '0 0';
-      }
-
-      if (edgeEnd < edges_index.length) {
-        const startCoord = this.propertySet.coordinates[edges_index[edgeEnd][0]];
-        const endCoord = this.propertySet.coordinates[edges_index[edgeEnd][1]];
-        
-        const startPoint = new THREE.Vector3(startCoord[0], startCoord[1], startCoord[2]);
-        const endPoint = new THREE.Vector3(endCoord[0], endCoord[1], endCoord[2]);
-        const screenPointX = OpenPlans.toScreenPosition(new THREE.Vector3(startPoint.x, startPoint.y, startPoint.z));
-        const screenPointY = OpenPlans.toScreenPosition(new THREE.Vector3(endPoint.x, endPoint.y, endPoint.z));
-        const dx = screenPointY.x - screenPointX.x;
-        const dy = screenPointY.y - screenPointX.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-        const edgeAnchorId = getKeyByValue(this.editorEdges, edgeEnd);
-        if (!edgeAnchorId) return;
-        const edgeDiv = this.subEdges.get(edgeAnchorId);
-        if (!edgeDiv) return;
-
-        edgeDiv.style.width = `${length}px`;
-        edgeDiv.style.left = `${screenPointX.x}px`;
-        edgeDiv.style.top = `${screenPointX.y}px`;
-        edgeDiv.style.transform = `rotate(${angle}deg)`;
-        edgeDiv.style.transformOrigin = '0 0';
-      }
-    }
-
     if (force) {
       for (const [edgeId, index] of this.editorEdges.entries()) {
         const edgeDiv = this.subEdges.get(edgeId);
@@ -610,13 +546,11 @@ export class BaseDoor extends PolyLineShape {
           const edges_index = brep.edges;
           const edge = edges_index[index];
 
-          const start = this.propertySet.coordinates[edge[0]];
-          const end = this.propertySet.coordinates[edge[1]];
+          const start = brep.vertices[edge[0]];
+          const end = brep.vertices[edge[1]];
 
-          const startP = new Vector3D(start[0], start[1], start[2]);
-          const endP = new Vector3D(end[0], end[1], end[2]);
-          const startPoint = new THREE.Vector3(startP.x, startP.y, startP.z);
-          const endPoint = new THREE.Vector3(endP.x, endP.y, endP.z);
+          const startPoint = new THREE.Vector3(start.x, start.y, start.z);
+          const endPoint = new THREE.Vector3(end.x, end.y, end.z);
 
           const screenPointX = OpenPlans.toScreenPosition(new THREE.Vector3(startPoint.x, startPoint.y, startPoint.z));
           const screenPointY = OpenPlans.toScreenPosition(new THREE.Vector3(endPoint.x, endPoint.y, endPoint.z));
@@ -635,8 +569,24 @@ export class BaseDoor extends PolyLineShape {
     }
   }
 
+  clearAnchorEdges() {
+    for (const [edgeId, edgeDiv] of this.subEdges.entries()) {
+      edgeDiv.removeEventListener('mousedown', (event) => this.onMouseDown(event));
+      edgeDiv.removeEventListener('mouseup', (event) => this.onMouseUp(event));
+      edgeDiv.removeEventListener('mousemove', (event) => this.onMouseMove(event));
+      edgeDiv.removeEventListener('mouseover', (event) => this.onMouseHover(event));
+      
+      edgeDiv.remove();
+      this.editorEdges.delete(edgeId);
+    }
+    this.subEdges.clear();
+    this.activeEdge = null;
+  }
+
 
   dispose() {
+    this.clearAnchorEdges();
+
     this.geometry.dispose();
     this.clear();
     this.subChild.forEach((child) => {
