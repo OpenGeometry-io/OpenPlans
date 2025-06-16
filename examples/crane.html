@@ -1,0 +1,139 @@
+<!--
+  Multiple Shapes Using OpenPlans
+  1. Polyline - A series of connected line segments with start and end.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Shapes</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans, CraneTest } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    let crane;
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.pencil.mode = "cursor";
+
+      crane = new CraneTest.Crane();
+      openPlans.addCustomObject(crane);
+
+      crane.builderPosition = [10, 0, 0];
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      const tileFolder = gui.addFolder('Tile');
+      const tileControls = {
+          latitude: -0.1103,
+          longitude: 51.5119,
+          zoom: 16,
+          generateTile: () => {
+            const requestOptions = {
+            method: "GET",
+            redirect: "follow"
+            };
+
+            const mapboxUrl = "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/-0.1093,51.5118,16.69,0/300x200@2x?access_token=pk.eyJ1IjoibWFuZXZpc2h3YWplZXQxIiwiYSI6ImNsN2NrYnJiZzB0bWkzb254eG9nMjc4ZWkifQ.62_f1MIY7KL8MXJTyZUGkw"
+
+            fetch(mapboxUrl)
+            .then((res) => res.blob()) // ✅ Fetch as blob
+            .then((blob) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const dataUrl = reader.result;
+
+                // const textureLoader = new THREE.TextureLoader();
+                // textureLoader.load(dataUrl, (texture) => {
+                openPlans.addImagePlane(dataUrl); // or your own method
+                // });
+                };
+              reader.readAsDataURL(blob);
+            })
+            .catch(console.error);
+          },
+      };
+      tileFolder.add(tileControls, 'latitude').name('Latitude').onChange((value) => {
+          tileControls.latitude = value;
+      });
+      tileFolder.add(tileControls, 'longitude').name('Longitude').onChange((value) => {
+          tileControls.longitude = value;
+      });
+      tileFolder.add(tileControls, 'generateTile').name('Generate Tile');
+
+      const craneFolder = gui.addFolder('Crane');
+      const craneControls = {
+        craneWidth: 1,
+        craneHeight: 1,
+        craneRadius: 5,
+        selected: false,
+        rotation: 0,
+      };
+
+      craneFolder.add(craneControls, 'craneWidth', 0.5, 2).name('Crane Width').onChange((value) => {
+        crane.craneWidth = value;
+      });
+      craneFolder.add(craneControls, 'craneHeight', 0.5, 2).name('Crane Height').onChange((value) => {
+        crane.craneHeight = value;
+      });
+      craneFolder.add(craneControls, 'craneRadius', 1, 30).name('Crane Radius').onChange((value) => {
+        crane.craneRadius = value;
+      });
+      craneFolder.add(craneControls, 'selected').name('Selected').onChange((value) => {
+        crane.selected = value;
+      });
+      craneFolder.add(craneControls, 'rotation', 0, Math.PI * 2).name('Rotation').onChange((value) => {
+        crane.craneRotation = value;
+      });
+
+      document.body.appendChild(stats.dom);
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>
