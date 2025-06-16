@@ -1,8 +1,8 @@
 import {
   Vector3D
-} from '../../kernel/dist';
+} from '../kernel/dist';
 import * as THREE from 'three';
-import { Pencil } from '../../kernel/dist/src/pencil';
+import { Pencil } from '../kernel/dist/src/pencil';
 import { PolyLineShape } from '../shape/polyline-shape';
 import { PolygonBuilder } from '../shape-builder/polygon-builder';
 import { generateUUID } from 'three/src/math/MathUtils.js';

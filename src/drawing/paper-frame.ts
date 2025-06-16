@@ -1,4 +1,4 @@
-import { Polygon, Vector3D } from "../../kernel/dist";
+import { Polygon, Vector3D } from "../kernel/dist";
 import * as THREE from 'three';
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';

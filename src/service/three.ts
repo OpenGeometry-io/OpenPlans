@@ -15,6 +15,7 @@ export class OpenThree {
   theme!: ICanvasTheme
   activeTheme: activeTheme = 'light'
   // planGrid: PlanGrid
+  openGrid: THREE.GridHelper | undefined
 
   constructor(container: HTMLElement, private callback: any) {
     CameraControls.install({THREE: THREE})
@@ -27,7 +28,7 @@ export class OpenThree {
       logarithmicDepthBuffer: true
     })
 
-    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 1, 100)
+    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 1, 1000)
     this.planCamera = new PlanCamera(this.threeCamera, container)
     
     this.setup()
@@ -90,9 +91,20 @@ export class OpenThree {
     const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
     // const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
     
-    const openGrid = new THREE.GridHelper(100, 100);
-    // @ts-ignore
-    this.scene.add(openGrid)
+    this.openGrid = new THREE.GridHelper(100, 100);
+    this.scene.add(this.openGrid);
+  }
+
+  toggleGrid(show: boolean) {
+    if (this.openGrid) {
+      if (show) {
+        this.scene.add(this.openGrid)
+      } else {
+        this.scene.remove(this.openGrid)
+      }
+    } else {
+      console.warn('OpenGrid is not initialized')
+    }
   }
 
   hexToRgb(hex: number) {

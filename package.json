@@ -1,6 +1,6 @@
 {
   "name": "@opengeometry/openplans",
-  "version": "0.0.10",
+  "version": "0.0.21",
   "author": "Vishwajeet Mane",
   "description": "Create 2D Drawings with OpenPlans",
   "main": "./index.js",

@@ -1,5 +1,5 @@
-import { OpenGeometry } from '../kernel/dist';
-import { Pencil, PencilMode } from '../kernel/dist/src/pencil';
+import { OpenGeometry } from './kernel/dist';
+import { Pencil, PencilMode } from './kernel/dist/src/pencil';
 import { BaseSpace } from './elements/base-spaces';
 
 import { DoubleWindow } from './elements/double-window';
@@ -11,7 +11,15 @@ import { OpenThree } from './service/three';
 import * as THREE from 'three';
 import { Event } from './utils/event';
 
+export * from './kernel/dist';
+
+// Shapes
+export * from "./shape/index";
+
 // Shape Builders
+export * from "./shape-builder/index";
+export * from "./generic/index";
+
 import { IPolylineBuilder, PolylineBuilder } from './shape-builder/polyline-builder';
 import { IPolygonBuilder, PolygonBuilder } from './shape-builder/polygon-builder';
 
@@ -24,6 +32,10 @@ import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
 import { OPDoor, BaseDoor } from './elements/base-door';
 import { OPWindow, BaseWindow } from './elements/base-window';
+import { GenericBuilder } from './generic/generic-builder';
+
+// Test Crane
+export * as CraneTest from "./crane";
 
 export class OpenPlans {
   private container: HTMLElement
@@ -66,6 +78,12 @@ export class OpenPlans {
         element.ogType === 'baseWindow'
       ) {
         element.calulateAnchorEdges(true);
+      }
+
+      if (
+        element.ogType === 'genericBuilder'
+      ) {
+        element.recalculateOverlay();
       }
     }
 
@@ -326,4 +344,52 @@ export class OpenPlans {
       y: -vector.y * halfHeight + halfHeight
     };
   }
+
+  // THREE METHODS
+  set showGrid(show: boolean) {
+    this.openThree.toggleGrid(show);
+  }
+
+  addCustomObject(genericObject: GenericBuilder) {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized');
+    }
+
+    this.openThree.scene.add(genericObject);
+    genericObject.pencil = this.pencil;
+    this.ogElements.push(genericObject);
+  }
+
+  addImagePlane(dataURL: string) {
+    if (!this.pencil) {
+      throw new Error('Pencil not initialized');
+    }
+    
+    // const link = document.createElement('a');
+    // link.href = dataURL;
+    // link.download = 'image.png'; // You can change the file name/format
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
+
+    const texture = new THREE.TextureLoader().load(dataURL, (texture) => {
+      const geometry = new THREE.PlaneGeometry(
+        texture.image.width,
+        texture.image.height
+      );
+      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geometry, material);
+      
+      // Set position and scale as needed
+      mesh.position.set(0, -0.1, 0);
+      mesh.scale.set(0.239, 0.239, 0.239); // Adjust scale as needed
+
+      mesh.rotateX(-Math.PI / 2); // Rotate to face upwards
+
+      this.openThree.scene.add(mesh);
+      this.ogElements.push(mesh);
+    });
+  }
 }
+
+

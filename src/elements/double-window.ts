@@ -1,9 +1,9 @@
 import {
   Vector3D,
   BasePoly,
-} from '../../kernel/dist';
+} from '../kernel/dist';
 import * as THREE from 'three';
-import { Pencil } from '../../kernel/dist/src/pencil';
+import { Pencil } from '../kernel/dist/src/pencil';
 
 const WindowSet = {
   position: {

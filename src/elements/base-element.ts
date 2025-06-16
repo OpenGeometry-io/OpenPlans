@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { BasePoly } from "../../kernel/dist";
+import { BasePoly } from "../kernel/dist";
 import * as THREE from 'three';
 
 /**

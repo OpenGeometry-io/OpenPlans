@@ -3,17 +3,17 @@
  */
 import * as THREE from 'three';
 import { PolyLineShape } from "../shape/polyline-shape";
-import { Vector3D } from '../../kernel/dist';
+import { Vector3D } from '../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
-import { Pencil } from '../../kernel/dist/src/pencil';
+import { Pencil } from '../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
 import { getKeyByValue } from '../utils/map-helper';
 
-export const VERTEX_EDITING = 0x1;
-export const EDGE_EDITING = 0x2;
-export const FACE_EDITING = 0x3;
-export const SELECTION_EDITING = 0x4;
+// export const VERTEX_EDITING = 0x1;
+// export const EDGE_EDITING = 0x2;
+// export const FACE_EDITING = 0x3;
+// export const SELECTION_EDITING = 0x4;
 
 export interface IPolylineBuilder {
   id?: string;
@@ -37,6 +37,9 @@ export interface IPolylineBuilder {
 }
 
 export class PolylineBuilder extends PolyLineShape {
+  allowVertexEditing: boolean = true;
+  allowEdgeEditing: boolean = true;
+
   ogType: string = "polyline";
 
   subNodes: Map<string, THREE.Object3D> = new Map();
@@ -52,7 +55,7 @@ export class PolylineBuilder extends PolyLineShape {
   activeEdge: string | null = null;
 
   // TODO: Should editing capacity be set like this or should it be a property of the OpenPlans instance
-  _editingCapacity: number = VERTEX_EDITING | EDGE_EDITING | FACE_EDITING | SELECTION_EDITING;
+  // _editingCapacity: number = VERTEX_EDITING | EDGE_EDITING | FACE_EDITING | SELECTION_EDITING;
 
   // remodel
   initialCursorPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -127,13 +130,13 @@ export class PolylineBuilder extends PolyLineShape {
     }
   }
 
-  set editingCapacity(value: number) {
-    this._editingCapacity = value;
-  }
+  // set editingCapacity(value: number) {
+  //   this._editingCapacity = value;
+  // }
 
-  get editingCapacity() {
-    return this._editingCapacity;
-  }
+  // get editingCapacity() {
+  //   return this._editingCapacity;
+  // }
 
   constructor(polylineConfig?: IPolylineBuilder) {
     super();
@@ -180,6 +183,7 @@ export class PolylineBuilder extends PolyLineShape {
 
     const points = coordinates.map(coord => new Vector3D(coord[0], coord[1], coord[2]));
     this.addMultiplePoints(points);
+    console.log("Setting OP Geometry for PolylineBuilder", this.propertySet.coordinates);
   }
 
   setOPMaterial() {
@@ -267,7 +271,6 @@ export class PolylineBuilder extends PolyLineShape {
       this.subEdges.set(anchorEdgeId, anchorEdgeDiv);
     }
   }
-
 
   addAnchorStyles() {
     const style = document.createElement('style');

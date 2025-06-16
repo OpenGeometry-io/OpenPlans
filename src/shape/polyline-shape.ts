@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PolyLine } from '../../kernel/dist';
+import { PolyLine } from '../kernel/dist';
 
 /**
  * If any element start moves, cast a ray and check if it interesects with the board.

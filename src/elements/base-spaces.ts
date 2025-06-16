@@ -3,8 +3,8 @@
  * It can be bounded by walls on all sides
  * It can also be a free space without walls
  */
-import { Polygon, Vector3D } from "../../kernel/dist";
-import { Pencil } from "../../kernel/dist/src/pencil";
+import { Polygon, Vector3D } from "../kernel/dist";
+import { Pencil } from "../kernel/dist/src/pencil";
 import * as THREE from 'three';
 import { GlyphNode, Glyphs } from "@opengeometry/openglyph";
 import { OPSpace } from "./base-types";

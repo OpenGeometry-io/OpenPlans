@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Vector3D } from '../../kernel/dist';
+import { Vector3D } from '../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateUUID } from 'three/src/math/MathUtils.js';
-import { Pencil } from '../../kernel/dist/src/pencil';
+import { Pencil } from '../kernel/dist/src/pencil';
 import { OpenPlans } from '..';
 import { getKeyByValue } from '../utils/map-helper';
 import { PolygonShape } from '../shape/polygon-shape';

@@ -1,6 +1,6 @@
 import { Glyphs } from '@opengeometry/openglyph';
 import * as THREE from 'three';
-import { Polygon, Vector3D } from '../../kernel/dist';
+import { Polygon, Vector3D } from '../kernel/dist';
 
 export type BlockRowTypes = 'image' | 'text' | 'logo' | 'qrCode';
 
