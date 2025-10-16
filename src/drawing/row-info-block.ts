@@ -1,6 +1,6 @@
 import { Glyphs } from '@opengeometry/openglyph';
 import * as THREE from 'three';
-import { Rectangle, Vector3D } from '../kernel/dist';
+import { Rectangle, Vector3 } from '../kernel/dist';
 
 export type BlockRowTypes = 'image' | 'text' | 'logo' | 'qrCode';
 
@@ -44,7 +44,7 @@ export class RowInfoBlock extends Rectangle {
     super({
       width: options.width,
       breadth: options.height,
-      center: new Vector3D(0, 0, 0)
+      center: new Vector3(0, 0, 0)
     });
     this.rowOptions = options;
     this.name = `rowInfoBlock` + this.ogid;

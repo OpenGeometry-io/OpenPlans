@@ -3,7 +3,7 @@
  * It can be bounded by walls on all sides
  * It can also be a free space without walls
  */
-import { Polygon, Vector3D } from "../kernel/dist";
+import { Polygon, Vector3 } from "../kernel/dist";
 import { Pencil } from "../kernel/dist/src/pencil";
 import * as THREE from 'three';
 import { GlyphNode, Glyphs } from "@opengeometry/openglyph";
@@ -113,7 +113,7 @@ export class BaseSpace extends Polygon {
       const x = coord[0];
       const y = coord[1];
       const z = coord[2];
-      const vector = new Vector3D(x, y, z);
+      const vector = new Vector3(x, y, z);
       this.addVertex(vector);
     }
 

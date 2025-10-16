@@ -1,6 +1,6 @@
 import { Glyphs } from '@opengeometry/openglyph';
 import * as THREE from 'three';
-import { Polygon, Vector3D } from '../kernel/dist';
+import { Polygon, Vector3 } from '../kernel/dist';
 
 export type BlockRowTypes = 'image' | 'text' | 'logo' | 'qrCode';
 
@@ -32,10 +32,10 @@ export class LogoInfoBlock extends Polygon {
 
     // calculate points based on width and height
     const points = [
-      new Vector3D(-options.width / 2, 0, -options.height / 2),
-      new Vector3D(options.width / 2, 0, -options.height / 2),
-      new Vector3D(options.width / 2, 0, options.height / 2),
-      new Vector3D(-options.width / 2, 0, options.height / 2),
+      new Vector3(-options.width / 2, 0, -options.height / 2),
+      new Vector3(options.width / 2, 0, -options.height / 2),
+      new Vector3(options.width / 2, 0, options.height / 2),
+      new Vector3(-options.width / 2, 0, options.height / 2),
     ];
     this.addVertices(points);
     this.outline = true;

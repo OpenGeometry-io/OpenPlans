@@ -1,4 +1,4 @@
-import { Polygon, Vector3D } from "../kernel/dist";
+import { Polygon, Vector3 } from "../kernel/dist";
 import * as THREE from 'three';
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
@@ -113,10 +113,10 @@ export class PaperFrame extends Polygon {
     const absoluteHeight = isPortrait ? height : width;
 
     const vertices = [
-      new Vector3D(-absoluteWidth / 2, -absoluteHeight / 2, 0), // Bottom left
-      new Vector3D(absoluteWidth / 2, -absoluteHeight / 2, 0), // Bottom right
-      new Vector3D(absoluteWidth / 2, absoluteHeight / 2, 0), // Top right
-      new Vector3D(-absoluteWidth / 2, absoluteHeight / 2, 0), // Top left
+      new Vector3(-absoluteWidth / 2, -absoluteHeight / 2, 0), // Bottom left
+      new Vector3(absoluteWidth / 2, -absoluteHeight / 2, 0), // Bottom right
+      new Vector3(absoluteWidth / 2, absoluteHeight / 2, 0), // Top right
+      new Vector3(-absoluteWidth / 2, absoluteHeight / 2, 0), // Top left
     ];
     this.addVertices(vertices);
 

@@ -64,32 +64,32 @@
       const polyLineFolder = gui.addFolder('Poly Line');
       const polyLineControls = {
         'Create Polyline': () => {
-          polyline = openPlans.polylineBuilder();
-          polyline.insertPoint(0, 0, 0);
-          polyline.insertPoint(5, 0, 4);
-          // polyline.insertPoint(10, 0, 0);
-          // polyline.insertPoint(5, 0, -4);
+          // polyline = openPlans.polylineBuilder();
           // polyline.insertPoint(0, 0, 0);
+          // polyline.insertPoint(5, 0, 4);
+          // // polyline.insertPoint(10, 0, 0);
+          // // polyline.insertPoint(5, 0, -4);
+          // // polyline.insertPoint(0, 0, 0);
           
-          console.log('Is Closed:', polyline.isClosed);
-          console.log(polyline.getOPConfig());
+          // console.log('Is Closed:', polyline.isClosed);
+          // console.log(polyline.getOPConfig());
         },
-        'selected': false,
+        'edit': false,
         'dispose': () => {
-          if (polyline) {
-            console.log('Disposing Polyline:', polyline.ogid);
-            openPlans.disposeElement(polyline.ogid);
-          }
+          // if (polyline) {
+          //   console.log('Disposing Polyline:', polyline.ogid);
+          //   openPlans.disposeElement(polyline.ogid);
+          // }
         }
       };
 
-      polyLineFolder.add(polyLineControls, 'Create Polyline').name('Create Polyline');
-      polyLineFolder.add(polyLineControls, 'selected').name('Selected').onChange((value) => {
-        if (polyline) {
-          polyline.selected = value;
-        }
-      });
-      polyLineFolder.add(polyLineControls, 'dispose').name('Dispose Polyline');
+      // polyLineFolder.add(polyLineControls, 'Create Polyline').name('Create Polyline');
+      // polyLineFolder.add(polyLineControls, 'edit').name('edit').onChange((value) => {
+      //   if (polyline) {
+      //     polyline.edit = value;
+      //   }
+      // });
+      // polyLineFolder.add(polyLineControls, 'dispose').name('Dispose Polyline');
 
       // Polygon
       const polygonFolder = gui.addFolder('Polygon');
@@ -98,47 +98,36 @@
 
           const testPoints = [
             {
-                "x": 9.5,
+                "x": 10,
                 "y": 0,
                 "z": 10
             },
             {
-                "x": 9.5,
+                "x": 10,
                 "y": 0,
-                "z": 1.0
+                "z": -2
             },
             {
-                "x": 4.9,
+               "x": 0,
                 "y": 0,
-                "z": 4.6
+                "z": 0
             },
             {
-                "x": -0.31,
-                "y": 0,
-                "z": 0.39
-            },
-            {
-                "x": 0.31,
-                "y": 0,
-                "z": -0.39
-            },
-            {
-                "x": 5.0,
-                "y": 0,
-                "z": 3.35
-            },
-            {
-                "x": 10.5,
-                "y": 0,
-                "z": -1.04
-            },
-            {
-                "x": 10.5,
+                "x": 0,
                 "y": 0,
                 "z": 10
+            },
+            {
+                "x": 5,
+                "y": 0,
+                "z": 5
             }
           ];
           polygon = openPlans.polygonBuilder();
+          polygon.placement(0, 0, -2);
+
+          //polygon.yaw = 45;
+
           // WORKS
           // polygon.insertPoint(0, 0, 0);
           // polygon.insertPoint(5, 0, 4);
@@ -153,22 +142,68 @@
 
           // TEST for the same above points using insertMultiplePoints - WORKS
           polygon.insertMultiplePoints(testPoints.map(point => [point.x, point.y, point.z]));
+          
+
+          // polygon.placement(2, 0, 0);
+          
+          console.log(polygon.position);
+//           const elements = [
+//     1,
+//     0,
+//     0,
+//     0,
+//     0,
+//     1,
+//     0,
+//     0,
+//     0,
+//     0,
+//     1,
+//     0,
+//     0.43316802030200563,
+//     0,
+//     4.455443083102647,
+//     1
+// ]
+//           polygon.setTransformation(elements);
+
+          // If Polygon Selection enabled, deselect Edit Mode
         },
-        'selected': false,
+        'edit': false,
+        'select': false,
+        'getTransformationMatrix': () => {
+          if (polygon) {
+            console.log('Transformation Matrix:', polygon.transformationMatrix.elements);
+          }
+        },
         'dispose': () => {
           if (polygon) {
             console.log('Disposing Polygon:', polygon.ogid);
             openPlans.disposeElement(polygon.ogid);
           }
-        }
+        },
+        rotationY: 0,
       };
       polygonFolder.add(polygonControls, 'Create Polygon').name('Create Polygon');
-      polygonFolder.add(polygonControls, 'selected').name('Selected').onChange((value) => {
+      polygonFolder.add(polygonControls, 'edit').name('Edit').onChange((value) => {
+        if (polygon) {
+          polygon.edit = value;
+        }
+      });
+      polygonFolder.add(polygonControls, 'select').name('Select').onChange((value) => {
         if (polygon) {
           polygon.selected = value;
         }
+        console.log(polygon.transformationMatrix.elements);
       });
       polygonFolder.add(polygonControls, 'dispose').name('Dispose Polygon');
+      polygonFolder.add(polygonControls, 'rotationY', -180, 180, 1).name('Rotation Y').onChange((value) => {
+        if (polygon) {
+          // If rotation methods from threejs is used, it will rotate around the first vertex which might not be desired.
+          polygon.yaw = value;
+        }
+      });
+      polygonFolder.add(polygonControls, 'getTransformationMatrix').name('Get Transformation Matrix');
 
       document.body.appendChild(stats.dom);
     }

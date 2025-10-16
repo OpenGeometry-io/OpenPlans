@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Vector3D } from '../kernel/dist';
+import { Vector3 } from '../kernel/dist';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { PolygonShape } from '../shape/polygon-shape';
+import { PolygonShape } from '../shapes/polygon-shape';
 
 export interface OPBoard {
   id?: string;
@@ -195,10 +195,10 @@ export class Board extends PolygonShape {
     this.outline = false;
 
     const points = [
-      new Vector3D(this.propertySet.coordinates[0][0], this.propertySet.coordinates[0][1], 0),
-      new Vector3D(this.propertySet.coordinates[1][0], this.propertySet.coordinates[1][1], 0),
-      new Vector3D(this.propertySet.coordinates[2][0], this.propertySet.coordinates[2][1], 0),
-      new Vector3D(this.propertySet.coordinates[3][0], this.propertySet.coordinates[3][1], 0),
+      new Vector3(this.propertySet.coordinates[0][0], this.propertySet.coordinates[0][1], 0),
+      new Vector3(this.propertySet.coordinates[1][0], this.propertySet.coordinates[1][1], 0),
+      new Vector3(this.propertySet.coordinates[2][0], this.propertySet.coordinates[2][1], 0),
+      new Vector3(this.propertySet.coordinates[3][0], this.propertySet.coordinates[3][1], 0),
     ];
     this.addVertices(points);
 

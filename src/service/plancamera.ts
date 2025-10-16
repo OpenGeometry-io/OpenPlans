@@ -12,7 +12,7 @@ export class PlanCamera {
     this.camera.position.set(0, 20, 0);
     // Container Events are not being sent to the shadow dom
     this.controls = new CameraControls(camera, container);
-    this.controls.mouseButtons.left = CameraControls.ACTION.NONE;
+    // this.controls.mouseButtons.left = CameraControls.ACTION.NONE;
     this.controls.touches.one = CameraControls.ACTION.NONE;
     this.controls.dollyToCursor = true;
     this.controls.minDistance = 1.5;

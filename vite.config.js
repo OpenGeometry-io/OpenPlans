@@ -8,10 +8,15 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        door: resolve(__dirname, 'examples/door.html'),
-        wall: resolve(__dirname, 'examples/wall.html'),
-        spaceContainer: resolve(__dirname, 'examples/spaceContainer.html'),
-        paper: resolve(__dirname, 'examples/drawings/paper.html'),
+        // Primitives (referenced in index.html)
+        line: resolve(__dirname, 'examples/primitives/line.html'),
+        polyline: resolve(__dirname, 'examples/primitives/polyline.html'),
+        arc: resolve(__dirname, 'examples/primitives/arc.html'),  
+        rectangle: resolve(__dirname, 'examples/primitives/rectangle.html'),
+        
+        // Shapes (referenced in index.html)
+        cuboid: resolve(__dirname, 'examples/shapes/cuboid.html'),
+        cylinder: resolve(__dirname, 'examples/shapes/cylinder.html'),
       },
       output: {
         entryFileNames: 'assets/js/[name]-[hash].js', // JS files inside assets/js

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Cylinder</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans, Vector3 } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    let cylinder;
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      // openPlans.pencil.mode = "cursor";
+      openPlans.showGrid = false;
+
+      // draftBoard = openPlans.board();
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      const cylinderFolder = gui.addFolder('Cylinder');
+      cylinderFolder.open();
+
+      cylinderFolder.add({ createCylinder: () => {
+        cylinder = openPlans.cylinder();
+      }}, 'createCylinder');
+
+
+      cylinderFolder.add({ preloadCylinder: () => {
+        const config = {
+            ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
+            radius: 10,
+            height: 20,
+            depth: 1,
+            color: 0x000000,
+            center: new Vector3(20, 0, 0),
+            angle: 1 * Math.PI,
+            color: 0xf0f0f0,
+          };
+        const preloadConfig = openPlans.cylinder(config);
+
+        console.log('Preloaded Cylinder Config:', preloadConfig.getOPConfig());
+      }}, 'preloadCylinder');
+
+      cylinderFolder.add({ logConfig: () => {
+        if (cylinder) {
+          console.log('Current Cylinder Config:', cylinder.getOPConfig());
+        } else {
+          console.log('No cylinder created yet.');
+        }
+      }}, 'logConfig');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

@@ -1,9 +1,14 @@
 import * as THREE from 'three'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { PlanCamera } from './plancamera'
-import CameraControls from 'camera-controls'
 import { activeTheme, ICanvasTheme } from '../base-type'
+
+import { ShapeSelector } from '../selector/shape-selector.ts'
+// import { ShapeEditor } from '../selector/shape-editor.ts'
+
 import * as OpenGrid from '../helpers/OpenGridHelper.ts'
+
+import CameraControls from 'camera-controls'
 
 export class OpenThree {
   scene: THREE.Scene
@@ -93,6 +98,10 @@ export class OpenThree {
     
     this.openGrid = new THREE.GridHelper(100, 100);
     this.scene.add(this.openGrid);
+
+    // Remove this later
+    ShapeSelector.scene = this.scene;
+    // ShapeEditor.scene = this.scene;
   }
 
   toggleGrid(show: boolean) {
@@ -117,49 +126,9 @@ export class OpenThree {
     this.planCamera.update()
     // console.log('OpenThree animate')
     this.callback()
+    ShapeSelector.update();
+    // ShapeEditor.update(this.threeCamera, this.renderer);
 
     requestAnimationFrame(() => this.animate())
   }
-
-  // addGUI() {
-  //   const gui = new GUI();
-  //   const wallFolder = gui.addFolder('Wall');
-  //   const wallControls = {
-  //     'thickness': 0.25,
-  //     'color': '#00ff00',
-  //   };
-  //   const walls = this.getEntitiesByType('wall');
-  //   console.log(walls);
-  //   walls.forEach((wall: BaseWall) => {
-  //     const subWall = wallFolder.addFolder(wall.name);
-  //     subWall.add(wallControls, 'thickness', 0.1, 1).name('Thickness').onChange((value) => {
-  //       wall.halfThickness = value / 2;
-  //     });
-  //   });
-
-  //   const doorFolder = gui.addFolder('Door');
-  //   const doorControls = {
-  //     'rotation': 1,
-  //     'quadrant': 1,
-  //   };
-  //   const doors = this.getEntitiesByType('door');
-  //   doors.forEach((door: BaseDoor) => {
-  //     const subDoor = doorFolder.addFolder(door.name);
-  //     subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
-  //       door.doorRotation = value;
-  //     });
-  //     subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
-  //       door.doorQudrant = value;
-  //     });
-  //   });
-
-  //   const pencil = gui.addFolder('Pencil');
-  //   const pencilControls = {
-  //     'mode': "cursor",
-  //   };
-  //   pencil.add(pencilControls, 'mode', ["select", "cursor"]).name('Mode').onChange((value) => {
-  //     if (!this.openGeometry?.pencil) return;
-  //     this.openGeometry.pencil.mode = value as PencilMode;
-  //   });
-  // }
 }
