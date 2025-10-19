@@ -1,17 +1,17 @@
-import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/dist';
-import { Pencil, PencilMode } from './kernel/dist/src/pencil';
-import { BaseSpace } from './elements/base-spaces';
+import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/';
+// import { Pencil, PencilMode } from './kernel/dist/src/pencil';
+// import { BaseSpace } from './elements/base-spaces';
 
 // import { DoubleWindow } from './elements/double-window';
 import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
-import { BuildingData } from './parser/IGraph';
+// import { BuildingData } from './parser/IGraph';
 import convertToOGFormat from './parser/ImpleniaConverter';
 import { PlanCamera } from './service/plancamera';
 import { OpenThree } from './service/three';
 import * as THREE from 'three';
 import { Event } from './utils/event';
 
-export * from './kernel/dist';
+export * from './kernel/';
 
 // Shapes
 export * from "./primitives/index";
@@ -27,7 +27,7 @@ export * from "./generic/index";
 import { PaperFrame } from './drawing';
 import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
 import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
-import { Board, OPBoard } from './elements/board';
+// import { Board, OPBoard } from './elements/board';
 // import { BaseWall } from './elements/base-wall';
 import { IBaseWall } from './base-type';
 // import { OPDoor, BaseDoor } from './elements/base-door';
@@ -49,7 +49,7 @@ export class OpenPlans {
   private openThree: OpenThree
   static sOThree: OpenThree;
  
-  private pencil: Pencil | undefined;
+  // private pencil: Pencil | undefined;
   
   private planCamera: PlanCamera
 
@@ -159,14 +159,14 @@ export class OpenPlans {
     const dimensionTool = DimensionTool;
     dimensionTool.sceneRef = this.openThree.scene;
 
-    this.pencil?.onCursorDown.add((coords) => {
-      console.log('Cursor Down', coords)
-    });
+    // this.pencil?.onCursorDown.add((coords) => {
+    //   console.log('Cursor Down', coords)
+    // });
     
-    if (this.pencil) {
-      ShapeSelector.pencil = this.pencil;
-      // ShapeEditor.pencil = this.pencil;
-    }
+    // if (this.pencil) {
+    //   ShapeSelector.pencil = this.pencil;
+    //   // ShapeEditor.pencil = this.pencil;
+    // }
   }
 
   disposeElement(ogid: string) {
@@ -261,15 +261,15 @@ export class OpenPlans {
     return door
   }
 
-  space(): BaseSpace {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized')
-    }
-    const space = new BaseSpace(this.pencil)
-    this.openThree.scene.add(space)
-    this.ogElements.push(space)
-    return space
-  }
+  // space(): BaseSpace {
+  //   if (!this.pencil) {
+  //     throw new Error('Pencil not initialized')
+  //   }
+  //   const space = new BaseSpace(this.pencil)
+  //   this.openThree.scene.add(space)
+  //   this.ogElements.push(space)
+  //   return space
+  // }
 
   // doubleWindow(): DoubleWindow {
   //   if (!this.pencil) {
@@ -281,15 +281,15 @@ export class OpenPlans {
   //   return window
   // }
 
-  board(boardConfig?:OPBoard): Board {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized')
-    }
-    const board = new Board(boardConfig)
-    this.openThree.scene.add(board)
-    this.ogElements.push(board)
-    return board
-  }
+  // board(boardConfig?:OPBoard): Board {
+  //   // if (!this.pencil) {
+  //   //   throw new Error('Pencil not initialized')
+  //   // }
+  //   const board = new Board(boardConfig)
+  //   this.openThree.scene.add(board)
+  //   this.ogElements.push(board)
+  //   return board
+  // }
 
   /***** Shape Builders *****/
 
@@ -428,23 +428,23 @@ export class OpenPlans {
     // if (!this.pencil) {
     //   throw new Error('Pencil not initialized')
     // }
-    const paperFrame = new PaperFrame()
-    this.openThree.scene.add(paperFrame)
-    this.ogElements.push(paperFrame)
-    return paperFrame
+    // const paperFrame = new PaperFrame()
+    // this.openThree.scene.add(paperFrame)
+    // this.ogElements.push(paperFrame)
+    // return paperFrame
   }
 
-  logoInfoBlock(options:LogoInfoBlockOptions) {
-    const logoBlock = new LogoInfoBlock(options);
-    this.openThree.scene.add(logoBlock);
-    return logoBlock
-  }
+  // logoInfoBlock(options:LogoInfoBlockOptions) {
+  //   const logoBlock = new LogoInfoBlock(options);
+  //   this.openThree.scene.add(logoBlock);
+  //   return logoBlock
+  // }
 
-  rowInfoBlock(options: RowInfoBlockOptions) {
-    const rowInfoBlock = new RowInfoBlock(options);
-    this.openThree.scene.add(rowInfoBlock);
-    return rowInfoBlock;
-  }
+  // rowInfoBlock(options: RowInfoBlockOptions) {
+  //   const rowInfoBlock = new RowInfoBlock(options);
+  //   this.openThree.scene.add(rowInfoBlock);
+  //   return rowInfoBlock;
+  // }
 
   static toScreenPosition(pos: THREE.Vector3): { x: number; y: number } {
     const vector = pos.clone().project(OpenPlans.sOThree.threeCamera);
@@ -474,9 +474,9 @@ export class OpenPlans {
   // }
 
   addImagePlane(dataURL: string) {
-    if (!this.pencil) {
-      throw new Error('Pencil not initialized');
-    }
+    // if (!this.pencil) {
+    //   throw new Error('Pencil not initialized');
+    // }
     
     // const link = document.createElement('a');
     // link.href = dataURL;

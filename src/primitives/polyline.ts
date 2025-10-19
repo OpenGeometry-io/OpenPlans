@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Polyline, IArcOptions, Vector3, IPolylineOptions } from '../kernel/dist';
+import { Polyline, IArcOptions, Vector3, IPolylineOptions } from '../kernel/';
 import { IPrimitive } from './base-type';
 import { DimensionTool } from '../dimensions';
 

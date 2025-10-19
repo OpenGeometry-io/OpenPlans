@@ -8,7 +8,7 @@ import * as THREE from 'three';
 // import { generateUUID } from 'three/src/math/MathUtils.js';
 // import { OpenPlans } from '..';
 
-import { Cuboid, Line, Opening, Vector3 } from "../kernel/dist";
+import { Cuboid, Line, Opening, Vector3 } from "../kernel/";
 import { DoorType, ElementType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
@@ -210,6 +210,32 @@ export class BaseDoor extends Opening implements IShape {
     this.propertySet.dimensions.end.x = value / 2;
     this.propertySet.dimensions.end.y = 0;
     this.propertySet.dimensions.end.z = 0;
+
+    this.setOPGeometry();
+    this.setConfig({
+      depth: this.propertySet.doorThickness * 1.1,
+      height: this.propertySet.doorHeight * 1.1,
+      width: value * 1.1,
+      center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
+      color: this.propertySet.doorColor,
+    });
+    // @ts-ignore
+    this.material.opacity = 0.0;
+  }
+
+  set doorThickness(value: number) {
+    this.propertySet.doorThickness = value;
+
+    this.setOPGeometry();
+    this.setConfig({
+      depth: value * 1.1,
+      height: this.propertySet.doorHeight * 1.1,
+      width: this.propertySet.dimensions.length * 1.1,
+      center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
+      color: this.propertySet.doorColor,
+    });
+    // @ts-ignore
+    this.material.opacity = 0.0;
   }
 
   constructor(baseDoorConfig?: OPDoor) {
@@ -229,6 +255,22 @@ export class BaseDoor extends Opening implements IShape {
     }
 
     this.setOPGeometry();
+
+    // delete
+    // @ts-ignore
+    this.material.opacity = 0.0;
+  }
+
+  createDoor() {
+    const smallGapOffset = 0.01;
+    const door = new Cuboid({
+      center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
+      width: this.propertySet.dimensions.length - 0.1 - smallGapOffset,
+      height: this.propertySet.doorHeight - 0.1 - smallGapOffset,
+      depth: this.propertySet.doorThickness,
+      color: this.propertySet.doorColor,
+    });
+    this.add(door);
   }
 
   createFrame() {
@@ -238,7 +280,7 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(this.propertySet.dimensions.start.x, this.propertySet.doorHeight / 2, 0),
       width: 0.1,
       height: this.propertySet.doorHeight,
-      depth: 0.1,
+      depth: this.propertySet.doorThickness,
       color: this.propertySet.frameColor,
     });
     // leftFrame.position.set(-this.propertySet.dimensions.length / 2, this.propertySet.doorHeight / 2, 0);
@@ -249,7 +291,7 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(this.propertySet.dimensions.end.x, this.propertySet.doorHeight / 2, 0),
       width: 0.1,
       height: this.propertySet.doorHeight,
-      depth: 0.1,
+      depth: this.propertySet.doorThickness,
       color: this.propertySet.frameColor,
     });
     this.add(rightFrame);
@@ -259,10 +301,12 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(0, this.propertySet.doorHeight, 0),
       width: this.propertySet.dimensions.length + 0.1,
       height: 0.1,
-      depth: 0.1,
+      depth: this.propertySet.doorThickness,
       color: this.propertySet.frameColor,
     });
     this.add(topFrame);
+
+    console.log(this.children.length  + ' children in the door after creating frame.');
   }
 
   setOPConfig(config: OPDoor): void {
@@ -280,16 +324,11 @@ export class BaseDoor extends Opening implements IShape {
   setOPGeometry(): void {
     // Implement geometry update logic here if needed
     if (this.children.length > 1) {
-      for (const child of this.children) {
-        if (child !== this.skeleton) {
-          const mesh = child as THREE.Mesh;
-          mesh.geometry.dispose();
-          mesh.removeFromParent();
-        }
-      }
+      this.remove(...this.children.slice(1));
     }
 
     this.createFrame();
+    this.createDoor();
   }
 
   setOPMaterial(): void {
@@ -298,6 +337,15 @@ export class BaseDoor extends Opening implements IShape {
     // if (line) {
     //   (line.material as THREE.LineBasicMaterial).color.set(0x0000ff);
     // }
+  }
+
+  showProfileView(status: boolean): void {
+    this.children.forEach((child) => {
+      // @ts-ignore
+      child.material.opacity = status ? 0.0 : 1.0;
+      // @ts-ignore
+      child.outline = status;
+    });
   }
 
 //       this.createDoorAndHinge();

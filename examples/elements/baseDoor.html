@@ -89,6 +89,9 @@
       const preloadControls = {
         'doorRotation': 1,
         'selected': false,
+        'length': 1,
+        'thickness': 0.2,
+        'showProfileView': false,
         'preloadDoor': () => {
           const preloadConfig = {
             "type": "door",
@@ -132,6 +135,21 @@
       preloadFolder.add(preloadControls, 'doorRotation', 1, 2).name('Door Rotation').onChange((value) => {
         if (door) {
           door.doorRotation = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'length', 1, 2).name('Door Length').onChange((value) => {
+        if (door) {
+          door.doorLength = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'thickness', 0.1, 1).name('Door Thickness').onChange((value) => {
+        if (door) {
+          door.doorThickness = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'showProfileView').name('Show Profile View').onChange((value) => {
+        if (door) {
+          door.showProfileView(value);
         }
       });
       preloadFolder.add(preloadControls, 'selected').name('Selected').onChange((value) => {

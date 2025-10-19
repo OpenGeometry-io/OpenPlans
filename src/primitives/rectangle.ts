@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { IRectangleOptions, Rectangle } from '../kernel/dist';
+import { IRectangleOptions, Rectangle } from '../kernel/';
 import { IPrimitive } from './base-type';
 
 /**

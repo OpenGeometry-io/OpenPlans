@@ -1,5 +1,5 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { ILineOptions, Line, Vector3 } from "../kernel/dist";
+import { ILineOptions, Line, Vector3 } from "../kernel/";
 import * as THREE from "three";
 
 export class LineDimension extends Line {

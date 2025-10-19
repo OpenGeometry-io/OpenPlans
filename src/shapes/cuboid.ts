@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ICuboidOptions, Cuboid } from '../kernel/dist';
+import { ICuboidOptions, Cuboid } from '../kernel/';
 import { IShape } from './base-type';
   
 /**

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Line, ILineOptions } from '../kernel/dist';
+import { Line, ILineOptions } from '../kernel/';
 import { IPrimitive } from './base-type';
 
 /*

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ICylinderOptions, Cylinder } from '../kernel/dist';
+import { ICylinderOptions, Cylinder } from '../kernel/';
 import { IShape } from './base-type';
   
 /**

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Arc, IArcOptions, Vector3 } from '../kernel/dist';
+import { Arc, IArcOptions, Vector3 } from '../kernel/';
 import { IPrimitive } from './base-type';
 import { DimensionTool } from '../dimensions';
 
