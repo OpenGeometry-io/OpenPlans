@@ -12,8 +12,6 @@ import { Cuboid, Line, Opening, Vector3 } from "../kernel/";
 import { DoorType, ElementType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
-// export type DoorMaterial = 'GLASS' | 'WOOD' | 'METAL' | 'PLASTIC' | 'COMPOSITE' | 'OTHER';
-
 export interface OPDoor {
   ogid?: string;
   labelName: string;
@@ -33,8 +31,9 @@ export interface OPDoor {
   };
   doorPosition: [number, number, number];
   doorType: DoorType;
-  doorHeight: number;
-  doorThickness: number;
+  doorHeight: number; // Height of the door panel
+  doorThickness: number; // Panel thickness
+  frameThickness: number;
   frameColor: number;
   // doorMaterial: string;
   doorColor: number;
@@ -77,7 +76,8 @@ export class BaseDoor extends Opening implements IShape {
     doorPosition: [0, 0, 0],
     doorType: DoorType.WOOD,
     doorHeight: 2.1,
-    doorThickness: 0.2,
+    doorThickness: 0.1,
+    frameThickness: 0.2,
     doorColor: 0x8B4513,
     frameColor: 0x000000,
     doorRotation: 1.5,
@@ -102,21 +102,13 @@ export class BaseDoor extends Opening implements IShape {
 //     return this._selected;
 //   }
 
-//   set labelName(value: string) {
-//     this.propertySet.labelName = value;
-//   }
+  set labelName(value: string) {
+    this.propertySet.labelName = value;
+  }
 
-//   get labelName() {
-//     return this.propertySet.labelName;
-//   }
-
-//   set doorThickness(value: number) {
-//     this.propertySet.doorThickness = value;
-
-//     this.calculateCoordinatesByConfig();
-//     this.brepRaw = this.getBrepData();
-//     this.createDoorAndHinge();
-//   }
+  get labelName() {
+    return this.propertySet.labelName;
+  }
 
 //   set doorColor(value: number) {
 //     this.propertySet.doorColor = value;
@@ -174,7 +166,7 @@ export class BaseDoor extends Opening implements IShape {
 
   set doorPosition(point: [number, number, number]) {
     this.propertySet.doorPosition = point;
-    // this.position.set(point[0], point[1], point[2]);
+    this.position.set(point[0], point[1], point[2]);
 
     // this.set_position(new Vector3(point[0], point[1], point[2]));
 
@@ -219,8 +211,6 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
       color: this.propertySet.doorColor,
     });
-    // @ts-ignore
-    this.material.opacity = 0.0;
   }
 
   set doorThickness(value: number) {
@@ -234,8 +224,6 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
       color: this.propertySet.doorColor,
     });
-    // @ts-ignore
-    this.material.opacity = 0.0;
   }
 
   constructor(baseDoorConfig?: OPDoor) {
@@ -255,13 +243,9 @@ export class BaseDoor extends Opening implements IShape {
     }
 
     this.setOPGeometry();
-
-    // delete
-    // @ts-ignore
-    this.material.opacity = 0.0;
   }
 
-  createDoor() {
+  private createDoor() {
     const smallGapOffset = 0.01;
     const door = new Cuboid({
       center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
@@ -273,17 +257,16 @@ export class BaseDoor extends Opening implements IShape {
     this.add(door);
   }
 
-  createFrame() {
+  // TODO: We will later replace this with SweepedSolid along a path with a Sketch Profile
+  private createFrame() {
     // Left Side Frame using Cuboid
-    // TODO: We will later replace this with SweepedSolid along a path with a Sketch Profile
     const leftFrame = new Cuboid({
       center: new Vector3(this.propertySet.dimensions.start.x, this.propertySet.doorHeight / 2, 0),
       width: 0.1,
       height: this.propertySet.doorHeight,
-      depth: this.propertySet.doorThickness,
+      depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
-    // leftFrame.position.set(-this.propertySet.dimensions.length / 2, this.propertySet.doorHeight / 2, 0);
     this.add(leftFrame);
 
     // Right Side Frame using Cuboid
@@ -291,7 +274,7 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(this.propertySet.dimensions.end.x, this.propertySet.doorHeight / 2, 0),
       width: 0.1,
       height: this.propertySet.doorHeight,
-      depth: this.propertySet.doorThickness,
+      depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
     this.add(rightFrame);
@@ -301,7 +284,7 @@ export class BaseDoor extends Opening implements IShape {
       center: new Vector3(0, this.propertySet.doorHeight, 0),
       width: this.propertySet.dimensions.length + 0.1,
       height: 0.1,
-      depth: this.propertySet.doorThickness,
+      depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
     this.add(topFrame);
@@ -339,6 +322,7 @@ export class BaseDoor extends Opening implements IShape {
     // }
   }
 
+  // TODO: Add pure profile setter for elements/primitives where only Line rendering is needed
   showProfileView(status: boolean): void {
     this.children.forEach((child) => {
       // @ts-ignore
