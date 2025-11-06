@@ -18,3 +18,12 @@ Here, **coordinates** are calculated properties.
 
 E.g. When a wall is created start and end points are calculated based on coordinates of the wall.
 Here, **start and end points** are calculated properties.
+
+
+## Elements and Sub Elements
+Some elements have sub elements.
+E.g. Wall has sub elements like openings, finishes, frames etc.
+
+## Elements and Views
+Elements can be viewed in different views like plan view, elevation view, 3D view etc.
+E.g. Wall can be viewed in plan view as a line, in 2D elevation view as a rectangle, and in 3D view as a solid object.

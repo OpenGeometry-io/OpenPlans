@@ -92,6 +92,7 @@
         'length': 1,
         'thickness': 0.2,
         'showProfileView': false,
+        'doorQuadrant': 1,
         'preloadDoor': () => {
           const preloadConfig = {
             "type": "door",
@@ -135,6 +136,11 @@
       preloadFolder.add(preloadControls, 'doorRotation', 1, 2).name('Door Rotation').onChange((value) => {
         if (door) {
           door.doorRotation = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'doorQuadrant', [1, 2, 3, 4]).name('Door Quadrant').onChange((value) => {
+        if (door) {
+          door.doorQuadrant = value;
         }
       });
       preloadFolder.add(preloadControls, 'doorPosition', [1, 2, 3, 4]).name('Door Position').onChange((value) => {

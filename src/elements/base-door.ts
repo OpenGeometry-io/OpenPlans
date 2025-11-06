@@ -42,15 +42,23 @@ export interface OPDoor {
   coordinates: Array<[number, number, number]>;
 }
 
+export type ElementViewType = 'plan' | '3d';
+export type SubElementType = 'frame' | 'finish' | 'opening' | 'panel';
+export type DoorQuandrant = 1 | 2 | 3 | 4;
+
 // export class BaseDoor extends PolyLineShape {
 export class BaseDoor extends Opening implements IShape {
   ogType: string = ElementType.DOOR;
 
   skeleton: Line;
-  subNodes: Map<string, THREE.Object3D> = new Map();
+  subElements: Map<SubElementType, THREE.Object3D> = new Map();
 
   selected: boolean = false;
   edit: boolean = false;
+
+  // By Default the Plan View is Mid Section View
+  // If needed Plan view can be overridden to add some other geometry
+  views: Map<ElementViewType, THREE.Object3D> = new Map();
 
 //   subNodes: Map<string, THREE.Object3D> = new Map();
 //   subEdges: Map<string, HTMLDivElement> = new Map();
@@ -123,73 +131,45 @@ export class BaseDoor extends Opening implements IShape {
 //     }
 //   }
 
-//   set doorRotation(value: number) {
-//     this.propertySet.doorRotation = value;
+  set doorRotation(value: number) {
+    this.propertySet.doorRotation = value;
 
-//     const doorGroup = this.subChild.get('doorGroup');
-//     if (!doorGroup) return;
-//     if (value < 1 || value > 2) return;
-//     doorGroup.rotation.y = Math.PI + (Math.PI / -value);
+    const doorGroup = this.subElements.get('panel');
+    if (!doorGroup) return;
+    if (value < 1 || value > 2) return;
+    
+    switch (this.propertySet.doorQuadrant) {
+      case 1:
+        doorGroup.rotation.y = Math.PI + (Math.PI / -value);
+        break;
+      case 2:
+        doorGroup.rotation.y = Math.PI +  (Math.PI / value);
+        break;
+      case 3:
+        doorGroup.rotation.y = Math.PI +  (Math.PI / -value);
+        break;
+      case 4:
+        doorGroup.rotation.y = Math.PI +  (Math.PI / value);
+        break;
+    }
+  }
 
-//     this.createHingeDoorArc();
-//   }
-
-//   set doorQuadrant(value: number) {
-//     if (value < 1 || value > 4) return;
-//     this.propertySet.doorQuadrant = value;
-
-//     switch (value) {
-//       case 1:
-//         this.rotation.set(0, 0, 0);
-//         break;
-//       case 2:
-//         this.rotation.set(0, 0, 0);
-//         this.rotateZ(Math.PI);
-//         break;
-//       case 3:
-//         this.rotation.set(0, 0, 0);
-//         this.rotateY(Math.PI);
-//         this.rotateZ(Math.PI / 2);
-//         break;
-//       case 4:
-//         this.rotation.set(0, 0, 0);
-//         this.rotateX(Math.PI);
-//         break;
-//       default:
-//         break;
-//     }
-//   }
+  set doorQuadrant(value: number) {
+    if (value < 1 || value > 4) return;
+    this.propertySet.doorQuadrant = value;
+    this.setOPGeometry();
+  }
 
 //   set hingeColor(value: number) {
 //     this.propertySet.hingeColor = value;
-//   }
+//  }
 
   set doorPosition(point: [number, number, number]) {
     this.propertySet.doorPosition = point;
     this.position.set(point[0], point[1], point[2]);
-
+    // TODO: We need to update the Position at Kernel Level as well
     // this.set_position(new Vector3(point[0], point[1], point[2]));
-
-    // this.brepRaw = this.getBrepData();
   }
-
-//   set pencil(pencil: Pencil) {
-//     this._pencil = pencil;
-//     this.pencil.onCursorMove.add((coords) => {
-//       this.handlePencilCursorMove(coords);
-//     });
-
-//     this.pencil.onCursorDown.add((coords) => {
-//       this.initialCursorPos = coords;
-//     });
-//   }
-
-//   get pencil() {
-//     if (!this._pencil) {
-//       throw new Error('Pencil is not set for BaseDoor');
-//     }
-//     return this._pencil;
-//   }
 
   set doorLength(value: number) {
     this.propertySet.dimensions.length = value;
@@ -231,8 +211,8 @@ export class BaseDoor extends Opening implements IShape {
     super();
     this.skeleton = new Line();
     this.add(this.skeleton);
-    
-    this.subNodes = new Map<string, THREE.Object3D>();
+
+    this.subElements = new Map<SubElementType, THREE.Object3D>();
     // this.selected = false;
     // this.edit = false;
     
@@ -247,14 +227,42 @@ export class BaseDoor extends Opening implements IShape {
 
   private createDoor() {
     const smallGapOffset = 0.01;
-    const door = new Cuboid({
+    const doorPanel = new Cuboid({
       center: new Vector3(0, this.propertySet.doorHeight / 2, 0),
       width: this.propertySet.dimensions.length - 0.1 - smallGapOffset,
       height: this.propertySet.doorHeight - 0.1 - smallGapOffset,
       depth: this.propertySet.doorThickness,
       color: this.propertySet.doorColor,
     });
-    this.add(door);
+
+    const frameClipMesh = new THREE.SphereGeometry(0.01, 32, 32);
+    const frameClipMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const frameClip = new THREE.Mesh(frameClipMesh, frameClipMat);
+
+    switch (this.propertySet.doorQuadrant) {
+      case 1:
+        frameClip.position.set(this.propertySet.dimensions.length / 2 - 0.05, 0, this.propertySet.frameThickness / 2);
+        doorPanel.position.set(- (this.propertySet.dimensions.length / 2 - 0.05), 0, -this.propertySet.doorThickness / 2);
+        break;
+      case 2:
+        frameClip.position.set(- (this.propertySet.dimensions.length / 2 - 0.05), 0, this.propertySet.frameThickness / 2);
+        doorPanel.position.set(this.propertySet.dimensions.length / 2 - 0.05, 0, -this.propertySet.doorThickness / 2);
+        break;
+      case 3:
+        frameClip.position.set(- (this.propertySet.dimensions.length / 2 - 0.05), 0, -this.propertySet.frameThickness / 2);
+        doorPanel.position.set(this.propertySet.dimensions.length / 2 - 0.05, 0, this.propertySet.doorThickness / 2);
+        break;
+      case 4:
+        frameClip.position.set(this.propertySet.dimensions.length / 2 - 0.05, 0, -this.propertySet.frameThickness / 2);
+        doorPanel.position.set(- (this.propertySet.dimensions.length / 2 - 0.05), 0, this.propertySet.doorThickness / 2);
+        break;
+      default:
+        break;
+    }
+
+    frameClip.add(doorPanel);
+    this.add(frameClip);
+    this.subElements.set('panel', frameClip);
   }
 
   // TODO: We will later replace this with SweepedSolid along a path with a Sketch Profile
@@ -267,7 +275,7 @@ export class BaseDoor extends Opening implements IShape {
       depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
-    this.add(leftFrame);
+    // this.add(leftFrame);
 
     // Right Side Frame using Cuboid
     const rightFrame = new Cuboid({
@@ -277,7 +285,7 @@ export class BaseDoor extends Opening implements IShape {
       depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
-    this.add(rightFrame);
+    // this.add(rightFrame);
 
     // Top Frame using Cuboid
     const topFrame = new Cuboid({
@@ -287,9 +295,17 @@ export class BaseDoor extends Opening implements IShape {
       depth: this.propertySet.frameThickness,
       color: this.propertySet.frameColor,
     });
-    this.add(topFrame);
+    // this.add(topFrame);
 
     console.log(this.children.length  + ' children in the door after creating frame.');
+    const frameGroup = new THREE.Group();
+    frameGroup.add(leftFrame);
+    frameGroup.add(rightFrame);
+    frameGroup.add(topFrame);
+
+    this.add(frameGroup);
+
+    this.subElements.set('frame', frameGroup);
   }
 
   setOPConfig(config: OPDoor): void {
@@ -324,232 +340,24 @@ export class BaseDoor extends Opening implements IShape {
 
   // TODO: Add pure profile setter for elements/primitives where only Line rendering is needed
   showProfileView(status: boolean): void {
-    this.children.forEach((child) => {
-      // @ts-ignore
-      child.material.opacity = status ? 0.0 : 1.0;
-      // @ts-ignore
-      child.outline = status;
-    });
+    for (const [elementKey, element] of this.subElements.entries()) {
+      // You can use element here if needed, or leave the loop empty if not used
+      if (element.children.length > 0) {
+        for (const child of element.children) {
+          // @ts-ignore
+          child.material.opacity = status ? 0.0 : 1.0;
+          // @ts-ignore
+          child.outline = status;
+        }
+      } 
+      // else {
+      //   // @ts-ignore
+      //   element.material.opacity = 1.0;
+      //   // @ts-ignore
+      //   element.outline = false;
+      // }
+    }
   }
-
-//       this.createDoorAndHinge();
-
-//       this.doorPosition = this.propertySet.doorPosition;
-//       this.doorQuadrant = this.propertySet.doorQuadrant;
-//     } else {
-//       this.propertySet.id = this.ogid;
-//       this.calculateCoordinatesByConfig();
-
-//       this.brepRaw = this.getBrepData();
-//       this.createDoorAndHinge();
-//     }
-//   }
-
-//   calculateCoordinatesByConfig() {
-//     this.propertySet.dimensions.start.x = -this.propertySet.dimensions.length / 2;
-//     this.propertySet.dimensions.start.y = 0;
-//     this.propertySet.dimensions.start.z = 0;
-
-//     this.propertySet.dimensions.end.x = this.propertySet.dimensions.length / 2;
-//     this.propertySet.dimensions.end.y = 0;
-//     this.propertySet.dimensions.end.z = 0;
-
-//     // Clear previous coordinates
-//     this.propertySet.coordinates = [];
-//     this.propertySet.coordinates.push(
-//       [this.propertySet.dimensions.start.x, this.propertySet.dimensions.start.y, this.propertySet.dimensions.start.z],
-//       [this.propertySet.dimensions.end.x, this.propertySet.dimensions.end.y, this.propertySet.dimensions.end.z],
-//     );
-
-//     this.setOPGeometry();
-//     this.setOPMaterial();
-//   }
-
-//   private createHingeDoorArc() {
-//     const hingeArc = this.subChild.get('hingeArc');
-//     if (hingeArc && hingeArc instanceof THREE.Line) {
-//       hingeArc.geometry.dispose();
-//       hingeArc.material.dispose();
-//       hingeArc.removeFromParent();
-//       this.subChild.delete('hingeArc');
-//     }
-
-//     const { start, end } = this.propertySet.dimensions;
-//     const thickness = this.propertySet.doorThickness / 2;
-
-//     const arc = new THREE.EllipseCurve(
-//       0, 0, 
-//       start.x - end.x, start.x - end.x - thickness,
-//       Math.PI, Math.PI / this.propertySet.doorRotation,
-//       true
-//     );
-//     const arcMat = new THREE.LineBasicMaterial({ color: 0x000000 });
-//     const arcGeo = new THREE.BufferGeometry().setFromPoints(arc.getPoints(32));
-//     const arcMesh = new THREE.Line(arcGeo, arcMat);
-//     arcMesh.position.set(0, 0, -thickness);
-//     arcMesh.rotateX(Math.PI / 2);
-//     this.subChild.set('hingeArc', arcMesh);
-    
-//     const hingeLeft = this.subChild.get('hingeLeftPolygon');
-//     hingeLeft?.add(arcMesh);
-//   }
-
-//   private createClipMesh() {
-//     if (this.subChild.has('hingeClipMesh')) {
-//       const existingHingeClip = this.subChild.get('hingeClipMesh');
-//       if (existingHingeClip instanceof THREE.Mesh) {
-//         existingHingeClip.geometry.dispose();
-//         existingHingeClip.material.dispose();
-//         existingHingeClip.removeFromParent();
-//         this.subChild.delete('hingeClipMesh');
-//       }
-//     }
-//     const hingeClip = new THREE.SphereGeometry(0.01, 32, 32);
-//     const hingeClipMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-//     const hingeClipMesh = new THREE.Mesh(hingeClip, hingeClipMat);
-//     hingeClipMesh.position.set(0, 0, -this.propertySet.doorThickness);
-//     this.subChild.set('hingeClipMesh', hingeClipMesh);
-//     return hingeClipMesh;
-//   }
-
-//   private createDoorAndHinge() {
-//     const { start, end } = this.propertySet.dimensions;
-//     const { hingeLeft, hingeRight } = this.createHingePolygon();
-//     hingeLeft.position.set(start.x, start.y, start.z);
-//     hingeRight.position.set(end.x, end.y, end.z);
-
-//     const hingeClipMesh = this.createClipMesh();
-//     hingeLeft.add(hingeClipMesh);
-
-//     const doorPolygon = this.createDoorPolygon();
-
-//     const length = this.propertySet.dimensions.length;
-//     const thickness = this.propertySet.doorThickness / 2;
-
-//     doorPolygon.position.set(length / 2, 0, thickness);
-
-//     // flip
-//     // doorPolygon.rotation.y = Math.PI;
-    
-//     if (this.subChild.has('doorGroup')) {
-//       const existingDoorGroup = this.subChild.get('doorGroup');
-//       if (existingDoorGroup instanceof THREE.Group) {
-//         existingDoorGroup.removeFromParent();
-//         this.subChild.delete('doorGroup');
-//       }
-//     }
-
-//     const doorGroup = new THREE.Group();
-//     hingeClipMesh.add(doorGroup);
-//     doorGroup.add(doorPolygon);
-//     doorGroup.rotation.y = Math.PI + (Math.PI / -this.propertySet.doorRotation);
-//     this.subChild.set('doorGroup', doorGroup);
-//     this.createHingeDoorArc();
-//   }
-
-//   private createHingePolygon() {
-//     if (this.subChild.has('hingeLeftPolygon')) {
-//       const existingHingeLeft = this.subChild.get('hingeLeftPolygon');
-//       if (existingHingeLeft instanceof PolygonBuilder) {
-//         existingHingeLeft.removeFromParent();
-//         existingHingeLeft.dispose();
-//         this.subChild.delete('hingeLeftPolygon');
-//       }
-//     }
-//     if (this.subChild.has('hingeRightPolygon')) {
-//       const existingHingeRight = this.subChild.get('hingeRightPolygon');
-//       if (existingHingeRight instanceof PolygonBuilder) {
-//         existingHingeRight.removeFromParent();
-//         existingHingeRight.dispose();
-//         this.subChild.delete('hingeRightPolygon');
-//       }
-//     }
-
-//     const doorThickness = this.propertySet.doorThickness;
-//     const halfDoorThickness = doorThickness / 2;
-//     const points: Array<[number, number, number]> = [];
-//     points.push(
-//       [-halfDoorThickness, 0, -doorThickness],
-//       [-halfDoorThickness, 0, doorThickness],
-//       [halfDoorThickness, 0, doorThickness],
-//       [halfDoorThickness, 0, 0],
-//       [0, 0, 0],
-//       [0, 0, -doorThickness]
-//     )
-//     const hingePolygon = new PolygonBuilder();
-//     hingePolygon.insertMultiplePoints(points);
-//     hingePolygon.material = new THREE.MeshBasicMaterial({
-//       color: this.propertySet.hingeColor,
-//       side: THREE.DoubleSide,
-//       depthWrite: true
-//     });
-//     this.subChild.set('hingeLeftPolygon', hingePolygon);
-//     this.add(hingePolygon);
-
-//     const hingeRight = hingePolygon.clone().rotateZ(Math.PI);
-//     this.subChild.set('hingeRightPolygon', hingeRight);
-//     this.add(hingeRight);
-
-//     return {
-//       hingeLeft: hingePolygon,
-//       hingeRight: hingeRight,
-//     };
-//   }
-
-//   private createDoorPolygon() {
-//     if (this.subChild.has('doorPolygon')) {
-//       const existingDoorPolygon = this.subChild.get('doorPolygon');
-//       if (existingDoorPolygon instanceof PolygonBuilder) {
-//         existingDoorPolygon.dispose();
-//       }
-//     }
-    
-//     const length = this.propertySet.dimensions.length;
-//     const thickness = this.propertySet.doorThickness / 2;
-//     const points: Array<[number, number, number]> = [];
-//     // points.push(
-//     //   [start.x + thickness, start.y, start.z - thickness],
-//     //   [start.x + thickness, start.y, start.z + thickness],
-//     //   [end.x - thickness, end.y, end.z + thickness],
-//     //   [end.x - thickness, end.y, end.z - thickness]
-//     // );
-//     points.push(
-//       [length / 2, 0, -thickness],
-//       [length / 2, 0, thickness],
-//       [-length / 2, 0, thickness],
-//       [-length / 2, 0, -thickness]
-//     );
-
-//     const doorPolygon = new PolygonBuilder();
-//     doorPolygon.insertMultiplePoints(points);
-//     doorPolygon.material = new THREE.MeshBasicMaterial({
-//       color: 0xffffff,
-//       side: THREE.DoubleSide,
-//       depthWrite: true,
-//     });
-//     this.subChild.set('doorPolygon', doorPolygon);
-    
-//     return doorPolygon;
-//   }
-
-//   setOPConfig(config: OPDoor): void {
-//     this.propertySet = config;
-//   }
-
-//   getOPConfig(): OPDoor {
-//     return this.propertySet;
-//   }
-
-//   setOPGeometry(): void {
-//     const { coordinates } = this.propertySet;
-//     const points = coordinates.map(coord => new Vector3(coord[0], coord[1], coord[2]));
-//     this.addMultiplePoints(points);
-//   }
-
-//   setOPMaterial() {
-//     this.material = new THREE.LineBasicMaterial({ color: 0x000000, depthWrite: false });
-//     this.renderOrder = 1;
-//   }
 
 //   set wallMaterial(material: DoorMaterial) {
 //     this.propertySet.doorMaterial = material;
