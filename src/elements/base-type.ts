@@ -1,8 +1,10 @@
 
+
 export enum ElementType {
   PRIMITIVE = 'PRIMITIVE',
   SHAPE = 'SHAPE',
   DOOR = 'DOOR',
+  WINDOW = 'WINDOW',
   WALL = 'WALL',
   SPACECONTAINER = 'SPACECONTAINER',
   BOARD = 'BOARD',
@@ -16,5 +18,15 @@ export enum DoorType {
   SLIDING = 'SLIDING',
   FOLDING = 'FOLDING',
   DOUBLEACTION = 'DOUBLEACTION',
+  OTHER = 'OTHER',
+}
+
+export enum WindowType {
+  GLASS = 'GLASS',
+  WOOD = 'WOOD',
+  SLIDING = 'SLIDING',
+  CASEMENT = 'CASEMENT',
+  AWNING = 'AWNING',
+  FIXED = 'FIXED',
   OTHER = 'OTHER',
 }

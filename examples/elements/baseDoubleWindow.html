@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base Double Window Example - OpenPlans</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 1000;
+      max-width: 300px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .control-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 5px;
+    }
+    select {
+      width: 100%;
+      padding: 5px;
+    }
+    .value-display {
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <div id="controls">
+    <h3>Double Window Controls</h3>
+    
+    <div class="control-group">
+      <label for="windowLength">Window Length: <span id="lengthValue" class="value-display">2.0m</span></label>
+      <input type="range" id="windowLength" min="1" max="4" step="0.1" value="2">
+    </div>
+    
+    <div class="control-group">
+      <label for="windowHeight">Window Height: <span id="heightValue" class="value-display">1.2m</span></label>
+      <input type="range" id="windowHeight" min="0.5" max="2.5" step="0.1" value="1.2">
+    </div>
+    
+    <div class="control-group">
+      <label for="sillHeight">Sill Height: <span id="sillValue" class="value-display">0.9m</span></label>
+      <input type="range" id="sillHeight" min="0" max="2" step="0.1" value="0.9">
+    </div>
+    
+    <div class="control-group">
+      <label for="windowThickness">Window Thickness: <span id="thicknessValue" class="value-display">0.05m</span></label>
+      <input type="range" id="windowThickness" min="0.02" max="0.15" step="0.01" value="0.05">
+    </div>
+    
+    <div class="control-group">
+      <label for="mullionWidth">Mullion Width: <span id="mullionValue" class="value-display">0.05m</span></label>
+      <input type="range" id="mullionWidth" min="0.02" max="0.2" step="0.01" value="0.05">
+    </div>
+    
+    <div class="control-group">
+      <label for="windowQuadrant">Window Quadrant:</label>
+      <select id="windowQuadrant">
+        <option value="1" selected>Quadrant 1</option>
+        <option value="2">Quadrant 2</option>
+        <option value="3">Quadrant 3</option>
+        <option value="4">Quadrant 4</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="leftWindowRotation">Left Window Rotation: <span id="leftRotationValue" class="value-display">1.5</span></label>
+      <input type="range" id="leftWindowRotation" min="1" max="2" step="0.1" value="1.5">
+    </div>
+    
+    <div class="control-group">
+      <label for="rightWindowRotation">Right Window Rotation: <span id="rightRotationValue" class="value-display">1.5</span></label>
+      <input type="range" id="rightWindowRotation" min="1" max="2" step="0.1" value="1.5">
+    </div>
+  </div>
+
+  <script type="module">
+    import { OpenPlans } from '../../src/index.ts';
+
+    const container = document.getElementById('container');
+    const openPlans = new OpenPlans(container);
+
+    await openPlans.setupOpenGeometry();
+    
+    // Create a double window with default configuration
+    const doubleWindow = openPlans.baseDoubleWindow();
+    
+    // Set up controls
+    const windowLengthInput = document.getElementById('windowLength');
+    const windowHeightInput = document.getElementById('windowHeight');
+    const sillHeightInput = document.getElementById('sillHeight');
+    const windowThicknessInput = document.getElementById('windowThickness');
+    const mullionWidthInput = document.getElementById('mullionWidth');
+    const windowQuadrantInput = document.getElementById('windowQuadrant');
+    const leftWindowRotationInput = document.getElementById('leftWindowRotation');
+    const rightWindowRotationInput = document.getElementById('rightWindowRotation');
+    
+    const lengthValue = document.getElementById('lengthValue');
+    const heightValue = document.getElementById('heightValue');
+    const sillValue = document.getElementById('sillValue');
+    const thicknessValue = document.getElementById('thicknessValue');
+    const mullionValue = document.getElementById('mullionValue');
+    const leftRotationValue = document.getElementById('leftRotationValue');
+    const rightRotationValue = document.getElementById('rightRotationValue');
+    
+    // Update window properties on control change
+    windowLengthInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.windowLength = value;
+      lengthValue.textContent = `${value.toFixed(2)}m`;
+    });
+    
+    windowHeightInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.propertySet.windowHeight = value;
+      doubleWindow.setOPGeometry();
+      heightValue.textContent = `${value.toFixed(2)}m`;
+    });
+    
+    sillHeightInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.propertySet.sillHeight = value;
+      doubleWindow.setOPGeometry();
+      sillValue.textContent = `${value.toFixed(2)}m`;
+    });
+    
+    windowThicknessInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.windowThickness = value;
+      thicknessValue.textContent = `${value.toFixed(2)}m`;
+    });
+    
+    mullionWidthInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.propertySet.mullionWidth = value;
+      doubleWindow.setOPGeometry();
+      mullionValue.textContent = `${value.toFixed(2)}m`;
+    });
+    
+    windowQuadrantInput.addEventListener('change', (e) => {
+      const value = parseInt(e.target.value);
+      doubleWindow.windowQuadrant = value;
+    });
+    
+    leftWindowRotationInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.leftWindowRotation = value;
+      leftRotationValue.textContent = value.toFixed(1);
+    });
+    
+    rightWindowRotationInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      doubleWindow.rightWindowRotation = value;
+      rightRotationValue.textContent = value.toFixed(1);
+    });
+    
+    // Fit camera to view the window
+    openPlans.fit('WINDOW');
+  </script>
+</body>
+</html>

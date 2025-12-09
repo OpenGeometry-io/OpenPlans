@@ -35,7 +35,7 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.pencil.mode = "cursor";
+      // openPlans.pencil.mode = "cursor";
       // openPlans.pencil.mode = "select";
 
       window = openPlans.baseSingleWindow();
@@ -44,7 +44,7 @@
 
     function setUI() {
       const gui = new GUI();
-      const windowFolder = gui.addFolder('window');
+      const windowFolder = gui.addFolder('Window');
       const windowControls = {
         'color': '#adb5bd',
         'windowLength': 2,
@@ -54,38 +54,41 @@
       };
       const windows = openPlans.getEntitiesByType('baseWindow');
       windows.forEach((window) => {
-        console.log('window:', window);
-        const subwindow = windowFolder.addFolder(window.labelName);
-        subwindow.addColor(windowControls, 'color').name('Color').onChange((value) => {
+        console.log('Window:', window);
+        const subWindow = windowFolder.addFolder(window.labelName);
+        subWindow.addColor(windowControls, 'color').name('Color').onChange((value) => {
           window.windowColor = value;
         });
-        subwindow.add(windowControls, 'windowLength', 2, 5).name('Length').onChange((value) => {
+        subWindow.add(windowControls, 'windowLength', 2, 5).name('Length').onChange((value) => {
           window.windowLength = value;
         });
-        subwindow.add(windowControls, 'windowThickness', 0.1, 1).name('Thickness').onChange((value) => {
+        subWindow.add(windowControls, 'windowThickness', 0.1, 1).name('Thickness').onChange((value) => {
           window.windowThickness = value;
         });
-        subwindow.add(windowControls, 'hingeThickness', 0.1, 0.5).name('Hinge Thickness').onChange((value) => {
+        subWindow.add(windowControls, 'hingeThickness', 0.1, 0.5).name('Hinge Thickness').onChange((value) => {
           window.hingeThickness = value;
         });
-        subwindow.add(windowControls, 'selected').name('Selected').onChange((value) => {
+        subWindow.add(windowControls, 'selected').name('Selected').onChange((value) => {
           window.selected = value;
         });
-        subwindow.add({ config: () => {
+        subWindow.add({ config: () => {
           const config = window.getOPConfig();
-          console.log('window Config:', config);
+          console.log('Window Config:', config);
         }}, 'config').name('Get Config');
-        subwindow.add({ dispose: () => {
+        subWindow.add({ dispose: () => {
           console.log('Disposing window:', window.ogid);
           openPlans.disposeElement(window.ogid);
         }}, 'dispose').name('Dispose');
       });
 
-      const preloadFolder = gui.addFolder('Preload window');
+      const preloadFolder = gui.addFolder('Preload Window');
       const preloadControls = {
-        'windowLength': 2,
         'selected': false,
-        'preloadwindow': () => {
+        'length': 1,
+        'thickness': 0.2,
+        'frameThickness': 0.1,
+        'showProfileView': false,
+        'preloadWindow': () => {
           const preloadConfig = {
             "type": "baseWindow",
             "labelName": "Edited Window",
@@ -109,21 +112,48 @@
             ],
             "windowHeight": 0,
             "windowThickness": 0.2,
-            "windowColor": 0xadb5bd,
+            "windowColor": 11384253,
             "hingeColor": 0,
             "coordinates": [],
             "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"
           };
           
           window = openPlans.baseSingleWindow(preloadConfig);
-          console.log('Preloaded window:', window);
+          console.log('Preloaded Window:', window);
         }
       };
 
-      preloadFolder.add(preloadControls, 'preloadwindow').name('Load window By Config');
-      preloadFolder.add(preloadControls, 'windowLength', 2, 5).name('Preload Length').onChange((value) => {
+      preloadFolder.add(preloadControls, 'preloadWindow').name('Load Window By Config');
+      preloadFolder.add(preloadControls, 'windowPosition', [1, 2, 3, 4]).name('Window Position').onChange((value) => {
+        if (window) {
+          // Example positions based on quadrant
+          const positions = {
+            1: [3, 0, 3],
+            2: [7, 0, 3],
+            3: [7, 0, 7],
+            4: [3, 0, 7]
+          };
+          window.windowPosition = positions[value];
+        }
+      });
+      preloadFolder.add(preloadControls, 'length', 1, 5).name('Window Length').onChange((value) => {
         if (window) {
           window.windowLength = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'thickness', 0.1, 1).name('Window Thickness').onChange((value) => {
+        if (window) {
+          window.windowThickness = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'frameThickness', 0.1, 0.5).name('Frame Thickness').onChange((value) => {
+        if (window) {
+          window.frameThickness = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'showProfileView').name('Show Profile View').onChange((value) => {
+        if (window) {
+          window.showProfileView(value);
         }
       });
       preloadFolder.add(preloadControls, 'selected').name('Selected').onChange((value) => {
@@ -134,7 +164,7 @@
       preloadFolder.add({ config: () => {
         if (window) {
           const config = window.getOPConfig();
-          console.log('Preloaded window Config:', config);
+          console.log('Preloaded Window Config:', config);
         }
       }}, 'config').name('Get Preload Config');
     }

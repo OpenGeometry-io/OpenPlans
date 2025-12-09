@@ -51,7 +51,8 @@
         'quadrant': 1,
         'doorLength': 2,
         'doorThickness': 0.2,
-        'selected': false
+        'selected': false,
+        'doorHeight': 1.2
       };
       const doors = openPlans.getEntitiesByType('baseDoor');
       doors.forEach((door) => {
@@ -68,6 +69,9 @@
         });
         subDoor.add(doorControls, 'doorLength', 2, 5).name('Length').onChange((value) => {
           door.doorLength = value;
+        });
+        subDoor.add(doorControls, 'doorHeight', 1.2, 2.5).name('Height').onChange((value) => {
+          door.doorHeight = value;
         });
         subDoor.add(doorControls, 'doorThickness', 0.1, 1).name('Thickness').onChange((value) => {
           door.doorThickness = value;
@@ -93,6 +97,7 @@
         'thickness': 0.2,
         'showProfileView': false,
         'doorQuadrant': 1,
+        'doorHeight': 1.2,
         'preloadDoor': () => {
           const preloadConfig = {
             "type": "door",
@@ -116,7 +121,7 @@
               3
             ],
             "doorType": "WOOD",
-            "doorHeight": 0,
+            "doorHeight": 1.2,
             "doorThickness": 0.2,
             "doorMaterial": "WOOD",
             "doorColor": 9127187,
@@ -163,6 +168,11 @@
       preloadFolder.add(preloadControls, 'thickness', 0.1, 1).name('Door Thickness').onChange((value) => {
         if (door) {
           door.doorThickness = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'doorHeight', 1.2, 2.5).name('Height').onChange((value) => {
+        if (door) {
+          door.doorHeight = value;
         }
       });
       preloadFolder.add(preloadControls, 'showProfileView').name('Show Profile View').onChange((value) => {

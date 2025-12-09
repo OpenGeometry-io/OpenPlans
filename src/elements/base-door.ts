@@ -206,6 +206,18 @@ export class BaseDoor extends Opening implements IShape {
     });
   }
 
+  set doorHeight(value: number) {
+    this.propertySet.doorHeight = value;
+    this.setOPGeometry();
+    this.setConfig({
+      depth: this.propertySet.doorThickness * 1.1,
+      height: value * 1.1,
+      width: this.propertySet.dimensions.length * 1.1,
+      center: new Vector3(0, value / 2, 0),
+      color: this.propertySet.doorColor,
+    });
+  }
+
   constructor(baseDoorConfig?: OPDoor) {
     // Call the parent class (Opening) constructor
     super();

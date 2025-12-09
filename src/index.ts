@@ -43,6 +43,8 @@ import { LinePrimitive } from './primitives/line';
 import { CuboidShape } from './shapes/cuboid';
 import { CylinderShape } from './shapes/cylinder';
 import { BaseDoor, OPDoor } from './elements/base-door';
+import { BaseSingleWindow, OPSingleWindow } from './elements/base-single-window';
+import { BaseDoubleWindow, OPDoubleWindow } from './elements/base-double-window';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -239,23 +241,22 @@ export class OpenPlans {
   //   return wall
   // }
 
-  // baseSingleWindow(config: OPWindow): BaseWindow {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const window = new BaseWindow(config);
-  //   window.pencil = this.pencil;
-  //   // this.openThree.scene.add(window)
-  //   this.ogElements.push(window)
-  //   return window
-  // }
+  baseSingleWindow(config?: OPSingleWindow): BaseSingleWindow {
+    const window = new BaseSingleWindow(config);
+    this.openThree.scene.add(window)
+    this.ogElements.push(window)
+    return window
+  }
 
-  baseDoor(config: OPDoor): BaseDoor {
-    // if (!this.pencil) {
-    //   throw new Error('Pencil not initialized')
-    // }
+  baseDoubleWindow(config?: OPDoubleWindow): BaseDoubleWindow {
+    const window = new BaseDoubleWindow(config);
+    this.openThree.scene.add(window)
+    this.ogElements.push(window)
+    return window
+  }
+
+  baseDoor(config?: OPDoor): BaseDoor {
     const door = new BaseDoor(config);
-    // door.pencil = this.pencil;
     this.openThree.scene.add(door)
     this.ogElements.push(door)
     return door
