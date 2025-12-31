@@ -49,3 +49,10 @@ This will start the development server and you should be able to access OpenPlan
 - Note: If you make changes to the OpenGeometry Kernel, you will need to rebuild it.
 - We use vite as the build tool, so you can use the vite commands to build and run the project.
 - Server port can be changed by modifying the `vite.config.js` file in the root directory of the OpenPlans project.
+
+
+## Documentation
+
+- Docusaurus is being used for documentation
+- `cd docs`
+- `npm run start` to make any changes

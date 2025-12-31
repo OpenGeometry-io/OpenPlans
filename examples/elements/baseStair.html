@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Stair</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo - Base Stair">
+  <meta name="author" content="OpenGeometry Team">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let stair;
+
+    async function init() {
+      console.log('Init started');
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+      console.log('OpenGeometry setup complete');
+
+      // Create a basic stair
+      stair = openPlans.baseStair();
+      console.log('Stair created:', stair);
+      console.log('Stair ogType:', stair.ogType);
+      
+      console.log('Init complete');
+    }
+
+    function setUI() {
+      console.log('setUI called - Creating GUI');
+      const gui = new GUI();
+      console.log('GUI created:', gui);
+      const stairFolder = gui.addFolder('Stair');
+      const stairControls = {
+        'stairColor': '#8B7355',
+        'width': 1.2,
+        'totalHeight': 3.0,
+        'riserHeight': 0.17,
+        'treadDepth': 0.28,
+        'selected': false,
+        'positionX': 0,
+        'positionY': 0,
+        'positionZ': 0,
+      };
+
+      console.log('All elements:', openPlans.ogElements);
+      const stairs = openPlans.getEntitiesByType('STAIR');
+      console.log('Found stairs:', stairs, 'Length:', stairs.length);
+      stairs.forEach((stair) => {
+        console.log('Processing stair:', stair);
+        const subStair = stairFolder.addFolder(stair.labelName);
+        
+        subStair.addColor(stairControls, 'stairColor').name('Stair Color').onChange((value) => {
+          stair.stairColor = parseInt(value.replace('#', '0x'));
+        });
+        
+        subStair.add(stairControls, 'width', 0.8, 2.5).name('Width').onChange((value) => {
+          stair.stairWidth = value;
+        });
+        
+        subStair.add(stairControls, 'totalHeight', 1, 5).name('Total Height').onChange((value) => {
+          stair.totalHeight = value;
+        });
+
+        subStair.add(stairControls, 'riserHeight', 0.15, 0.22).name('Riser Height').onChange((value) => {
+          stair.riserHeight = value;
+        });
+
+        subStair.add(stairControls, 'treadDepth', 0.22, 0.35).name('Tread Depth').onChange((value) => {
+          stair.treadDepth = value;
+        });
+
+        subStair.add(stairControls, 'positionX', -10, 10).name('Position X').onChange((value) => {
+          const pos = stair.propertySet.stairPosition;
+          stair.stairPosition = [value, pos[1], pos[2]];
+        });
+
+        subStair.add(stairControls, 'positionY', -5, 5).name('Position Y').onChange((value) => {
+          const pos = stair.propertySet.stairPosition;
+          stair.stairPosition = [pos[0], value, pos[2]];
+        });
+
+        subStair.add(stairControls, 'positionZ', -10, 10).name('Position Z').onChange((value) => {
+          const pos = stair.propertySet.stairPosition;
+          stair.stairPosition = [pos[0], pos[1], value];
+        });
+        
+        subStair.add(stairControls, 'selected').name('Selected').onChange((value) => {
+          stair.selected = value;
+        });
+
+        subStair.add({ config: () => {
+          const config = stair.getOPConfig();
+          console.log('Stair Config:', config);
+          console.log('Number of Steps:', stair.propertySet.numberOfSteps);
+        }}, 'config').name('Get Config');
+
+        subStair.add({ dispose: () => {
+          console.log('Disposing stair:', stair.ogid);
+          openPlans.disposeElement(stair.ogid);
+        }}, 'dispose').name('Dispose');
+      });
+
+      const preloadFolder = gui.addFolder('Preload Stair');
+      const preloadControls = {
+        'selected': false,
+        'width': 1.2,
+        'totalHeight': 3.0,
+        'riserHeight': 0.17,
+        'treadDepth': 0.28,
+        'showProfileView': false,
+        'positionX': 5,
+        'positionY': 0,
+        'positionZ': 0,
+      };
+
+      preloadFolder.add(preloadControls, 'width', 0.8, 2.5).name('Width');
+      preloadFolder.add(preloadControls, 'totalHeight', 1, 5).name('Total Height');
+      preloadFolder.add(preloadControls, 'riserHeight', 0.15, 0.22).name('Riser Height');
+      preloadFolder.add(preloadControls, 'treadDepth', 0.22, 0.35).name('Tread Depth');
+      preloadFolder.add(preloadControls, 'positionX', -10, 10).name('Position X');
+      preloadFolder.add(preloadControls, 'positionY', -5, 5).name('Position Y');
+      preloadFolder.add(preloadControls, 'positionZ', -10, 10).name('Position Z');
+      preloadFolder.add(preloadControls, 'selected').name('Selected');
+      preloadFolder.add(preloadControls, 'showProfileView').name('Show Profile View').onChange((value) => {
+        const stairs = openPlans.getEntitiesByType('STAIR');
+        stairs.forEach((stair) => {
+          stair.showProfileView(value);
+        });
+      });
+
+      preloadFolder.add({ 
+        create: () => {
+          // Calculate number of steps
+          const numberOfSteps = Math.ceil(preloadControls.totalHeight / preloadControls.riserHeight);
+          const adjustedRiserHeight = preloadControls.totalHeight / numberOfSteps;
+          const totalLength = (numberOfSteps - 1) * preloadControls.treadDepth;
+
+          const newStair = openPlans.baseStair({
+            labelName: 'Custom Stair',
+            type: 'STAIR',
+            stairType: 'STRAIGHT',
+            dimensions: {
+              width: preloadControls.width,
+              totalHeight: preloadControls.totalHeight,
+              totalLength: totalLength,
+            },
+            stairPosition: [preloadControls.positionX, preloadControls.positionY, preloadControls.positionZ],
+            riserHeight: adjustedRiserHeight,
+            treadDepth: preloadControls.treadDepth,
+            numberOfSteps: numberOfSteps,
+            stairColor: 0x8B7355,
+            stairMaterial: 'wood',
+            coordinates: [],
+          });
+          console.log('Created new stair:', newStair);
+          setUI(); // Refresh UI to show new stair
+        }
+      }, 'create').name('Create Stair');
+    }
+
+    init().then(() => {
+      console.log('Init promise resolved, calling setUI');
+      setTimeout(() => {
+        setUI();
+      }, 100);
+    }).catch(err => {
+      console.error('Error in init:', err);
+    });
+  </script>
+</body>
+
+</html>

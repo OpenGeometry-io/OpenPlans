@@ -13,17 +13,8 @@ OpenPlans can be used in Two Ways
 - Create Editor Tools
 
 #### 2. Headless Floorplan Generation
-
-#### Feature List
-- Triangulation
-- Shapes - Rectangles, Circles, Polygons
-- Extrusion
-- Offset
-- Boolean Operations (In Progress)
+- Generate Floorplans from JSON Data
+- Export to Various Formats
 
 #### Developer Guide
 You can find the developer guide [here](https://github.com/OpenGeometry-io/OpenPlans/blob/main/developer.md)
-
-- Docusaurus is being used for documentation
-- `cd docs`
-- `npm run start` to make any changes

@@ -45,6 +45,8 @@ import { CylinderShape } from './shapes/cylinder';
 import { BaseDoor, OPDoor } from './elements/base-door';
 import { BaseSingleWindow, OPSingleWindow } from './elements/base-single-window';
 import { BaseDoubleWindow, OPDoubleWindow } from './elements/base-double-window';
+import { BaseSlab, OPSlab } from './elements/base-slab';
+import { BaseStair, OPStair } from './elements/base-stair';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -62,6 +64,10 @@ export class OpenPlans {
 
   private onRender: Event<void> = new Event<void>();
 
+
+  // 2D Views and Profile Views
+  private profileViews: Map<string, { camera: THREE.Camera; renderer: THREE.WebGLRenderer; container: HTMLElement }> = new Map();
+
   constructor(container: HTMLElement) {
     // this.renderCallback = this.renderCallback.bind(this)
 
@@ -78,6 +84,44 @@ export class OpenPlans {
     this.setuplabelRenderer();
     this.setupEvent();
   }
+
+
+  // 2D Views and Profile Views
+  // TODO: Create proper 2D view management system, where user can create multiple 2D views at different heights and that view will be rendered accordingly in given container
+  // TODO: Using this system, we can create section views as well and get reference to those views which can be used to generate 2D drawings later
+  // TODO: These views can be also saved as part of the Element Views
+  
+  /**
+   * Create a 2D view in the given container.
+   * @param container The HTML container element where the 2D view will be rendered.
+   */
+  create2DView(container: HTMLElement, sectionHeight: number = 0): { camera: THREE.Camera; renderer: THREE.WebGLRenderer } {
+    const aspect = container.clientWidth / container.clientHeight;
+    const camera = new THREE.OrthographicCamera(-aspect * 1.5 / 2, aspect * 1.5 / 2, 1.5 / 2, -1.5 / 2, 0.01, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    // rotate camera to look down
+    camera.position.set(0, 20, 0);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionHeight);
+    renderer.clippingPlanes = [clippingPlane];
+    renderer.localClippingEnabled = true;
+
+    this.profileViews.set(container.id, { camera, renderer, container });
+
+    return { camera, renderer  };
+  }
+  
+  /**
+   * Show or hide the 2D view.
+   * @param show Whether to show or hide the 2D view
+   * @param orthographic Whether to use orthographic projection
+   * @param height The height of the 2D view
+   */
+  // toggle2DView(show: boolean, orthographic: boolean = true, height: number = 0) { 
 
   // set enablePencil(value: boolean) {
   //   if (value && !this.pencil) {
@@ -123,10 +167,18 @@ export class OpenPlans {
     });
   }
 
+  // This function is called on each animation frame, called from OpenThree class using callback
   private renderCallback = () => {
     if (this.openThree && this.labelRenderer) {
       // console.log('Rendering labels');
       this.labelRenderer.render(this.openThree.scene, this.openThree.threeCamera);
+    }
+
+    if (this.profileViews.size > 0) {
+      // console.log('Rendering 2D/Profile Views');
+      this.profileViews.forEach(({ camera: profileCamera, renderer: profileRenderer, container }) => {
+        profileRenderer.render(this.openThree.scene, profileCamera);
+      });
     }
   }
 
@@ -260,6 +312,20 @@ export class OpenPlans {
     this.openThree.scene.add(door)
     this.ogElements.push(door)
     return door
+  }
+
+  baseSlab(config?: OPSlab): BaseSlab {
+    const slab = new BaseSlab(config);
+    this.openThree.scene.add(slab)
+    this.ogElements.push(slab)
+    return slab
+  }
+
+  baseStair(config?: OPStair): BaseStair {
+    const stair = new BaseStair(config);
+    this.openThree.scene.add(stair)
+    this.ogElements.push(stair)
+    return stair
   }
 
   // space(): BaseSpace {

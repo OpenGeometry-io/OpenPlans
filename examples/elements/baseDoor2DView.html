@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Door</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <div id="profileViewContainer" style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+    <!-- 2D Profile View will be rendered here -->
+  </div>
+
+
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let door;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      // openPlans.pencil.mode = "cursor";
+      // openPlans.pencil.mode = "select";
+
+      door = openPlans.baseDoor();
+      // door.doorPosition = [-4, 0, 0];
+
+      const profileContainer = document.getElementById('profileViewContainer');
+      const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+      profileContainer.appendChild(renderer.domElement);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const doorFolder = gui.addFolder('Door');
+      const doorControls = {
+        'rotation': 1,
+        'color': '#adb5bd',
+        'quadrant': 1,
+        'doorLength': 2,
+        'doorThickness': 0.2,
+        'selected': false,
+        'doorHeight': 1.2
+      };
+      const doors = openPlans.getEntitiesByType('baseDoor');
+      doors.forEach((door) => {
+        console.log('Door:', door);
+        const subDoor = doorFolder.addFolder(door.labelName);
+        subDoor.addColor(doorControls, 'color').name('Color').onChange((value) => {
+          door.doorColor = value;
+        });
+        subDoor.add(doorControls, 'rotation', 1, 2).name('Rotation').onChange((value) => {
+          door.doorRotation = value;
+        });
+        subDoor.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+          door.doorQuadrant = value;
+        });
+        subDoor.add(doorControls, 'doorLength', 2, 5).name('Length').onChange((value) => {
+          door.doorLength = value;
+        });
+        subDoor.add(doorControls, 'doorHeight', 1.2, 2.5).name('Height').onChange((value) => {
+          door.doorHeight = value;
+        });
+        subDoor.add(doorControls, 'doorThickness', 0.1, 1).name('Thickness').onChange((value) => {
+          door.doorThickness = value;
+        });
+        subDoor.add(doorControls, 'selected').name('Selected').onChange((value) => {
+          door.selected = value;
+        });
+        subDoor.add({ config: () => {
+          const config = door.getOPConfig();
+          console.log('Door Config:', config);
+        }}, 'config').name('Get Config');
+        subDoor.add({ dispose: () => {
+          console.log('Disposing door:', door.ogid);
+          openPlans.disposeElement(door.ogid);
+        }}, 'dispose').name('Dispose');
+      });
+
+      const preloadFolder = gui.addFolder('Preload Door');
+      const preloadControls = {
+        'doorRotation': 1,
+        'selected': false,
+        'length': 1,
+        'thickness': 0.2,
+        'showProfileView': false,
+        'doorQuadrant': 1,
+        'doorHeight': 1.2,
+        'preloadDoor': () => {
+          const preloadConfig = {
+            "type": "door",
+            "labelName": "Edited Door",
+            "dimensions": {
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "length": 2
+            },
+            "doorPosition": [
+              3,
+              0,
+              3
+            ],
+            "doorType": "WOOD",
+            "doorHeight": 1.2,
+            "doorThickness": 0.2,
+            "doorMaterial": "WOOD",
+            "doorColor": 9127187,
+            "hingeColor": 0,
+            "doorRotation": 1.5,
+            "doorQuadrant": 2,
+            "coordinates": [],
+            "id": "1b4c0b48-d475-4913-acb2-a5780cb44576"
+          };
+          
+          door = openPlans.baseDoor(preloadConfig);
+          console.log('Preloaded Door:', door);
+        }
+      };
+
+      preloadFolder.add(preloadControls, 'preloadDoor').name('Load Door By Config');
+      preloadFolder.add(preloadControls, 'doorRotation', 1, 2).name('Door Rotation').onChange((value) => {
+        if (door) {
+          door.doorRotation = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'doorQuadrant', [1, 2, 3, 4]).name('Door Quadrant').onChange((value) => {
+        if (door) {
+          door.doorQuadrant = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'doorPosition', [1, 2, 3, 4]).name('Door Position').onChange((value) => {
+        if (door) {
+          // Example positions based on quadrant
+          const positions = {
+            1: [3, 0, 3],
+            2: [7, 0, 3],
+            3: [7, 0, 7],
+            4: [3, 0, 7]
+          };
+          door.doorPosition = positions[value];
+        }
+      });
+      preloadFolder.add(preloadControls, 'length', 1, 2).name('Door Length').onChange((value) => {
+        if (door) {
+          door.doorLength = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'thickness', 0.1, 1).name('Door Thickness').onChange((value) => {
+        if (door) {
+          door.doorThickness = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'doorHeight', 1.2, 2.5).name('Height').onChange((value) => {
+        if (door) {
+          door.doorHeight = value;
+        }
+      });
+      preloadFolder.add(preloadControls, 'showProfileView').name('Show Profile View').onChange((value) => {
+        if (door) {
+          door.showProfileView(value);
+        }
+      });
+      preloadFolder.add(preloadControls, 'selected').name('Selected').onChange((value) => {
+        if (door) {
+          door.selected = value;
+        }
+      });
+      preloadFolder.add({ config: () => {
+        if (door) {
+          const config = door.getOPConfig();
+          console.log('Preloaded Door Config:', config);
+        }
+      }}, 'config').name('Get Preload Config');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>
