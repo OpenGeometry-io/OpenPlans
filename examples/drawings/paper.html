@@ -33,66 +33,82 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.pencil.mode = "select";
+      openPlans.showGrid = false;
+      openPlans.openThree.toggleTheme('darkBlue');
+
+      // openPlans.pencil.mode = "select";
 
       paperFrame = openPlans.paperFrame();
+      console.log(paperFrame);
       paperFrame.format = 'A4';
       paperFrame.margin = 10;
       paperFrame.paperName = 'VerticalPaper';
 
+
+      // Paper Frame with Config
+      paperFrame = openPlans.paperFrame({
+        ogid: 'fb844b7a-9306-408a-bd2d-1b78ec2402f4',
+        format: 'A2',
+        orientation: 'landscape',
+        margin: 2,
+        backgroundColor: 0xffffff,
+        borderColor: 0x000000,
+      });
+      paperFrame.position.set(50, 0, 0);
+
       // infoBlock = openPlans.infoBlock();
       
-      const logoInfoBlock = openPlans.logoInfoBlock(
-        {
-          type: 'logo',
-          width: 6,
-          height: 1.5,
-          url: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
-          name: 'OpenGeometry Logo',
-          borderColor: 0x44460FF,
-        }
-      );
-      logoInfoBlock.position.set(0, 0, 2.5);
+      // const logoInfoBlock = openPlans.logoInfoBlock(
+      //   {
+      //     type: 'logo',
+      //     width: 6,
+      //     height: 1.5,
+      //     url: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
+      //     name: 'OpenGeometry Logo',
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // logoInfoBlock.position.set(0, 0, 2.5);
       
-      titleBlock = openPlans.rowInfoBlock(
-        {
-          type: 'text',
-          width: 6,
-          height: 1.5,
-          title: 'Studio Name',
-          description: 'Company Description',
-          fontSize: 3,
-          fontColor: 0x44460FF,
-          borderColor: 0x44460FF,
-        }
-      );
-      titleBlock.position.set(0, 0, 4);
+      // titleBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 6,
+      //     height: 1.5,
+      //     title: 'Studio Name',
+      //     description: 'Company Description',
+      //     fontSize: 3,
+      //     fontColor: 0x44460FF,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // titleBlock.position.set(0, 0, 4);
 
-      revBlock = openPlans.rowInfoBlock(
-        {
-          type: 'text',
-          width: 3,
-          height: 1.5,
-          title: 'Revision',
-          description: 'Rev A',
-          fontSize: 2,
-          borderColor: 0x44460FF,
-        }
-      );
-      revBlock.position.set(-1.5, 0, 5.5);
+      // revBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 3,
+      //     height: 1.5,
+      //     title: 'Revision',
+      //     description: 'Rev A',
+      //     fontSize: 2,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // revBlock.position.set(-1.5, 0, 5.5);
 
-      dateBlock = openPlans.rowInfoBlock(
-        {
-          type: 'text',
-          width: 3,
-          height: 1.5,
-          title: 'Date',
-          description: '2023-10-01',
-          fontSize: 2,
-          borderColor: 0x44460FF,
-        }
-      );
-      dateBlock.position.set(1.5, 0, 5.5);
+      // dateBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 3,
+      //     height: 1.5,
+      //     title: 'Date',
+      //     description: '2023-10-01',
+      //     fontSize: 2,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // dateBlock.position.set(1.5, 0, 5.5);
     }
 
     function setUI() {
@@ -117,6 +133,9 @@
         subPaperFrame.add(frameControls, 'margin', 0, 50).name('Margin').onChange((value) => {
           paperFrame.margin = value;
         });
+        subPaperFrame.add({ 'Get Config': () => {
+          console.log(paperFrame.getOPConfig());
+        }}, 'Get Config').name('Get Config');
       });
 
       const studioFolder = gui.addFolder('Studio Info');

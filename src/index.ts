@@ -1,41 +1,25 @@
+/**
+ * OpenPlans - A 2D and 3D Library for Architectural, Engineering and Mechanical Design
+ * Copyright (c) 2025 OpenGeometry
+ * All rights reserved.
+ *
+ * Author: OpenGeometry Team | Vishwajeet Mane
+ * Contact: info@opengeometry.io
+ * License: MIT
+ */
+
+// External Packages
 import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/';
-// import { Pencil, PencilMode } from './kernel/dist/src/pencil';
-// import { BaseSpace } from './elements/base-spaces';
-
-// import { DoubleWindow } from './elements/double-window';
-import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
-// import { BuildingData } from './parser/IGraph';
-import convertToOGFormat from './parser/ImpleniaConverter';
-import { PlanCamera } from './service/plancamera';
-import { OpenThree } from './service/three';
 import * as THREE from 'three';
-import { Event } from './utils/event';
-
-export * from './kernel/';
-
-// Shapes
-export * from "./primitives/index";
-
-// Shape Builders
-export * from "./shape-builder/index";
-export * from "./generic/index";
-
-// import { IPolylineBuilder, PolylineBuilder } from './shape-builder/polyline-builder';
-// import { IPolygonBuilder, PolygonBuilder } from './shape-builder/polygon-builder';
-
-// Elements
-import { PaperFrame } from './drawing';
-import { LogoInfoBlock, LogoInfoBlockOptions } from './drawing/logo-info-block';
-import { RowInfoBlock, RowInfoBlockOptions } from './drawing/row-info-block';
-// import { Board, OPBoard } from './elements/board';
-// import { BaseWall } from './elements/base-wall';
-import { IBaseWall } from './base-type';
-// import { OPDoor, BaseDoor } from './elements/base-door';
-// import { OPWindow, BaseWindow } from './elements/base-window';
-// import { GenericBuilder } from './generic/generic-builder';
-import { ShapeSelector } from './selector/shape-selector';
-// import { ShapeEditor } from './selector/shape-editor';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
+
+// Generic Services
+import { OpenThree } from './service/three';
+import { PlanCamera } from './service/plancamera';
+import convertToOGFormat from './parser/ImpleniaConverter';
+
+// Primitives, 2D Elements and Shapes
 import { ArcPrimitive } from './primitives/arc';
 import { DimensionTool } from './dimensions';
 import { PolylinePrimitive, RectanglePrimitive } from './primitives/index';
@@ -47,6 +31,19 @@ import { BaseSingleWindow, OPSingleWindow } from './elements/base-single-window'
 import { BaseDoubleWindow, OPDoubleWindow } from './elements/base-double-window';
 import { BaseSlab, OPSlab } from './elements/base-slab';
 import { BaseStair, OPStair } from './elements/base-stair';
+
+// Drawing and Layout
+import { PaperFrame, PaperFrameOptions } from './layouts/';
+
+// Utils
+import { Event } from './utils/event';
+
+// Shapes
+export * from "./primitives/index";
+
+// Shape Builders
+export * from "./shape-builder/index";
+export * from './kernel/';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -491,14 +488,14 @@ export class OpenPlans {
   /**
    * Paper Creation and Frames
    */
-  paperFrame() {
+  paperFrame(config: PaperFrameOptions) {
     // if (!this.pencil) {
     //   throw new Error('Pencil not initialized')
     // }
-    // const paperFrame = new PaperFrame()
-    // this.openThree.scene.add(paperFrame)
-    // this.ogElements.push(paperFrame)
-    // return paperFrame
+    const paperFrame = new PaperFrame(config)
+    this.openThree.scene.add(paperFrame)
+    this.ogElements.push(paperFrame)
+    return paperFrame
   }
 
   // logoInfoBlock(options:LogoInfoBlockOptions) {

@@ -1,5 +1,6 @@
-import { Polygon, Vector3 } from "../kernel/dist";
+import { Polygon, Vector3 } from "../kernel/";
 import * as THREE from 'three';
+import { IShape } from "../shapes/base-type";
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
 export type PaperOrientation = 'portrait' | 'landscape';
@@ -14,101 +15,130 @@ export const paperSizes: Record<PaperFormat, { width: number; height: number }> 
 };
 
 export interface PaperFrameOptions {
-  name: string;
+  ogid?: string;
+  labelName: string;
+  type: 'PAPERFRAME';
   format: PaperFormat;
   orientation: PaperOrientation;
   margin: number;
-  backgroundColor: string;
-  borderColor: string;
+  backgroundColor: number;
+  borderColor: number;
   borderWidth: number;
   paperSize: { width: number; height: number };
 }
 
-export class PaperFrame extends Polygon {
+export class PaperFrame extends Polygon implements IShape {
   ogType = 'paperFrame';
+  subElements: Map<string, THREE.Object3D> = new Map();
+  
+  selected: boolean = false;
+  edit: boolean = false;
 
-  private options: PaperFrameOptions;
-  private subNodes: Map<string, THREE.Object3D> = new Map();
+  propertySet: PaperFrameOptions = {
+    labelName: 'PaperFrame',
+    type: 'PAPERFRAME',
+    format: 'A4',
+    orientation: 'portrait',
+    margin: 10,
+    backgroundColor: 0xffffff,
+    borderColor: 0x000000,
+    borderWidth: 1,
+    paperSize: paperSizes['A4'],
+  };
   
   private readonly Y_OFFSET = 0.0010; // Offset to avoid z-fighting
 
-  constructor() {
-    super();
-    this.options = {
-      name: 'PaperFrame',
-      format: 'A4',
-      orientation: 'portrait',
-      margin: 10,
-      backgroundColor: '#ffffff',
-      borderColor: '#000000',
-      borderWidth: 1,
-      paperSize: paperSizes['A4'],
-    };
+  // Getter and Setter Properties
 
-    this.setupGeometry();
-    this.setupMaterial();
-
-    // Cosmetic properties
-    this.createOuterBorder();
-    this.createInnerBorder();
-  }
-
+  /**
+   * Set the Label Name for the Paper Frame
+   */
   set paperName(name: string) {
-    this.options.name = name;
+    this.propertySet.labelName = name;
   }
 
   set format(format: PaperFormat) {
-    this.options.format = format;
-    this.options.paperSize = paperSizes[format];
+    this.propertySet.format = format;
+    this.propertySet.paperSize = paperSizes[format];
 
-    this.updateGeometry();
+    this.setOPGeometry();
   }
 
   set orientation(orientation: PaperOrientation) {
-    this.options.orientation = orientation;
-    this.updateGeometry();
+    this.propertySet.orientation = orientation;
+    
+    this.setOPGeometry();
   }
 
   set margin(margin: number) {
-    this.options.margin = margin;
+    this.propertySet.margin = margin;
 
-    this.remove(this.subNodes.get('InnerBorder')!);
-    this.createInnerBorder();
+    this.setOPGeometry();
   }
 
   get margin() {
-    return this.options.margin;
+    return this.propertySet.margin;
   }
 
-  set backgroundColor(color: string) {
-    this.options.backgroundColor = color;
+  set backgroundColor(color: number) {
+    this.propertySet.backgroundColor = color;
   }
 
-  set borderColor(color: string) {
-    this.options.borderColor = color;
+  set borderColor(color: number) {
+    this.propertySet.borderColor = color;
+
+    // TODO: We need to implement setOPMaterial properly
+    // Note: For time being we will use setOPGeometry
+    this.setOPGeometry();
   }
 
   set borderWidth(width: number) {
-    this.options.borderWidth = width;
+    this.propertySet.borderWidth = width;
   }
 
   get paperSize() {
-    return this.options.paperSize;
+    return this.propertySet.paperSize;
   }
 
   set paperSize(size: { width: number; height: number }) {
     if (this.format !== 'Custom') {
       throw new Error('Cannot set paper size for non-custom formats');
     }
-    this.options.paperSize = size;
+    this.propertySet.paperSize = size;
 
-    this.updateGeometry();
+    this.setOPGeometry();
   }
 
-  private setupGeometry() {
-    const { width, height } = this.options.paperSize;
+  constructor(paperFrameConfig?: Partial<PaperFrameOptions>) {
+    // TODO: Figure out the best way to retain ogid when calling parent elements, since they internally have the logic to create ogid
+    super({
+      ogid: paperFrameConfig?.ogid,
+      vertices: [],
+      color: 0
+    });
 
-    const isPortrait = this.options.orientation === 'portrait';
+    this.subElements = new Map<string, THREE.Object3D>();
+
+    if (paperFrameConfig) {
+      this.propertySet = { ...this.propertySet, ...paperFrameConfig, ...this.options };
+    } else {
+      this.propertySet = { ...this.propertySet, ...this.options };
+    }
+
+    this.setOPGeometry();
+  }
+
+  setOPConfig(config: Record<string, any>): void {
+    
+  }
+
+  setOPGeometry(): void {
+
+    const format = this.propertySet.format;
+    this.propertySet.paperSize = paperSizes[format];
+    const { width, height } = this.propertySet.paperSize;
+
+    const isPortrait = this.propertySet.orientation === 'portrait';
     const absoluteWidth = isPortrait ? width : height;
     const absoluteHeight = isPortrait ? height : width;
 
@@ -118,38 +148,39 @@ export class PaperFrame extends Polygon {
       new Vector3(absoluteWidth / 2, absoluteHeight / 2, 0), // Top right
       new Vector3(-absoluteWidth / 2, absoluteHeight / 2, 0), // Top left
     ];
-    this.addVertices(vertices);
+    
+    this.setConfig({ 
+      vertices: vertices,
+      color: this.propertySet.backgroundColor
+    });
 
     this.rotation.x = -Math.PI / 2; // Rotate to face the camera
     this.position.y = -0.01;
-    // Create The Polygon Page Done here
+
+    this.outline = true;
+
+    // Local Geometry Updates
+    this.createInnerBorder();
   }
 
-  private setupMaterial() {
-    // Setup the material for the paper frame
-    const material = new THREE.MeshBasicMaterial({
-      color: this.options.backgroundColor,
-      // side: THREE.DoubleSide,
-    });
-    this.material = material;
+  // TODO: Material or Color Related changes should be applied here but for now we will use setOPGeometry
+  setOPMaterial(): void {
+    this.color = this.propertySet.backgroundColor;
+    this.borderColor = this.propertySet.borderColor;
   }
 
-  private createOuterBorder() {
-    const borderMaterial = new THREE.LineBasicMaterial({
-      color: '#000000',
-      linewidth: 1,
-    });
-    const borderGeometry = new THREE.EdgesGeometry(this.geometry);
-    const borderMesh = new THREE.LineSegments(borderGeometry, borderMaterial);
-    this.add(borderMesh);
-    this.subNodes.set('OuterBorder', borderMesh);
+  getOPConfig() {
+    return this.propertySet;
   }
 
   private createInnerBorder() {
-    const { width, height } = this.options.paperSize;
-    const margin = this.options.margin / 10;
+    // Cleanup Previous Inner Border
+    this.remove(this.subElements.get('InnerBorder')!);
 
-    const isPortrait = this.options.orientation === 'portrait';
+    const { width, height } = this.propertySet.paperSize;
+    const margin = this.propertySet.margin / 10;
+
+    const isPortrait = this.propertySet.orientation === 'portrait';
     const absoluteWidth = isPortrait ? width : height;
     const absoluteHeight = isPortrait ? height : width;
 
@@ -168,27 +199,15 @@ export class PaperFrame extends Polygon {
     ];
 
     const innerBorderMaterial = new THREE.LineBasicMaterial({
-      color: '#000000',
+      color: this.propertySet.borderColor,
       linewidth: 1,
     });
     const innerBorderGeometry = new THREE.BufferGeometry().setFromPoints(innerVertices);
     const innerBorderMesh = new THREE.LineSegments(innerBorderGeometry, innerBorderMaterial);
     innerBorderMesh.position.set(0, 0, this.Y_OFFSET);
     this.add(innerBorderMesh);
-    this.subNodes.set('InnerBorder', innerBorderMesh);
-  }
 
-  private updateGeometry() {
-    this.resetVertices();
-
-    // Clear previous geometry and borders
-    this.remove(this.subNodes.get('InnerBorder')!);
-    this.remove(this.subNodes.get('OuterBorder')!);
-
-    this.setupGeometry();
-    this.setupMaterial();
-    this.createOuterBorder();
-    this.createInnerBorder();
+    this.subElements.set('InnerBorder', innerBorderMesh);
   }
 
   /**
@@ -288,13 +307,13 @@ export class PaperFrame extends Polygon {
   //   }
   // }
 
-  removeBlock(blockId: string) {
-    const blockMesh = this.subNodes.get(blockId);
-    console.log('BlockMesh:', blockMesh);
-    if (blockMesh) {
-      this.remove(blockMesh);
-      this.subNodes.delete(blockId);
-    }
-    // remove logo and other blocks
-  }
+  // removeBlock(blockId: string) {
+  //   const blockMesh = this.subNodes.get(blockId);
+  //   console.log('BlockMesh:', blockMesh);
+  //   if (blockMesh) {
+  //     this.remove(blockMesh);
+  //     this.subNodes.delete(blockId);
+  //   }
+  //   // remove logo and other blocks
+  // }
 }

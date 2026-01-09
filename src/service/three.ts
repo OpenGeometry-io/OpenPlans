@@ -43,7 +43,7 @@ export class OpenThree {
   generateTheme() {
     this.theme = {
       darkBlue: {
-        background: '#003ca0',
+        background: '#5b6676',
         color: '#fff',
         gridColor: 0xffffff
       },
