@@ -48,6 +48,9 @@
 
       // draftBoard = openPlans.board();
 
+      // Line 1
+      line = openPlans.line();
+
       openPlans.onRender.add(() => {
         stats.begin();
         stats.end();
@@ -60,18 +63,52 @@
       const lineFolder = gui.addFolder('Line');
       lineFolder.open();
 
-      lineFolder.add({ createLine: () => {
-        line = openPlans.line();
-      }}, 'createLine');
+      const lineControls = {
+        startPointX: 0,
+        startPointY: 0,
+        startPointZ: 0,
+        endPointX: 10,
+        endPointY: 0,
+        endPointZ: 2,
+        color: 0x000000,
+      };
+
+      lineFolder.add(lineControls, 'startPointX').onChange((value) => {
+        line.startPoint = [value, line.startPoint[1], line.startPoint[2]];
+      });
+      lineFolder.add(lineControls, 'startPointY').onChange((value) => {
+        line.startPoint = [line.startPoint[0], value, line.startPoint[2]];
+      });
+      lineFolder.add(lineControls, 'startPointZ').onChange((value) => {
+        line.startPoint = [line.startPoint[0], line.startPoint[1], value];
+      });
+      lineFolder.add(lineControls, 'endPointX').onChange((value) => {
+        line.endPoint = [value, line.endPoint[1], line.endPoint[2]];
+      });
+      lineFolder.add(lineControls, 'endPointY').onChange((value) => {
+        line.endPoint = [line.endPoint[0], value, line.endPoint[2]];
+      });
+      lineFolder.add(lineControls, 'endPointZ').onChange((value) => {
+        line.endPoint = [line.endPoint[0], line.endPoint[1], value];
+      });
+      lineFolder.addColor(lineControls, 'color').onChange((value) => {
+        line.lineColor = value;
+      });
+
+      lineFolder.add({ getConfig: () => {
+        const config = line.getOPConfig();
+        console.log('Line Config:', config);
+      }}, 'getConfig');
 
       lineFolder.add({ preloadLine: () => {
         const config = {
-            start: new Vector3(0, 0, 2),
-            end: new Vector3(10, 0, 2),
+            ogid: "81c8c201-0b60-41aa-a2dd-19c46e0fee17",
+            startPoint: [0, 0, 0],
+            endPoint: [10, 0, 2],
             color: 0x000000,
           };
         const preloadConfig = openPlans.line(config);
-        console.log('Preloaded Line:', preloadConfig);
+        console.log('Preloaded Line:', preloadConfig.getOPConfig());
       }}, 'preloadLine');
     }
 

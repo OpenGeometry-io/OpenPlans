@@ -1,57 +1,97 @@
 import * as THREE from 'three';
-import { Line, ILineOptions } from '../kernel/';
+import { Line, Vector3 } from '../kernel/';
 import { IPrimitive } from './base-type';
+
+export interface LineOptions {
+  ogid?: string;
+  startPoint: Array<number>;
+  endPoint: Array<number>;
+  color: number;
+}
 
 /*
  * Line Primitive Class
  * Extends the Line class from the kernel and implements the IPrimitive interface.
  * Manages properties, sub-nodes, selection, and editing states.
  */
-
 export class LinePrimitive extends Line implements IPrimitive {
   ogType: string = 'LinePrimitive';
   subNodes: Map<string, THREE.Object3D>;
-  selected: boolean;
-  edit: boolean;
 
-  propertySet: ILineOptions;
+  selected: boolean = false;
+  edit: boolean = false;
 
-  constructor(properties?: ILineOptions) {
-    super(properties);
+  propertySet: LineOptions = {
+    startPoint: [0, 0, 0],
+    endPoint: [1, 0, 0],
+    color: 0x000000,
+  };
+
+
+  set startPoint(value: Array<number>) {
+    this.propertySet.startPoint = value;
+
+    this.setOPGeometry();
+  }
+
+  get startPoint(): Array<number> {
+    return this.propertySet.startPoint;
+  }
+
+  set endPoint(value: Array<number>) {
+    this.propertySet.endPoint = value;
+
+    this.setOPGeometry();
+  }
+
+  get endPoint(): Array<number> {
+    return this.propertySet.endPoint;
+  }
+
+  set lineColor(value: number) {
+    this.propertySet.color = value;
+
+    this.color = value;
+  }
+
+  get lineColor(): number {
+    return this.propertySet.color;
+  }
+
+  constructor(lineConfig?: LineOptions) {
+    super({
+      ogid: lineConfig?.ogid,
+      start: new Vector3(...(lineConfig?.startPoint || [0, 0, 0])),
+      end: new Vector3(...(lineConfig?.endPoint || [1, 0, 0])),
+      color: lineConfig?.color || 0x000000,
+    });
+
     this.subNodes = new Map<string, THREE.Object3D>();
-    this.selected = false;
-    this.edit = false;
-    
-    if (properties) {
-      this.propertySet = { ...properties, ...this.options };
-    } else {
-      // Default properties from the Arc class/Kernel
-      this.propertySet = this.options;
+
+    if (lineConfig) {
+      this.propertySet = { ...this.propertySet, ...lineConfig  };
     }
+
+    this.propertySet.ogid = this.ogid;
+    this.setOPGeometry();
   }
 
-  setOPConfig(config: ILineOptions): void {
-    this.discardGeometry();
-
-    console.log('Setting Line Config:', config);
-    this.propertySet = config;
-    this.setConfig(config);
-    console.log(this.geometry.attributes.position);
+  setOPConfig(config: LineOptions): void {
+    
   }
 
-  getOPConfig(): ILineOptions {
+  getOPConfig(): LineOptions {
     return this.propertySet;
   }
 
   setOPGeometry(): void {
-    // Implement geometry update logic here if needed
+    this.setConfig({
+      start: new Vector3(...this.propertySet.startPoint),
+      end: new Vector3(...this.propertySet.endPoint),
+      color: this.propertySet.color,
+    });
   }
 
   setOPMaterial(): void {
-    // Implement material update logic here
-    // const line = this.subNodes.get('arcLine') as THREE.Line;
-    // if (line) {
-    //   (line.material as THREE.LineBasicMaterial).color.set(0x0000ff);
-    // }
   }
 }

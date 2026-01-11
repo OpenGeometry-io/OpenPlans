@@ -120,11 +120,10 @@ export class PaperFrame extends Polygon implements IShape {
     this.subElements = new Map<string, THREE.Object3D>();
 
     if (paperFrameConfig) {
-      this.propertySet = { ...this.propertySet, ...paperFrameConfig, ...this.options };
-    } else {
-      this.propertySet = { ...this.propertySet, ...this.options };
+      this.propertySet = { ...this.propertySet, ...paperFrameConfig };
     }
 
+    this.propertySet.ogid = this.ogid;
     this.setOPGeometry();
   }
 

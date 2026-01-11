@@ -51,6 +51,8 @@
       openPlans.showGrid = false;
 
       // draftBoard = openPlans.board();
+      // Arc 1
+      arc = openPlans.arc();
 
       openPlans.onRender.add(() => {
         stats.begin();
@@ -64,26 +66,60 @@
       const arcFolder = gui.addFolder('Arc');
       arcFolder.open();
 
-      arcFolder.add({ createArc: () => {
-        arc = openPlans.arc();
-      }}, 'createArc');
+      const arcControls = {
+        centerX: 0,
+        centerY: 0,
+        centerZ: 0,
+        radius: 1,
+        startAngle: 0,
+        endAngle: Math.PI,
+        segments: 16,
+        color: 0x000000,
+      };
+
+      arcFolder.add(arcControls, 'centerX', -10, 10).onChange((value) => {
+        arc.arcCenter = new Vector3(value, arc.arcCenter.y, arc.arcCenter.z);
+      });
+      arcFolder.add(arcControls, 'centerY', -10, 10).onChange((value) => {
+        arc.arcCenter = new Vector3(arc.arcCenter.x, value, arc.arcCenter.z);
+      });
+      arcFolder.add(arcControls, 'centerZ', -10, 10).onChange((value) => {
+        arc.arcCenter = new Vector3(arc.arcCenter.x, arc.arcCenter.y, value);
+      });
+      arcFolder.add(arcControls, 'radius', 0, 10).onChange((value) => {
+        arc.arcRadius = value;
+      });
+      arcFolder.add(arcControls, 'startAngle', 0, Math.PI * 2).onChange((value) => {
+        arc.arcStartAngle = value;
+      });
+      arcFolder.add(arcControls, 'endAngle', 0, Math.PI * 2).onChange((value) => {
+        arc.arcEndAngle = value;
+      });
+      arcFolder.add(arcControls, 'segments', 3, 64).onChange((value) => {
+        arc.arcSegments = value;
+      });
+      arcFolder.addColor(arcControls, 'color').onChange((value) => {
+        arc.arcColor = value;
+      });
+
+      arcFolder.add({ getConfigArc1: () => {
+        console.log('Arc 1 Config:', arc.getOPConfig());
+      }}, 'getConfigArc1');
 
       arcFolder.add({ preloadArc: () => {
         const config = {
-            center: new Vector3(0, 0, 2),
+            ogid: 'arc-preload-001',
+            center: [0, 0, 2],
             radius: 5,
             startAngle: 0,
-            endAngle: Math.PI / 2,
+            endAngle: Math.PI * 2,
+            segments: 16,
             color: 0x000000,
           };
         const preloadConfig = openPlans.arc(config);
 
         console.log('Preloaded Arc Config:', preloadConfig.getOPConfig());
       }}, 'preloadArc');
-
-      arcFolder.add({ logConfig: () => {
-        console.log('Arc Config:', arc.getOPConfig());
-      }}, 'logConfig');
     }
 
     (async function () {
