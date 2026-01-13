@@ -1,6 +1,14 @@
 import * as THREE from 'three';
-import { IRectangleOptions, Rectangle } from '../kernel/';
+import { Rectangle, Vector3 } from '../kernel/';
 import { IPrimitive } from './base-type';
+
+export interface RectangleOptions {
+  ogid?: string;
+  center: Array<number>;
+  width: number;
+  breadth: number;
+  color: number;
+}
 
 /**
  * If any element start moves, cast a ray and check if it interesects with the board.
@@ -8,56 +16,107 @@ import { IPrimitive } from './base-type';
  * If the element is moved outside the board, remove it from the board.
  */
 
+
+/**
+ * Rectangle Primitive Class
+ * Represents a rectangular shape in 3D space.
+ * Inherits from the Rectangle class and implements the IPrimitive interface.
+ */
 export class RectanglePrimitive extends Rectangle implements IPrimitive {
   ogType: string = 'RectanglePrimitive';
   subNodes: Map<string, THREE.Object3D>;
-  selected: boolean;
-  edit: boolean;
+
+  selected: boolean = false;
+  edit: boolean = false;
 
   // TODO: Property Set can be extended based on requirements
   // TODO: But do we need a separate propertySet for each primitive? Can't we use this.options directly?
-  propertySet: IRectangleOptions;
+  propertySet: RectangleOptions = {
+    center: [0, 0, 0],
+    width: 1,
+    breadth: 1,
+    color: 0x0000ff
+  };
   // dimensionsSet: Map<string, THREE.Object3D> = new Map<string, THREE.Object3D>();
 
-  constructor(properties?: IRectangleOptions) {
-    super(properties);
+  set center(value: Array<number>) {
+    this.propertySet.center = value;
+
+    this.setOPGeometry();
+  }
+
+  get center(): Array<number> {
+    return this.propertySet.center;
+  }
+
+  set width(value: number) {
+    this.propertySet.width = value;
+
+    this.setOPGeometry();
+  }
+
+  get width(): number {
+    return this.propertySet.width;
+  }
+
+  set breadth(value: number) {
+    this.propertySet.breadth = value;
+
+    this.setOPGeometry();
+  }
+
+  get breadth(): number {
+    return this.propertySet.breadth;
+  }
+
+  set rectangleColor(value: number) {
+    this.propertySet.color = value;
+
+    this.color = value;
+  }
+
+  get rectangleColor(): number {
+    return this.propertySet.color;
+  }
+
+  constructor(rectangleConfig?: RectangleOptions) {
+    super({
+      ogid: rectangleConfig?.ogid,
+      center: new Vector3(...(rectangleConfig?.center || [0, 0, 0])),
+      width: rectangleConfig?.width || 1,
+      breadth: rectangleConfig?.breadth || 1,
+      color: rectangleConfig?.color || 0x0000ff
+    });
+
     this.subNodes = new Map<string, THREE.Object3D>();
-    this.selected = false;
-    this.edit = false;
     
-    if (properties) {
-      // TODO: Deep Merge, currently shallow merge
-      // TODO: Add this to all primitives
-      this.propertySet = { ...properties, ...this.options };
-    } else {
-      this.propertySet = this.options;
+    if (rectangleConfig) {
+      this.propertySet = { ...this.propertySet, ...rectangleConfig };
     }
+
+    this.propertySet.ogid = this.ogid;
+    this.setOPGeometry();
 
     // this.setDimensions();
     // this.listenKeyboardEvents();
   }
 
-  setOPConfig(config: IRectangleOptions): void {
-    this.discardGeometry();
-
-    console.log('Setting Rectangle Config:', config);
-    this.propertySet = config;
-    this.setConfig(config);
+  setOPConfig(config: RectangleOptions): void {
   }
 
-  getOPConfig(): IRectangleOptions {
+  getOPConfig(): RectangleOptions {
     return this.propertySet;
   }
 
   setOPGeometry(): void {
-    // Implement geometry update logic here if needed
+    this.setConfig({
+      center: new Vector3(...this.propertySet.center),
+      width: this.propertySet.width,
+      breadth: this.propertySet.breadth,
+      color: this.propertySet.color
+    });
   }
 
   setOPMaterial(): void {
-    // Implement material update logic here
-    // const line = this.subNodes.get('arcLine') as THREE.Line;
-    // if (line) {
-    //   (line.material as THREE.LineBasicMaterial).color.set(0x0000ff);
-    // }
   }
 }

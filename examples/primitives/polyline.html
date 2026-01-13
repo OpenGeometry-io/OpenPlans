@@ -35,7 +35,7 @@
     const stats = new Stats();
     stats.showPanel(2);
 
-    let polyline;
+    let polyline1, polyline2;
     let openPlans;
 
     async function init() {
@@ -47,6 +47,9 @@
       openPlans.showGrid = false;
 
       // draftBoard = openPlans.board();
+
+      // Polyline
+      polyline1 = openPlans.polyline();
 
       openPlans.onRender.add(() => {
         stats.begin();
@@ -60,31 +63,52 @@
       const polylineFolder = gui.addFolder('Polyline');
       polylineFolder.open();
 
-      polylineFolder.add({ createPolyline: () => {
-        polyline = openPlans.polyline();
-      }}, 'createPolyline');
+      // Polyline 1 Folder
+      const polyline1Folder = polylineFolder.addFolder('Polyline 1');
+      polyline1Folder.open();
 
-      polylineFolder.add({ preloadPolyline: () => {
+      const polylineControls = {
+        color: 0x0000ff
+      };
+
+      polyline1Folder.addColor(polylineControls, 'color').onChange((value => {
+        polyline1.lineColor = value;
+      }));
+
+      polyline1Folder.add({ getConfig: () => {
+        console.log('Current Polyline Config:', polyline1.getOPConfig());
+      }}, 'getConfig');
+
+      // Create Polyline using Config
+      const polyline2Folder = polylineFolder.addFolder('Polyline with Config');
+      polyline2Folder.open();
+
+      polyline2Folder.add({ preloadPolyline: () => {
         const config = {
+            ogid: 'polyline-2-with-config',
             points: [
-              new Vector3(0, 0, 0),
-              new Vector3(10, 0, 0),
-              new Vector3(10, 0, 10),
-              new Vector3(0, 0, 10),
-              new Vector3(0, 0, 0)
+              [20, 0, 0],
+              [15, 0, 10],
+              [10, 0, 5],
+              [-10, 0, 8],
+              [0, 0, 0]
             ],
-            color: 0x000000,
+            color: 0xff0000,
           };
-        const preloadConfig = openPlans.polyline(config);
 
-        preloadConfig.addPoint(new Vector3(-10, 0, 0));
+          polyline2 = openPlans.polyline(config);
 
-        console.log('Preloaded Polyline Config:', preloadConfig.getOPConfig());
+          console.log('Preloaded Polyline Config:', polyline2.getOPConfig());
       }}, 'preloadPolyline');
 
-      polylineFolder.add({ logConfig: () => {
-        console.log('Current Polyline Config:', polyline.getOPConfig());
-      }}, 'logConfig');
+      polyline2Folder.add({ addPoint: () => {
+        const randomX = Math.floor(Math.random() * 100) - 50;
+        const randomZ = Math.floor(Math.random() * 100) - 50;
+        const newPoint = [randomX, 0, randomZ];
+
+        polyline2.attachPoint(newPoint);
+        console.log('Updated Polyline 2 Config:', polyline2.getOPConfig());
+      }}, 'addPoint');
     }
 
     (async function () {

@@ -47,6 +47,9 @@
       openPlans.showGrid = false;
 
       // draftBoard = openPlans.board();
+      
+      // Rectangle 1
+      rectangle = openPlans.rectangle();
 
       openPlans.onRender.add(() => {
         stats.begin();
@@ -60,29 +63,70 @@
       const rectangleFolder = gui.addFolder('Rectangle');
       rectangleFolder.open();
 
-      rectangleFolder.add({ createRectangle: () => {
-        rectangle = openPlans.rectangle();
-      }}, 'createRectangle');
+      const rectangleControls = {
+        centerX: 0,
+        centerY: 0,
+        centerZ: 0,
+        width: 1,
+        breadth: 1,
+        color: 0x0000ff,
+      };
 
+      rectangleFolder.add(rectangleControls, 'centerX', -50, 50).onChange((value) => {
+        if (rectangle) {
+          rectangle.center = [value, rectangle.center[1], rectangle.center[2]];
+        }
+      });
+
+      rectangleFolder.add(rectangleControls, 'centerY', -50, 50).onChange((value) => {
+        if (rectangle) {
+          rectangle.center = [rectangle.center[0], value, rectangle.center[2]];
+        }
+      });
+
+      rectangleFolder.add(rectangleControls, 'centerZ', -50, 50).onChange((value) => {
+        if (rectangle) {
+          rectangle.center = [rectangle.center[0], rectangle.center[1], value];
+        }
+      });
+
+      rectangleFolder.add(rectangleControls, 'width', 0, 100).onChange((value) => {
+        if (rectangle) {
+          rectangle.width = value;
+        }
+      });
+
+      rectangleFolder.add(rectangleControls, 'breadth', 0, 100).onChange((value) => {
+        if (rectangle) {
+          rectangle.breadth = value;
+        }
+      });
+
+      rectangleFolder.addColor(rectangleControls, 'color').onChange((value) => {
+        if (rectangle) {
+          rectangle.rectangleColor = value;
+        }
+      });
+
+      rectangleFolder.add({ getConfig: () => {
+        if (rectangle) {
+          const config = rectangle.getOPConfig();
+          console.log('Rectangle Config:', config);
+        }
+      }}, 'getConfig');
 
       rectangleFolder.add({ preloadRectangle: () => {
         const config = {
+            ogid: 'preloaded-rectangle-222',
+            center: [0, 0, 0],
             width: 20,
             breadth: 10,
-            color: 0x000000,
+            color: 14821416,
           };
         const preloadConfig = openPlans.rectangle(config);
 
         console.log('Preloaded Rectangle Config:', preloadConfig.getOPConfig());
       }}, 'preloadRectangle');
-
-      rectangleFolder.add({ logConfig: () => {
-        if (rectangle) {
-          console.log('Current Rectangle Config:', rectangle.getOPConfig());
-        } else {
-          console.log('No rectangle created yet.');
-        }
-      }}, 'logConfig');
     }
 
     (async function () {
