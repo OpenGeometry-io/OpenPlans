@@ -38,6 +38,9 @@ import { PaperFrame, PaperFrameOptions } from './layouts/';
 // Utils
 import { Event } from './utils/event';
 
+// Elements
+import { Board, BoardOptions } from './elements/board';
+
 // Shapes
 export * from "./primitives/index";
 
@@ -345,15 +348,15 @@ export class OpenPlans {
   //   return window
   // }
 
-  // board(boardConfig?:OPBoard): Board {
-  //   // if (!this.pencil) {
-  //   //   throw new Error('Pencil not initialized')
-  //   // }
-  //   const board = new Board(boardConfig)
-  //   this.openThree.scene.add(board)
-  //   this.ogElements.push(board)
-  //   return board
-  // }
+  board(boardConfig?: BoardOptions): Board {
+    // if (!this.pencil) {
+    //   throw new Error('Pencil not initialized')
+    // }
+    const board = new Board(boardConfig)
+    this.openThree.scene.add(board)
+    this.ogElements.push(board)
+    return board
+  }
 
   /***** Shape Builders *****/
 

@@ -48,7 +48,8 @@
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.pencil.mode = "select";
+      // openPlans.pencil.mode = "select";
+      openPlans.showGrid = false;
 
       draftBoard = openPlans.board();
       // door.position.set(-2, 0, 0);

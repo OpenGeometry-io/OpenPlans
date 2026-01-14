@@ -30,7 +30,7 @@ export interface PaperFrameOptions {
 export class PaperFrame extends Polygon implements IShape {
   ogType = 'paperFrame';
   subElements: Map<string, THREE.Object3D> = new Map();
-  
+
   selected: boolean = false;
   edit: boolean = false;
 
