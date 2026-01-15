@@ -52,8 +52,6 @@
       openPlans.showGrid = false;
 
       draftBoard = openPlans.board();
-      // door.position.set(-2, 0, 0);
-
       console.log(draftBoard.labelName);
 
       draftBoard.labelName = "Draft Board X";
@@ -64,7 +62,7 @@
       const boardFolder = gui.addFolder('Board');
       const boardControls = {
         'selected': false,
-        'color': '0xffffff',
+        'color': 0xffffff,
         'width': 20,
         'height': 20,
         'start': {
@@ -77,14 +75,14 @@
         },
         'Set Config': () => {
           const preloadConfig = {
-            "id": "draft-board-x",
+            "ogid": "draft-board-x",
             "center": {
               "x": 32.76,
               "y": -20.4,
               "z": 0
             },
-            "color": 13421772,
-            "type": "board",
+            "color": 0xffffff,
+            "type": "BOARD",
             "coordinates": [
               [
                 14.4,
@@ -107,7 +105,7 @@
                 0
               ]
             ],
-            "labelName": "Draft Board X",
+            "labelName": "Preloaded Board",
             "dimensions": {
               "start": {
                 "x": 14.4,

@@ -218,7 +218,9 @@ export class Board extends Polygon implements IShape {
 
     this.outline = true;
 
-    this.setLabelPosition();
+    if (this.labelDivMesh) {
+      this.setLabelPosition();
+    }
   }
 
   dispose() {
@@ -241,6 +243,8 @@ export class Board extends Polygon implements IShape {
 
     this.labelDivMesh = new CSS2DObject(labelDiv);
     this.add(this.labelDivMesh);
+
+    this.setLabelPosition();
 
     setTimeout(() => {
       const width = labelDiv.clientWidth;
