@@ -65,6 +65,11 @@
 
                 const element = openPlans[elementKey](config);
 
+                // Enable outline for shape elements
+                if (elementKey === 'cuboid' || elementKey === 'cylinder') {
+                    element.outline = true;
+                }
+
                 // Wait for a frame
                 await fitCamera(openPlans, element);
             } else {

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Demo - Floor Plan Elements</title>
+    <!-- MIXPANEL_TRACKING -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenPlans Demo showcasing floor plan elements on a paper frame">
+    <meta name="author" content="OpenGeometry">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+
+        .example-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 12px 24px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="example-title">Floor Plan Demo</div>
+    <div id="app" style="width: 100%; height: 100vh;">
+    </div>
+    <script type="module">
+        import { OpenPlans, CameraMode } from './../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let paperFrame, door, window2D, cabinet, island;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            openPlans.CameraMode = CameraMode.Plan;
+
+            openPlans.showGrid = false;
+            openPlans.openThree.toggleTheme('darkBlue');
+
+            // Create Paper Frame (A3 Landscape)
+            paperFrame = openPlans.paperFrame();
+            paperFrame.format = 'A3';
+            paperFrame.orientation = 'landscape';
+            paperFrame.margin = 10;
+            paperFrame.paperName = 'Floor Plan Demo';
+
+            // Set renderer and scene for PDF export
+            paperFrame.renderer = openPlans.openThree.renderer;
+            paperFrame.scene = openPlans.openThree.scene;
+
+            // Create Door 2D
+            door = openPlans.door2D({
+                labelName: 'Entry Door'
+            });
+            door.position.set(-8, 0, 4);
+
+            // Create Single Window 2D
+            window2D = openPlans.singleWindow2D({
+                labelName: 'Living Room Window'
+            });
+            window2D.position.set(-8, 0, -2);
+
+            // Create Cabinet 2D (Kitchen)
+            cabinet = openPlans.cabinet2D({
+                labelName: 'Kitchen Cabinet',
+                dimensions: { width: 1.5, depth: 0.6 },
+                doorSlots: 3
+            });
+            cabinet.position.set(4, 0, 4);
+
+            // Create Island 2D (Kitchen)
+            island = openPlans.island2D({
+                labelName: 'Kitchen Island',
+                dimensions: { width: 2, depth: 1 }
+            });
+            island.position.set(4, 0, -2);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+
+            // Paper Frame Controls
+            const paperFolder = gui.addFolder('📄 Paper Frame');
+            const paperControls = {
+                'format': paperFrame.format,
+                'orientation': paperFrame.orientation,
+                'margin': paperFrame.margin
+            };
+            paperFolder.add(paperControls, 'format', ['A4', 'A3', 'A2']).name('Format').onChange((value) => {
+                paperFrame.format = value;
+            });
+            paperFolder.add(paperControls, 'orientation', ['portrait', 'landscape']).name('Orientation').onChange((value) => {
+                paperFrame.orientation = value;
+            });
+            paperFolder.add(paperControls, 'margin', 0, 50).name('Margin').onChange((value) => {
+                paperFrame.margin = value;
+            });
+            // paperFolder.add({ exportPDF: () => paperFrame.exportToPDF() }, 'exportPDF').name('📥 Export to PDF');
+            paperFolder.open();
+
+            // Door Controls
+            const doorFolder = gui.addFolder('🚪 Door 2D');
+            const doorControls = {
+                'labelName': door.labelName,
+                'swingRotation': door.swingRotation,
+                'doorWidth': door.doorDimensions.width,
+                'doorColor': door.doorColor,
+                'frameColor': door.frameColor
+            };
+            doorFolder.add(doorControls, 'labelName').name('Label').onChange((value) => {
+                door.labelName = value;
+            });
+            doorFolder.add(doorControls, 'swingRotation', 0, 90).name('Swing Rotation').onChange((value) => {
+                door.swingRotation = value;
+            });
+            doorFolder.add(doorControls, 'doorWidth', 0.5, 3).name('Width').onChange((value) => {
+                door.doorDimensions = { ...door.doorDimensions, width: value };
+            });
+            doorFolder.addColor(doorControls, 'doorColor').name('Door Color').onChange((value) => {
+                door.doorColor = value;
+            });
+            doorFolder.addColor(doorControls, 'frameColor').name('Frame Color').onChange((value) => {
+                door.frameColor = value;
+            });
+
+            // Window Controls
+            const windowFolder = gui.addFolder('🪟 Window 2D');
+            const windowControls = {
+                'labelName': window2D.labelName,
+                'windowWidth': window2D.windowDimensions.width,
+                'glassColor': window2D.glassColor,
+                'frameColor': window2D.frameColor
+            };
+            windowFolder.add(windowControls, 'labelName').name('Label').onChange((value) => {
+                window2D.labelName = value;
+            });
+            windowFolder.add(windowControls, 'windowWidth', 0.5, 3).name('Width').onChange((value) => {
+                window2D.windowDimensions = { ...window2D.windowDimensions, width: value };
+            });
+            windowFolder.addColor(windowControls, 'glassColor').name('Glass Color').onChange((value) => {
+                window2D.glassColor = value;
+            });
+            windowFolder.addColor(windowControls, 'frameColor').name('Frame Color').onChange((value) => {
+                window2D.frameColor = value;
+            });
+
+            // Cabinet Controls
+            const cabinetFolder = gui.addFolder('🗄️ Cabinet 2D');
+            const cabinetControls = {
+                'labelName': cabinet.labelName,
+                'width': cabinet.dimensions.width,
+                'depth': cabinet.dimensions.depth,
+                'doorSlots': cabinet.doorSlots,
+                'cabinetColor': cabinet.cabinetColor,
+                'doorColor': cabinet.doorColor
+            };
+            cabinetFolder.add(cabinetControls, 'labelName').name('Label').onChange((value) => {
+                cabinet.labelName = value;
+            });
+            cabinetFolder.add(cabinetControls, 'width', 0.5, 3).name('Width').onChange((value) => {
+                cabinet.dimensions = { ...cabinet.dimensions, width: value };
+            });
+            cabinetFolder.add(cabinetControls, 'depth', 0.3, 1.5).name('Depth').onChange((value) => {
+                cabinet.dimensions = { ...cabinet.dimensions, depth: value };
+            });
+            cabinetFolder.add(cabinetControls, 'doorSlots', 1, 6, 1).name('Door Slots').onChange((value) => {
+                cabinet.doorSlots = value;
+            });
+            cabinetFolder.addColor(cabinetControls, 'cabinetColor').name('Cabinet Color').onChange((value) => {
+                cabinet.cabinetColor = value;
+            });
+            cabinetFolder.addColor(cabinetControls, 'doorColor').name('Door Color').onChange((value) => {
+                cabinet.doorColor = value;
+            });
+
+            // Island Controls
+            const islandFolder = gui.addFolder('🏝️ Island 2D');
+            const islandControls = {
+                'labelName': island.labelName,
+                'width': island.dimensions.width,
+                'depth': island.dimensions.depth,
+                'islandColor': island.islandColor
+            };
+            islandFolder.add(islandControls, 'labelName').name('Label').onChange((value) => {
+                island.labelName = value;
+            });
+            islandFolder.add(islandControls, 'width', 0.5, 4).name('Width').onChange((value) => {
+                island.dimensions = { ...island.dimensions, width: value };
+            });
+            islandFolder.add(islandControls, 'depth', 0.5, 2).name('Depth').onChange((value) => {
+                island.dimensions = { ...island.dimensions, depth: value };
+            });
+            islandFolder.addColor(islandControls, 'islandColor').name('Island Color').onChange((value) => {
+                island.islandColor = value;
+            });
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

@@ -11,17 +11,18 @@
 // External Packages
 import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/';
 import * as THREE from 'three';
+import { ElementType } from './elements/base-type';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
 
 // Generic Services
 import { OpenThree } from './service/three';
-import { PlanCamera } from './service/plancamera';
+import { CameraMode, PlanCamera } from './service/plancamera';
 import convertToOGFormat from './parser/ImpleniaConverter';
 
 // Primitives, 2D Elements and Shapes
 import { ArcPrimitive } from './primitives/arc';
-import { DimensionTool } from './dimensions';
+import { DimensionTool, DimensionType } from './dimensions';
 import { PolylinePrimitive, RectanglePrimitive } from './primitives/index';
 import { LinePrimitive } from './primitives/line';
 import { CuboidShape } from './shapes/cuboid';
@@ -40,7 +41,7 @@ import { Event } from './utils/event';
 
 // Elements
 import { Board, BoardOptions } from './elements/board';
-import { Door2D, DoorOptions } from './elements/planview/door2D';
+import { Door2D, DoorMaterial, DoorOptions } from './elements/planview/door2D';
 import { DoubleDoor2D, DoubleDoorOptions } from './elements/planview/doubleDoor2D';
 import { Window2D, WindowOptions } from './elements/planview/window2D';
 import { DoubleWindow2D, DoubleWindowOptions } from './elements/planview/doubleWindow2D';
@@ -81,6 +82,9 @@ import { Planter2D, PlanterOptions } from './elements/planview/landscape/planter
 import { Fountain2D, FountainOptions } from './elements/planview/landscape/fountain2D';
 import { Bench2D, BenchOptions } from './elements/planview/landscape/bench2D';
 
+// Camera Modes
+export { CameraMode } from './service/plancamera';
+
 // Shapes
 export * from "./primitives/index";
 
@@ -107,6 +111,15 @@ export class OpenPlans {
 
   // 2D Views and Profile Views
   private profileViews: Map<string, { camera: THREE.Camera; renderer: THREE.WebGLRenderer; container: HTMLElement }> = new Map();
+
+  set CameraMode(mode: CameraMode) {
+    this.planCamera.CameraMode = mode;
+  }
+
+  get CameraMode() {
+    return this.planCamera.CameraMode;
+  }
+
 
   constructor(container: HTMLElement) {
     // this.renderCallback = this.renderCallback.bind(this)
@@ -246,7 +259,7 @@ export class OpenPlans {
   async setupOpenGeometry(wasmURL?: string) {
     this.og = await OpenGeometry.create({ wasmURL });
 
-    await Glyphs.loadFaces('Source_Code_Pro_Regular');
+    await Glyphs.loadFaces('Edu_NSW_ACT_Foundation_Regular');
     Glyphs.scene = this.openThree.scene
     Glyphs.camera = this.openThree.threeCamera
 
@@ -787,7 +800,67 @@ export class OpenPlans {
     };
   }
 
-  // THREE METHODS
+  // // THREE METHODS
+  // renderJSON(data: any) {
+  //   if (!data || !data.floor_plan || !data.floor_plan.elements) return;
+
+  //   data.floor_plan.elements.forEach((element: any) => {
+  //     switch (element.type) {
+  //       case 'wall':
+  //         // Convert 2D points to 3D points (y=0)
+  //         const points = element.points.map((p: number[]) => [p[0], 0, p[1]]);
+  //         this.polyline({
+  //           points: points,
+  //           color: 0x000000 // Default black for walls
+  //         });
+  //         break;
+
+  //       case 'door':
+  //         const door = this.door2D({
+  //           ogid: element.id,
+  //           labelName: element.label || 'Door',
+  //           type: ElementType.DOOR,
+  //           doorPosition: { x: element.position[0], y: 0, z: element.position[1] },
+  //           doorDimensions: { width: element.length, thickness: 0.2 },
+  //           frameDimensions: { width: 0.1, thickness: 0.2 }, // Adjusted default frame width
+  //           doorColor: 0xc7c7c7,
+  //           frameColor: 0x000000,
+  //           doorMaterial: DoorMaterial.WOOD,
+  //           swingRotation: 0,
+  //           isOpen: false,
+  //         });
+
+  //         door.position.set(element.position[0], 0, element.position[1]);
+
+  //         if (element.orientation === 'vertical') {
+  //           door.rotation.y = Math.PI / 2;
+  //         }
+  //         break;
+
+  //       case 'window':
+  //         const window = this.singleWindow2D({
+  //           ogid: element.id,
+  //           labelName: element.label || 'Window',
+  //           type: ElementType.WINDOW,
+  //           windowPosition: { x: element.position[0], y: 0, z: element.position[1] },
+  //           windowDimensions: { width: element.length, thickness: 0.2 },
+  //           frameDimensions: { width: 0.1, thickness: 0.2 },
+  //           frameColor: 0x000000,
+  //           glassColor: 0x87CEEB
+  //         });
+
+  //         window.position.set(element.position[0], 0, element.position[1]);
+
+  //         if (element.orientation === 'vertical') {
+  //           window.rotation.y = Math.PI / 2;
+  //         }
+  //         break;
+  //     }
+  //   });
+
+  //   // Handle rooms if needed in future (skipped for now)
+  // }
+
   set showGrid(show: boolean) {
     this.openThree.toggleGrid(show);
   }
@@ -831,6 +904,11 @@ export class OpenPlans {
       this.openThree.scene.add(mesh);
       this.ogElements.push(mesh);
     });
+  }
+
+  /* Dimensions */
+  createDimension(type: DimensionType) {
+    return DimensionTool.createDimension(type);
   }
 }
 

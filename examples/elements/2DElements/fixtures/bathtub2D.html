@@ -3,6 +3,7 @@
 
 <head>
     <title>OpenPlans Bathtub 2D</title>
+    <!-- MIXPANEL_TRACKING -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -15,13 +16,31 @@
             width: 100%;
             height: 100vh;
         }
+
+        .example-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 12px 24px;
+            z-index: 1000;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+    <div class="example-title">Bathtub 2D</div>
     <div id="app"></div>
     <script type="module">
-        import { OpenPlans } from './../../../../src/index.ts';
+        import { OpenPlans, CameraMode } from './../../../../src/index.ts';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         let openPlans;
@@ -31,6 +50,8 @@
             const container = document.getElementById('app');
             openPlans = new OpenPlans(container);
             await openPlans.setupOpenGeometry();
+
+            openPlans.CameraMode = CameraMode.Plan;
 
             bathtub = openPlans.bathtub2D({
                 labelName: 'Bathtub'

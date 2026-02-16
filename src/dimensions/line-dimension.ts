@@ -1,100 +1,161 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { ILineOptions, Line, Vector3 } from "../kernel/";
 import * as THREE from "three";
+import { IPrimitive } from "../primitives/base-type";
 
-export class LineDimension extends Line {
+export interface LengthDimensionOptions {
+  ogid?: string;
+  startPoint: Array<number>;
+  endPoint: Array<number>;
+  color: number;
+  witnessLineLength: number;
+  // Value can is is auto calculated
+  value: number;
+}
+
+export class LineDimension extends Line implements IPrimitive {
   ogType: string = 'LineDimension';
-  dimensionData: ILineOptions;
+  subNodes: Map<string, THREE.Object3D>;
 
-  dimensionLabel: string = '1';
-  dimensionMesh: CSS2DObject | null = null;
+  selected: boolean = false;
+  edit: boolean = false;
 
-  constructor(dimensionData?: ILineOptions) {
-    super(dimensionData);
+  propertySet: LengthDimensionOptions = {
+    startPoint: [0, 0, 0],
+    endPoint: [2, 0, 0],
+    color: 0x000000,
+    witnessLineLength: 1,
+    value: 1,
+  };
 
-    this.dimensionData = dimensionData || this.options;
-    this.createDimension();
+  set startPoint(value: Array<number>) {
+    this.propertySet.startPoint = value;
+
+    this.setOPGeometry();
   }
 
-  setDimensionLabel(label: string) {
-    this.dimensionLabel = label;
-    if (this.dimensionMesh) {
-      (this.dimensionMesh.element as HTMLDivElement).textContent = label;
-    }
+  get startPoint(): Array<number> {
+    return this.propertySet.startPoint;
   }
 
-  setDimensionData(data: ILineOptions, length: number) {
-    this.dimensionData.start = data.start;
+  set endPoint(value: Array<number>) {
+    this.propertySet.endPoint = value;
 
-    const newStart = new THREE.Vector3(data.start.x, data.start.y, data.start.z);
-    const newEnd = new THREE.Vector3(data.end.x, data.end.y, data.end.z);
-    
-    this.dimensionData.end = newEnd;
-
-    this.setDimensionLabel(length.toString());
-    this.setConfig(this.dimensionData);
+    this.setOPGeometry();
   }
 
-  getDimensionLabel() {
-    return this.dimensionLabel;
+  get endPoint(): Array<number> {
+    return this.propertySet.endPoint;
   }
 
-  private createDimension() {
-    // Div element for the label
-    const dimensionMesh = this.createDimensionMesh();
-
-    // Clear existing children
-    // this.clear();
-
-    // Cross lines at the ends
-    const crossLineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-    const crossLineLength = 0.1;
-
-    const direction = new THREE.Vector3().subVectors(this.dimensionData.end, this.dimensionData.start).normalize();
-    const perpendicular = new THREE.Vector3(-direction.y, 0, direction.x).normalize();
-
-    const startCrossGeometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3().addVectors(this.dimensionData.start, perpendicular.clone().multiplyScalar(crossLineLength / 2)),
-      new THREE.Vector3().addVectors(this.dimensionData.start, perpendicular.clone().multiplyScalar(-crossLineLength / 2)),
-    ]);
-    const startCrossLine = new THREE.Line(startCrossGeometry, crossLineMaterial);
-    this.add(startCrossLine);
-
-    const endCrossGeometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3().addVectors(this.dimensionData.end, perpendicular.clone().multiplyScalar(crossLineLength / 2)),
-      new THREE.Vector3().addVectors(this.dimensionData.end, perpendicular.clone().multiplyScalar(-crossLineLength / 2)),
-    ]);
-
-    const endCrossLine = new THREE.Line(endCrossGeometry, crossLineMaterial);
-    this.add(endCrossLine);
+  set witnessLineLength(value: number) {
+    this.propertySet.witnessLineLength = value;
   }
 
-  createDimensionMesh() {
-    if (this.dimensionMesh) {
-      return this.dimensionMesh;
+  get witnessLineLength(): number {
+    return this.propertySet.witnessLineLength;
+  }
+
+  set lineColor(value: number) {
+    this.propertySet.color = value;
+
+    this.color = value;
+  }
+
+  get lineColor(): number {
+    return this.propertySet.color;
+  }
+
+  constructor(lineDimensionConfig?: LengthDimensionOptions) {
+    super({
+      ogid: lineDimensionConfig?.ogid,
+      start: new Vector3(...(lineDimensionConfig?.startPoint || [0, 0, 0])),
+      end: new Vector3(...(lineDimensionConfig?.endPoint || [1, 0, 0])),
+      color: lineDimensionConfig?.color || 0x000000,
+    });
+
+    this.subNodes = new Map<string, THREE.Object3D>();
+
+    if (lineDimensionConfig) {
+      this.propertySet = { ...this.propertySet, ...lineDimensionConfig };
     }
 
-    const div = document.createElement('div');
-    div.className = 'label';
-    div.textContent = this.dimensionLabel;
-    div.style.marginTop = '-1em';
-    div.style.padding = '2px 5px';
-    div.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-    div.style.border = '1px solid #000';
-    div.style.borderRadius = '4px';
-    div.style.fontSize = '12px';
-
-    this.dimensionMesh = new CSS2DObject(div);
-    const centerPoint = new THREE.Vector3().addVectors(this.dimensionData.start, this.dimensionData.end).multiplyScalar(0.5);
-    this.dimensionMesh.position.set(centerPoint.x, centerPoint.y, centerPoint.z);
-
-    this.add(this.dimensionMesh);
+    this.propertySet.ogid = this.ogid;
+    this.setOPGeometry();
   }
 
-  updateDimensionMeshPosition() {
-    if (!this.dimensionMesh) return;
+  setOPConfig(config: LengthDimensionOptions): void {
 
-    // const midPoint = new THREE.Vector3().addVectors(this.start, this.end).multiplyScalar(0.5);
-    // this.dimensionMesh.position.copy(midPoint);
+  }
+
+  getOPConfig(): LengthDimensionOptions {
+    return this.propertySet;
+  }
+
+  setOPGeometry(): void {
+    this.setConfig({
+      start: new Vector3(...this.propertySet.startPoint),
+      end: new Vector3(...this.propertySet.endPoint),
+      color: this.propertySet.color,
+    });
+    console.log("test")
+    this.createCrossHairs();
+  }
+
+  createCrossHairs() {
+    if (this.subNodes.has("witnessLineLeft")) {
+      const witnessLineLeft = this.subNodes.get("witnessLineLeft") as Line;
+      witnessLineLeft.removeFromParent();
+      witnessLineLeft.discardGeometry();
+    }
+
+    if (this.subNodes.has("witnessLineRight")) {
+      const witnessLineRight = this.subNodes.get("witnessLineRight") as Line;
+      witnessLineRight.removeFromParent();
+      witnessLineRight.discardGeometry();
+    }
+
+    const { startPoint, endPoint, witnessLineLength } = this.propertySet;
+
+    const direction = new Vector3(...endPoint).subtract(new Vector3(...startPoint)).normalize();
+    const perpendicularLeft = new Vector3(
+      direction.z,
+      0,
+      -direction.x
+    ).normalize();
+
+    // Create witness line for End Point
+    const wOneStart = new Vector3(endPoint[0], endPoint[1], endPoint[2]);
+    const wOneEnd = new Vector3(endPoint[0], endPoint[1], endPoint[2]).add(
+      perpendicularLeft.multiply_scalar(witnessLineLength)
+    );
+
+    const witnessLineLeft = new Line({
+      start: wOneStart,
+      end: wOneEnd,
+      color: 0xff00ff,
+    });
+
+    this.add(witnessLineLeft);
+    this.subNodes.set("witnessLineLeft", witnessLineLeft);
+
+    // Create witness line for Start Point
+    const wTwoStart = new Vector3(startPoint[0], startPoint[1], startPoint[2]);
+
+    const wTwoEnd = new Vector3(startPoint[0], startPoint[1], startPoint[2]).add(
+      perpendicularLeft.multiply_scalar(witnessLineLength)
+    );
+
+    const witnessLineRight = new Line({
+      start: wTwoStart,
+      end: wTwoEnd,
+      color: 0xff00ff,
+    });
+
+    this.add(witnessLineRight);
+    this.subNodes.set("witnessLineRight", witnessLineRight);
+  }
+
+  setOPMaterial(): void {
   }
 }

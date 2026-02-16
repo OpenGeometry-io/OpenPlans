@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>OpenPlan JSON</title>
+  <!-- MIXPANEL_TRACKING -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -11,17 +13,37 @@
       margin: 0;
       overflow: hidden;
     }
+
     #app {
       width: 100%;
       height: 100vh;
     }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
+  <div class="example-title">JSON Generated Plans</div>
   <div id="app">
   </div>
   <script type="module">
-    import { OpenPlans } from './../src/index.ts';
+    import { OpenPlans, CameraMode } from './../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
@@ -31,6 +53,8 @@
       console.log(container);
       openPlans = new OpenPlans(container);
       // await openPlans.setupOpenGeometry();
+      // await openPlans.setupOpenGeometry();
+      openPlans.CameraMode = CameraMode.Plan;
       openPlans.pencil.mode = "select";
       const impleniaJsonURL = "https://raw.githubusercontent.com/aka-blackboots/2025-AEC-Hackathon/refs/heads/main/json/GenericDesign_21004/21004.json";
       const graph = await fetch(impleniaJsonURL);
@@ -40,7 +64,7 @@
 
     function setUI() {
       const gui = new GUI();
-      
+
     }
 
     (async function () {
@@ -49,4 +73,5 @@
     })();
   </script>
 </body>
+
 </html>

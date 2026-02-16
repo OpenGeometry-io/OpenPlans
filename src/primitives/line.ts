@@ -73,7 +73,7 @@ export class LinePrimitive extends Line implements IPrimitive {
     this.subNodes = new Map<string, THREE.Object3D>();
 
     if (lineConfig) {
-      this.propertySet = { ...this.propertySet, ...lineConfig  };
+      this.propertySet = { ...this.propertySet, ...lineConfig };
     }
 
     this.propertySet.ogid = this.ogid;
@@ -81,7 +81,7 @@ export class LinePrimitive extends Line implements IPrimitive {
   }
 
   setOPConfig(config: LineOptions): void {
-    
+
   }
 
   getOPConfig(): LineOptions {

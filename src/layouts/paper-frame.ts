@@ -1,6 +1,7 @@
 import { Polygon, Vector3 } from "../kernel/";
 import * as THREE from 'three';
 import { IShape } from "../shapes/base-type";
+import jsPDF from "jspdf";
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
 export type PaperOrientation = 'portrait' | 'landscape';
@@ -34,6 +35,10 @@ export class PaperFrame extends Polygon implements IShape {
   selected: boolean = false;
   edit: boolean = false;
 
+  // References for PDF export (set by the application)
+  renderer!: THREE.WebGLRenderer;
+  scene!: THREE.Scene;
+
   propertySet: PaperFrameOptions = {
     labelName: 'PaperFrame',
     type: 'PAPERFRAME',
@@ -45,7 +50,7 @@ export class PaperFrame extends Polygon implements IShape {
     borderWidth: 1,
     paperSize: paperSizes['A4'],
   };
-  
+
   private readonly Y_OFFSET = 0.0010; // Offset to avoid z-fighting
 
   // Getter and Setter Properties
@@ -64,10 +69,18 @@ export class PaperFrame extends Polygon implements IShape {
     this.setOPGeometry();
   }
 
+  get format(): PaperFormat {
+    return this.propertySet.format;
+  }
+
   set orientation(orientation: PaperOrientation) {
     this.propertySet.orientation = orientation;
-    
+
     this.setOPGeometry();
+  }
+
+  get orientation(): PaperOrientation {
+    return this.propertySet.orientation;
   }
 
   set margin(margin: number) {
@@ -128,7 +141,7 @@ export class PaperFrame extends Polygon implements IShape {
   }
 
   setOPConfig(config: Record<string, any>): void {
-    
+
   }
 
   setOPGeometry(): void {
@@ -147,8 +160,8 @@ export class PaperFrame extends Polygon implements IShape {
       new Vector3(absoluteWidth / 2, absoluteHeight / 2, 0), // Top right
       new Vector3(-absoluteWidth / 2, absoluteHeight / 2, 0), // Top left
     ];
-    
-    this.setConfig({ 
+
+    this.setConfig({
       vertices: vertices,
       color: this.propertySet.backgroundColor
     });
@@ -186,13 +199,13 @@ export class PaperFrame extends Polygon implements IShape {
     const innerVertices = [
       new THREE.Vector3(-absoluteWidth / 2 + margin, -absoluteHeight / 2 + margin, 0), // Top left
       new THREE.Vector3(absoluteWidth / 2 - margin, -absoluteHeight / 2 + margin, 0), // Top right
-    
+
       new THREE.Vector3(absoluteWidth / 2 - margin, absoluteHeight / 2 - margin, 0), // Bottom right
       new THREE.Vector3(-absoluteWidth / 2 + margin, absoluteHeight / 2 - margin, 0), // Bottom left
-    
+
       new THREE.Vector3(-absoluteWidth / 2 + margin, -absoluteHeight / 2 + margin, 0), // Top left
       new THREE.Vector3(-absoluteWidth / 2 + margin, absoluteHeight / 2 - margin, 0), // Bottom left
-    
+
       new THREE.Vector3(absoluteWidth / 2 - margin, -absoluteHeight / 2 + margin, 0), // Top right
       new THREE.Vector3(absoluteWidth / 2 - margin, absoluteHeight / 2 - margin, 0), // Bottom right
     ];
@@ -207,6 +220,97 @@ export class PaperFrame extends Polygon implements IShape {
     this.add(innerBorderMesh);
 
     this.subElements.set('InnerBorder', innerBorderMesh);
+  }
+
+  /**
+   * Exports the current paper frame to a PDF document.
+   * Uses raster rendering with optimized quality/size balance.
+   */
+  exportToPDF(): void {
+    // 1. Get dimensions from propertySet and handle orientation
+    const { width, height } = this.propertySet.paperSize;
+    const isLandscape = this.propertySet.orientation === 'landscape';
+
+    // Swap dimensions for landscape mode
+    const actualWidth = isLandscape ? height : width;
+    const actualHeight = isLandscape ? width : height;
+
+    // Use the string format (a4, a3) if available
+    const pdfFormat = this.propertySet.format.toLowerCase();
+    const pdfOrientation = isLandscape ? 'landscape' : 'portrait';
+
+    // 2. High-Resolution Rendering Logic
+    // DPI Scale: 100 gives ~1000 DPI for crisp output
+    const dpiScale = 100;
+    const renderWidth = Math.floor(actualWidth * dpiScale);
+    const renderHeight = Math.floor(actualHeight * dpiScale);
+
+    const renderTarget = new THREE.WebGLRenderTarget(renderWidth, renderHeight, {
+      format: THREE.RGBAFormat,
+      type: THREE.UnsignedByteType,
+      samples: 4,
+    });
+
+    // 3. Align Camera to Paper Bounds
+    const pdfCam = new THREE.OrthographicCamera(
+      -actualWidth / 2, actualWidth / 2,
+      actualHeight / 2, -actualHeight / 2,
+      0.1, 1000
+    );
+
+    pdfCam.position.set(this.position.x, 100, this.position.z);
+    pdfCam.lookAt(this.position.x, 0, this.position.z);
+
+    // 4. Execute Render
+    this.renderer.setRenderTarget(renderTarget);
+    this.renderer.render(this.scene, pdfCam);
+
+    // 5. Pixel Extraction
+    const pixelBuffer = new Uint8Array(renderWidth * renderHeight * 4);
+    this.renderer.readRenderTargetPixels(renderTarget, 0, 0, renderWidth, renderHeight, pixelBuffer);
+
+    // 6. Handle Vertical Flip using Canvas
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = renderWidth;
+    tempCanvas.height = renderHeight;
+    const ctx = tempCanvas.getContext('2d');
+
+    if (ctx) {
+      const imageData = ctx.createImageData(renderWidth, renderHeight);
+      imageData.data.set(pixelBuffer);
+      ctx.putImageData(imageData, 0, 0);
+
+      const flipCanvas = document.createElement('canvas');
+      flipCanvas.width = renderWidth;
+      flipCanvas.height = renderHeight;
+      const flipCtx = flipCanvas.getContext('2d')!;
+
+      flipCtx.translate(0, renderHeight);
+      flipCtx.scale(1, -1);
+      flipCtx.drawImage(tempCanvas, 0, 0);
+
+      // 7. Initialize PDF with correct units and orientation
+      const pdf = new jsPDF({
+        orientation: pdfOrientation,
+        unit: 'mm',
+        format: pdfFormat
+      });
+
+      // 8. Add image to PDF
+      const actualPdfWidth = pdf.internal.pageSize.getWidth();
+      const actualPdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgData = flipCanvas.toDataURL('image/jpeg', 0.92);
+      pdf.addImage(imgData, 'JPEG', 0, 0, actualPdfWidth, actualPdfHeight);
+      pdf.save(`OpenPlans_${this.propertySet.format || 'Custom'}_${pdfOrientation}.pdf`);
+
+      flipCanvas.remove();
+    }
+
+    // 9. Cleanup
+    this.renderer.setRenderTarget(null);
+    renderTarget.dispose();
+    tempCanvas.remove();
   }
 
   /**
@@ -283,7 +387,7 @@ export class PaperFrame extends Polygon implements IShape {
   //         infoBlockMesh.position.x - infoBlock.options.width / 2 + block.userData.dimension.width / 2,
   //         absoluteHeightInBlock,
   //         this.Y_OFFSET);
-        
+
   //       this.add(block);
   //       this.subNodes.set(block.name, block);
   //     }

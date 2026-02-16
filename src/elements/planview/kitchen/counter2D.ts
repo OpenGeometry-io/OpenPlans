@@ -24,7 +24,7 @@ export class Counter2D extends Polyline implements IShape {
         type: ElementType.FIXTURE,
         position: { x: 0, y: 0, z: 0 },
         dimensions: { width: 1.5, depth: 0.6 },
-        counterColor: 0xd4c4b0
+        counterColor: 0xffffff
     };
 
     get labelName() { return this.propertySet.labelName; }
@@ -39,8 +39,7 @@ export class Counter2D extends Polyline implements IShape {
     get counterColor() { return this.propertySet.counterColor; }
     set counterColor(value: number) {
         this.propertySet.counterColor = value;
-        const surface = this.subElements.get("surface") as Polygon;
-        if (surface) surface.color = value;
+        this.setOPGeometry();
     }
 
     constructor(config?: Partial<CounterOptions>) {
@@ -62,16 +61,22 @@ export class Counter2D extends Polyline implements IShape {
         this.subElements.clear();
 
         const { dimensions } = this.propertySet;
-        const hw = dimensions.width / 2;
-        const hd = dimensions.depth / 2;
+        const w = dimensions.width;
+        const d = dimensions.depth;
+        const hw = w / 2;
+        const hd = d / 2;
 
-        // Counter surface
+        // Panel thickness (side panels and front edge)
+        const panelThickness = 0.04;
+        const secondaryColor = 0xc7c7c7;
+
+        // Main counter surface (white by default)
         const surfacePoly = new Polygon({
             vertices: [
-                new Vector3(-hw, 0, -hd),
-                new Vector3(-hw, 0, hd),
-                new Vector3(hw, 0, hd),
-                new Vector3(hw, 0, -hd)
+                new Vector3(-hw + panelThickness, 0, -hd + panelThickness),
+                new Vector3(-hw + panelThickness, 0, hd),
+                new Vector3(hw - panelThickness, 0, hd),
+                new Vector3(hw - panelThickness, 0, -hd + panelThickness)
             ],
             color: this.counterColor
         });
@@ -79,19 +84,50 @@ export class Counter2D extends Polyline implements IShape {
         this.subElements.set("surface", surfacePoly);
         this.add(surfacePoly);
 
-        // Edge detail line
-        const edgeLine = new Polygon({
+        // Left side panel - fixed grey color
+        const leftPanelPoly = new Polygon({
             vertices: [
-                new Vector3(-hw + 0.03, 0, hd - 0.03),
-                new Vector3(-hw + 0.03, 0, hd - 0.05),
-                new Vector3(hw - 0.03, 0, hd - 0.05),
-                new Vector3(hw - 0.03, 0, hd - 0.03)
+                new Vector3(-hw, 0, -hd),
+                new Vector3(-hw, 0, hd),
+                new Vector3(-hw + panelThickness, 0, hd),
+                new Vector3(-hw + panelThickness, 0, -hd)
             ],
-            color: 0xb0a090
+            color: secondaryColor
         });
-        edgeLine.position.set(0, 0.001, 0);
-        this.subElements.set("edge", edgeLine);
-        this.add(edgeLine);
+        leftPanelPoly.outline = true;
+        leftPanelPoly.position.set(0, 0.001, 0);
+        this.subElements.set("leftPanel", leftPanelPoly);
+        this.add(leftPanelPoly);
+
+        // Right side panel - fixed grey color
+        const rightPanelPoly = new Polygon({
+            vertices: [
+                new Vector3(hw - panelThickness, 0, -hd),
+                new Vector3(hw - panelThickness, 0, hd),
+                new Vector3(hw, 0, hd),
+                new Vector3(hw, 0, -hd)
+            ],
+            color: secondaryColor
+        });
+        rightPanelPoly.outline = true;
+        rightPanelPoly.position.set(0, 0.001, 0);
+        this.subElements.set("rightPanel", rightPanelPoly);
+        this.add(rightPanelPoly);
+
+        // Front edge strip at bottom (-Z) - fixed grey color
+        const frontEdgePoly = new Polygon({
+            vertices: [
+                new Vector3(-hw + panelThickness, 0, -hd),
+                new Vector3(-hw + panelThickness, 0, -hd + panelThickness),
+                new Vector3(hw - panelThickness, 0, -hd + panelThickness),
+                new Vector3(hw - panelThickness, 0, -hd)
+            ],
+            color: secondaryColor
+        });
+        frontEdgePoly.outline = true;
+        frontEdgePoly.position.set(0, 0.001, 0);
+        this.subElements.set("frontEdge", frontEdgePoly);
+        this.add(frontEdgePoly);
     }
 
     setOPMaterial(): void { }

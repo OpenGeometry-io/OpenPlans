@@ -24,7 +24,7 @@ export class Dishwasher2D extends Polyline implements IShape {
         type: ElementType.APPLIANCE,
         position: { x: 0, y: 0, z: 0 },
         dimensions: { width: 0.6, depth: 0.6 },
-        bodyColor: 0xe8e8e8
+        bodyColor: 0xffffff
     };
 
     get labelName() { return this.propertySet.labelName; }
@@ -92,7 +92,7 @@ export class Dishwasher2D extends Polyline implements IShape {
                 new Vector3(hw, 0, hd),
                 new Vector3(hw, 0, hd - frontStripDepth)
             ],
-            color: this.bodyColor
+            color: 0xc7c7c7
         });
         frontStripPoly.outline = true;
         frontStripPoly.position.set(0, 0.001, 0);

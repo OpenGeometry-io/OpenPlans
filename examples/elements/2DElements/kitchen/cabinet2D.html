@@ -3,6 +3,7 @@
 
 <head>
     <title>OpenPlans Cabinet 2D</title>
+    <!-- MIXPANEL_TRACKING -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -15,13 +16,31 @@
             width: 100%;
             height: 100vh;
         }
+
+        .example-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 12px 24px;
+            z-index: 1000;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+    <div class="example-title">Cabinet 2D</div>
     <div id="app"></div>
     <script type="module">
-        import { OpenPlans } from './../../../../src/index.ts';
+        import { OpenPlans, CameraMode } from './../../../../src/index.ts';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         let openPlans;
@@ -32,10 +51,12 @@
             openPlans = new OpenPlans(container);
             await openPlans.setupOpenGeometry();
 
+            openPlans.CameraMode = CameraMode.Plan;
+
             cabinet = openPlans.cabinet2D({
                 labelName: 'Kitchen Cabinet',
-                dimensions: { width: 0.6, depth: 0.6 },
-                doors: 2
+                dimensions: { width: 1.2, depth: 0.8 },
+                doorSlots: 2
             });
         }
 
@@ -43,14 +64,15 @@
             const gui = new GUI();
             const folder = gui.addFolder('Cabinet 2D');
             folder.add({ labelName: cabinet.labelName }, 'labelName').name('Label').onChange(v => cabinet.labelName = v);
-            folder.add({ width: cabinet.dimensions.width }, 'width', 0.4, 1.2, 0.01).name('Width').onChange(v => {
+            folder.add({ width: cabinet.dimensions.width }, 'width', 0.4, 2.6, 0.01).name('Width').onChange(v => {
                 cabinet.dimensions = { ...cabinet.dimensions, width: v };
             });
-            folder.add({ depth: cabinet.dimensions.depth }, 'depth', 0.4, 0.8, 0.01).name('Depth').onChange(v => {
+            folder.add({ depth: cabinet.dimensions.depth }, 'depth', 0.4, 2.6, 0.01).name('Depth').onChange(v => {
                 cabinet.dimensions = { ...cabinet.dimensions, depth: v };
             });
-            folder.add({ doors: cabinet.doors }, 'doors', 1, 4, 1).name('Doors').onChange(v => cabinet.doors = v);
+            folder.add({ doorSlots: cabinet.doorSlots }, 'doorSlots', 1, 6, 1).name('Door Slots').onChange(v => cabinet.doorSlots = v);
             folder.addColor({ cabinetColor: cabinet.cabinetColor }, 'cabinetColor').name('Cabinet Color').onChange(v => cabinet.cabinetColor = v);
+            folder.addColor({ doorColor: cabinet.doorColor }, 'doorColor').name('Door Color').onChange(v => cabinet.doorColor = v);
             folder.add({ fit: () => openPlans.fit(cabinet.id) }, 'fit').name('Fit');
         }
 

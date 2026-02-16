@@ -24,8 +24,8 @@ export class Shower2D extends Polyline implements IShape {
         labelName: "Shower",
         type: ElementType.FIXTURE,
         position: { x: 0, y: 0, z: 0 },
-        dimensions: { width: 0.9, depth: 0.9 },
-        floorColor: 0xf5f5f5,
+        dimensions: { width: 1, depth: 1 },
+        floorColor: 0xffffff,
         outlineColor: 0x000000
     };
 

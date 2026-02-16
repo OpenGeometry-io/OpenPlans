@@ -23,7 +23,7 @@ export class OpenThree {
   openGrid: THREE.GridHelper | undefined
 
   constructor(container: HTMLElement, private callback: any) {
-    CameraControls.install({THREE: THREE})
+    CameraControls.install({ THREE: THREE })
     this.generateTheme()
 
     this.container = container
@@ -33,9 +33,9 @@ export class OpenThree {
       logarithmicDepthBuffer: true
     })
 
-    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 1, 1000)
+    this.threeCamera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.2, 1000)
     this.planCamera = new PlanCamera(this.threeCamera, container)
-    
+
     this.setup()
   }
 
@@ -76,7 +76,7 @@ export class OpenThree {
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.container.appendChild(this.renderer.domElement)
-    
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
     this.scene.add(ambientLight)
 
@@ -95,7 +95,7 @@ export class OpenThree {
     // Utils like Grid, Lights and Etc
     const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
     // const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
-    
+
     this.openGrid = new THREE.GridHelper(100, 100);
     this.scene.add(this.openGrid);
 

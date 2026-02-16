@@ -3,6 +3,11 @@ import * as THREE from "three";
 
 export type DimensionType = 'length' | 'angle' | 'area' | 'radius' | 'diameter' | 'volume' | 'custom';
 
+// export interface DimensionObjectToElementConstraint {
+//   elementKey: THREE.Object3D,
+//   constraint: 'start' | 'end' | 'midpoint' | 'center' | 'custom',
+// } 
+
 export class Dimensions {
   static instance: Dimensions;
   private scene: THREE.Scene | null = null;
@@ -41,15 +46,21 @@ export class Dimensions {
     return this.store.get(key);
   }
 
-  createDimension(key: string, type: DimensionType): any {
+  // Dimensions that are attached to a particular OpenPlans Element
+  // TODO
+  // attachDimension()
+
+  // Dimensions without constraint and not dependent on any Element
+  createDimension(type: DimensionType): any {
     // Logic to create a new dimension based on the key and type
     switch (type) {
       case 'length':
         // Create a length dimension
         const lengthDimension = new LineDimension();
+        console.log(this.sceneRef);
         this.sceneRef.add(lengthDimension);
-        this.store.set(key, lengthDimension);
-        break;
+        this.store.set(lengthDimension.uuid, lengthDimension);
+        return lengthDimension;
       case 'angle':
         // Create an angle dimension
         break;
