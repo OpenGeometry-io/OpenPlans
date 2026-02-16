@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Door</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <div id="profileViewContainer"
+    style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+    <!-- 2D Profile View will be rendered here -->
+  </div>
+
+  <script type="module">
+    import { OpenPlans } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let door;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      // openPlans.pencil.mode = "cursor";
+      // openPlans.pencil.mode = "select";
+
+      door = openPlans.door2D();
+      // door.doorPosition = [-4, 0, 0];
+
+      const profileContainer = document.getElementById('profileViewContainer');
+      const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+      profileContainer.appendChild(renderer.domElement);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const doorFolder = gui.addFolder('Door 2D');
+      const doorControls = {
+        'labelName': door.labelName,
+        'swingRotation': door.swingRotation,
+        'doorWidth': door.doorDimensions.width,
+        'doorThickness': door.doorDimensions.thickness,
+        'doorColor': door.doorColor,
+        'frameWidth': door.frameDimensions.width,
+        'frameThickness': door.frameDimensions.thickness,
+        'frameColor': door.frameColor
+        // 'quadrant': door.doorQuadrant,
+        // 'selected': door.selected,
+        // 'doorHeight': door.doorHeight
+      };
+
+      doorFolder.add(doorControls, 'labelName').name('Label Name').onChange((value) => {
+        door.labelName = value;
+      });
+      doorFolder.add(doorControls, 'swingRotation', 0, 90).name('Swing Rotation').onChange((value) => {
+        door.swingRotation = value;
+      });
+      doorFolder.add(doorControls, 'doorWidth', 0.5, 5).name('Width').onChange((value) => {
+        door.doorDimensions = { ...door.doorDimensions, width: value };
+      });
+      doorFolder.add(doorControls, 'doorThickness', 0.1, 1).name('Thickness').onChange((value) => {
+        door.doorDimensions = { ...door.doorDimensions, thickness: value };
+      });
+      doorFolder.addColor(doorControls, 'doorColor').name('Door Color').onChange((value) => {
+        door.doorColor = value;
+      });
+      doorFolder.add(doorControls, 'frameWidth', 0.1, 1).name('Frame Width').onChange((value) => {
+        door.frameDimensions = { ...door.frameDimensions, width: value };
+      });
+      doorFolder.add(doorControls, 'frameThickness', 0.1, 1).name('Frame Thickness').onChange((value) => {
+        door.frameDimensions = { ...door.frameDimensions, thickness: value };
+      });
+      doorFolder.addColor(doorControls, 'frameColor').name('Frame Color').onChange((value) => {
+        door.frameColor = value;
+      });
+
+      // doorFolder.add(doorControls, 'quadrant', [1, 2, 3, 4]).name('Quadrant').onChange((value) => {
+      //   door.doorQuadrant = value;
+      // });
+      // doorFolder.add(doorControls, 'selected').name('Selected').onChange((value) => {
+      //   door.selected = value;
+      // });
+      // doorFolder.add({ config: () => {
+      //   const config = door.getOPConfig();
+      //   console.log('Door Config:', config);
+      // }}, 'config').name('Get Config');
+      // doorFolder.add({ dispose: () => {
+      //   console.log('Disposing door:', door.ogid);
+      //   openPlans.disposeElement(door.ogid);
+      // }}, 'dispose').name('Dispose');
+
+      doorFolder.add({ fit: () => openPlans.fit(door.id) }, 'fit').name('Fit');
+
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

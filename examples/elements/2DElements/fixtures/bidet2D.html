@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Bidet 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let bidet;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            bidet = openPlans.bidet2D({
+                labelName: 'Bidet'
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Bidet 2D');
+            folder.add({ labelName: bidet.labelName }, 'labelName').name('Label').onChange(v => bidet.labelName = v);
+            folder.add({ width: bidet.dimensions.width }, 'width', 0.5, 2, 0.01).name('Width').onChange(v => {
+                bidet.dimensions = { ...bidet.dimensions, width: v };
+            });
+            folder.add({ depth: bidet.dimensions.depth }, 'depth', 0.7, 3, 0.01).name('Depth').onChange(v => {
+                bidet.dimensions = { ...bidet.dimensions, depth: v };
+            });
+            folder.addColor({ bodyColor: bidet.bodyColor }, 'bodyColor').name('Body Color').onChange(v => bidet.bodyColor = v);
+            folder.add({ fit: () => openPlans.fit(bidet.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

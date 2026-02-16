@@ -102,12 +102,15 @@
         arc.arcColor = value;
       });
 
-      arcFolder.add({ getConfigArc1: () => {
-        console.log('Arc 1 Config:', arc.getOPConfig());
-      }}, 'getConfigArc1');
+      arcFolder.add({
+        getConfigArc1: () => {
+          console.log('Arc 1 Config:', arc.getOPConfig());
+        }
+      }, 'getConfigArc1');
 
-      arcFolder.add({ preloadArc: () => {
-        const config = {
+      arcFolder.add({
+        preloadArc: () => {
+          const config = {
             ogid: 'arc-preload-001',
             center: [0, 0, 2],
             radius: 5,
@@ -116,10 +119,13 @@
             segments: 16,
             color: 0x000000,
           };
-        const preloadConfig = openPlans.arc(config);
+          const preloadConfig = openPlans.arc(config);
 
-        console.log('Preloaded Arc Config:', preloadConfig.getOPConfig());
-      }}, 'preloadArc');
+          console.log('Preloaded Arc Config:', preloadConfig.getOPConfig());
+        }
+      }, 'preloadArc');
+
+      arcFolder.add({ fit: () => openPlans.fit(arc.id) }, 'fit').name('Fit');
     }
 
     (async function () {

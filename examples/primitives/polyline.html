@@ -75,16 +75,19 @@
         polyline1.lineColor = value;
       }));
 
-      polyline1Folder.add({ getConfig: () => {
-        console.log('Current Polyline Config:', polyline1.getOPConfig());
-      }}, 'getConfig');
+      polyline1Folder.add({
+        getConfig: () => {
+          console.log('Current Polyline Config:', polyline1.getOPConfig());
+        }
+      }, 'getConfig');
 
       // Create Polyline using Config
       const polyline2Folder = polylineFolder.addFolder('Polyline with Config');
       polyline2Folder.open();
 
-      polyline2Folder.add({ preloadPolyline: () => {
-        const config = {
+      polyline2Folder.add({
+        preloadPolyline: () => {
+          const config = {
             ogid: 'polyline-2-with-config',
             points: [
               [20, 0, 0],
@@ -99,16 +102,21 @@
           polyline2 = openPlans.polyline(config);
 
           console.log('Preloaded Polyline Config:', polyline2.getOPConfig());
-      }}, 'preloadPolyline');
+        }
+      }, 'preloadPolyline');
 
-      polyline2Folder.add({ addPoint: () => {
-        const randomX = Math.floor(Math.random() * 100) - 50;
-        const randomZ = Math.floor(Math.random() * 100) - 50;
-        const newPoint = [randomX, 0, randomZ];
+      polyline2Folder.add({
+        addPoint: () => {
+          const randomX = Math.floor(Math.random() * 100) - 50;
+          const randomZ = Math.floor(Math.random() * 100) - 50;
+          const newPoint = [randomX, 0, randomZ];
 
-        polyline2.attachPoint(newPoint);
-        console.log('Updated Polyline 2 Config:', polyline2.getOPConfig());
-      }}, 'addPoint');
+          polyline2.attachPoint(newPoint);
+          console.log('Updated Polyline 2 Config:', polyline2.getOPConfig());
+        }
+      }, 'addPoint');
+
+      polyline1Folder.add({ fit: () => openPlans.fit(polyline1.id) }, 'fit').name('Fit');
     }
 
     (async function () {

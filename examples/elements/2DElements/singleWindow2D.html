@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Single Window 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenGeometry Demo">
+    <meta name="author" content="Vishwajeet Mane">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" style="width: 100%; height: 100vh;">
+    </div>
+    <div id="profileViewContainer"
+        style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+        <!-- 2D Profile View will be rendered here -->
+    </div>
+
+    <script type="module">
+        import { OpenPlans } from './../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let singleWindow;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            singleWindow = openPlans.singleWindow2D();
+
+            const profileContainer = document.getElementById('profileViewContainer');
+            const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+            profileContainer.appendChild(renderer.domElement);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const windowFolder = gui.addFolder('Single Window 2D');
+            const windowControls = {
+                'labelName': singleWindow.labelName,
+                'windowWidth': singleWindow.windowDimensions.width,
+                'windowThickness': singleWindow.windowDimensions.thickness,
+                'glassColor': singleWindow.glassColor,
+                'frameWidth': singleWindow.frameDimensions.width,
+                'frameThickness': singleWindow.frameDimensions.thickness,
+                'frameColor': singleWindow.frameColor
+            };
+
+            windowFolder.add(windowControls, 'labelName').name('Label Name').onChange((value) => {
+                singleWindow.labelName = value;
+            });
+            windowFolder.add(windowControls, 'windowWidth', 0.5, 3).name('Window Width').onChange((value) => {
+                singleWindow.windowDimensions = { ...singleWindow.windowDimensions, width: value };
+            });
+            windowFolder.add(windowControls, 'windowThickness', 0.05, 0.3).name('Window Thickness').onChange((value) => {
+                singleWindow.windowDimensions = { ...singleWindow.windowDimensions, thickness: value };
+            });
+            windowFolder.addColor(windowControls, 'glassColor').name('Glass Color').onChange((value) => {
+                singleWindow.glassColor = value;
+            });
+            windowFolder.add(windowControls, 'frameWidth', 0.05, 0.3).name('Frame Width').onChange((value) => {
+                singleWindow.frameDimensions = { ...singleWindow.frameDimensions, width: value };
+            });
+            windowFolder.add(windowControls, 'frameThickness', 0.1, 0.4).name('Frame Thickness').onChange((value) => {
+                singleWindow.frameDimensions = { ...singleWindow.frameDimensions, thickness: value };
+            });
+            windowFolder.addColor(windowControls, 'frameColor').name('Frame Color').onChange((value) => {
+                singleWindow.frameColor = value;
+            });
+            windowFolder.add({ fit: () => openPlans.fit(singleWindow.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Stair 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenGeometry Demo">
+    <meta name="author" content="Vishwajeet Mane">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" style="width: 100%; height: 100vh;">
+    </div>
+    <div id="profileViewContainer"
+        style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+        <!-- 2D Profile View will be rendered here -->
+    </div>
+
+    <script type="module">
+        import { OpenPlans } from './../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let stair;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            stair = openPlans.stair2D();
+
+            const profileContainer = document.getElementById('profileViewContainer');
+            const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+            profileContainer.appendChild(renderer.domElement);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const stairFolder = gui.addFolder('Stair 2D');
+            const stairControls = {
+                'labelName': stair.labelName,
+                'stairWidth': stair.stairDimensions.width,
+                'stairLength': stair.stairDimensions.length,
+                'numberOfSteps': stair.numberOfSteps,
+                'direction': stair.direction,
+                'stairColor': stair.stairColor,
+                'arrowColor': stair.arrowColor
+            };
+
+            stairFolder.add(stairControls, 'labelName').name('Label Name').onChange((value) => {
+                stair.labelName = value;
+            });
+            stairFolder.add(stairControls, 'stairWidth', 0.6, 2.5).name('Stair Width').onChange((value) => {
+                stair.stairDimensions = { ...stair.stairDimensions, width: value };
+            });
+            stairFolder.add(stairControls, 'stairLength', 1.5, 6).name('Stair Length').onChange((value) => {
+                stair.stairDimensions = { ...stair.stairDimensions, length: value };
+            });
+            stairFolder.add(stairControls, 'numberOfSteps', 3, 20, 1).name('Number of Steps').onChange((value) => {
+                stair.numberOfSteps = value;
+            });
+            stairFolder.add(stairControls, 'direction', ['UP', 'DOWN']).name('Direction').onChange((value) => {
+                stair.direction = value;
+            });
+            stairFolder.addColor(stairControls, 'stairColor').name('Stair Color').onChange((value) => {
+                stair.stairColor = value;
+            });
+            stairFolder.addColor(stairControls, 'arrowColor').name('Arrow Color').onChange((value) => {
+                stair.arrowColor = value;
+            });
+            stairFolder.add({ fit: () => openPlans.fit(stair.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

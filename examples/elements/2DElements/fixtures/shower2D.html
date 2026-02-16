@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Shower 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let shower;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            shower = openPlans.shower2D({
+                labelName: 'Shower',
+                dimensions: { width: 0.9, depth: 0.9 }
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Shower 2D');
+            folder.add({ labelName: shower.labelName }, 'labelName').name('Label').onChange(v => shower.labelName = v);
+            folder.add({ width: shower.dimensions.width }, 'width', 0.7, 2, 0.01).name('Width').onChange(v => {
+                shower.dimensions = { ...shower.dimensions, width: v };
+            });
+            folder.add({ depth: shower.dimensions.depth }, 'depth', 0.7, 2, 0.01).name('Depth').onChange(v => {
+                shower.dimensions = { ...shower.dimensions, depth: v };
+            });
+            folder.addColor({ floorColor: shower.floorColor }, 'floorColor').name('Floor Color').onChange(v => shower.floorColor = v);
+            folder.add({ fit: () => openPlans.fit(shower.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

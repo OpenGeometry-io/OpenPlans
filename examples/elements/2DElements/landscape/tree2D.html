@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Tree 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let tree;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            tree = openPlans.tree2D({
+                labelName: 'Oak Tree',
+                canopyRadius: 1.5,
+                trunkRadius: 0.15
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Tree 2D');
+            folder.add({ labelName: tree.labelName }, 'labelName').name('Label').onChange(v => tree.labelName = v);
+            folder.add({ canopyRadius: tree.canopyRadius }, 'canopyRadius', 0.5, 3.0, 0.1).name('Canopy Radius').onChange(v => tree.canopyRadius = v);
+            folder.add({ trunkRadius: tree.trunkRadius }, 'trunkRadius', 0.05, 0.4, 0.01).name('Trunk Radius').onChange(v => tree.trunkRadius = v);
+            folder.addColor({ canopyColor: tree.canopyColor }, 'canopyColor').name('Canopy Color').onChange(v => tree.canopyColor = v);
+            folder.addColor({ trunkColor: tree.trunkColor }, 'trunkColor').name('Trunk Color').onChange(v => tree.trunkColor = v);
+            folder.add({ fit: () => openPlans.fit(tree.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

@@ -5,6 +5,7 @@ export interface IShape {
   subElements: Map<string, THREE.Object3D>;
   selected: boolean;
   edit: boolean;
+  locked: boolean;
   propertySet: Record<string, any>;
   setOPConfig(config: Record<string, any>): void;
   getOPConfig(): Record<string, any>;

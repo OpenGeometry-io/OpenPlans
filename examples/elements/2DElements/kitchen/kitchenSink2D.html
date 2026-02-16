@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Kitchen Sink 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let kitchenSink;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            kitchenSink = openPlans.kitchenSink2D({
+                labelName: 'Kitchen Sink'
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Kitchen Sink 2D');
+            folder.add({ labelName: kitchenSink.labelName }, 'labelName').name('Label').onChange(v => kitchenSink.labelName = v);
+            folder.add({ width: kitchenSink.dimensions.width }, 'width', 0.6, 1.5, 0.01).name('Width').onChange(v => {
+                kitchenSink.dimensions = { ...kitchenSink.dimensions, width: v };
+            });
+            folder.add({ depth: kitchenSink.dimensions.depth }, 'depth', 0.4, 1, 0.01).name('Depth').onChange(v => {
+                kitchenSink.dimensions = { ...kitchenSink.dimensions, depth: v };
+            });
+            folder.addColor({ sinkColor: kitchenSink.sinkColor }, 'sinkColor').name('Sink Color').onChange(v => kitchenSink.sinkColor = v);
+            folder.add({ fit: () => openPlans.fit(kitchenSink.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

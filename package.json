@@ -14,7 +14,8 @@
     "build": "npm run clean && rollup -c",
     "cpy-pkg-json": "cp package.json dist/package.json && cp README.md dist/README.md",
     "pre-prepare": "npm run build && npm run cpy-pkg-json",
-    "release": "npm run pre-prepare && cd dist && npm publish"
+    "release": "npm run pre-prepare && cd dist && npm publish",
+    "generate-thumbnails": "node scripts/generate-thumbnails.js"
   },
   "keywords": [
     "openplans",
@@ -26,13 +27,15 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@opengeometry/openglyph": "^0.0.6"
+    "@opengeometry/openglyph": "^0.0.6",
+    "@types/jspdf": "^1.3.3",
+    "jspdf": "^4.0.0"
   },
   "peerDependencies": {
-    "three": "^0.168.0",
     "@types/three": "^0.168.0",
     "camera-controls": "^2.9.0",
-    "lil-gui": "^0.19.2"
+    "lil-gui": "^0.19.2",
+    "three": "^0.168.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
@@ -41,6 +44,7 @@
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/dat.gui": "^0.7.7",
     "@types/three": "^0.173.0",
+    "puppeteer": "^24.36.1",
     "rimraf": "^6.0.1",
     "rollup": "^4.34.8",
     "stats.js": "^0.17.0",

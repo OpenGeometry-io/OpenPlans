@@ -47,7 +47,7 @@
       openPlans.showGrid = false;
 
       // draftBoard = openPlans.board();
-      
+
       // Rectangle 1
       rectangle = openPlans.rectangle();
 
@@ -108,25 +108,31 @@
         }
       });
 
-      rectangleFolder.add({ getConfig: () => {
-        if (rectangle) {
-          const config = rectangle.getOPConfig();
-          console.log('Rectangle Config:', config);
+      rectangleFolder.add({
+        getConfig: () => {
+          if (rectangle) {
+            const config = rectangle.getOPConfig();
+            console.log('Rectangle Config:', config);
+          }
         }
-      }}, 'getConfig');
+      }, 'getConfig');
 
-      rectangleFolder.add({ preloadRectangle: () => {
-        const config = {
+      rectangleFolder.add({
+        preloadRectangle: () => {
+          const config = {
             ogid: 'preloaded-rectangle-222',
             center: [0, 0, 0],
             width: 20,
             breadth: 10,
             color: 14821416,
           };
-        const preloadConfig = openPlans.rectangle(config);
+          const preloadConfig = openPlans.rectangle(config);
 
-        console.log('Preloaded Rectangle Config:', preloadConfig.getOPConfig());
-      }}, 'preloadRectangle');
+          console.log('Preloaded Rectangle Config:', preloadConfig.getOPConfig());
+        }
+      }, 'preloadRectangle');
+
+      rectangleFolder.add({ fit: () => openPlans.fit(rectangle.id) }, 'fit').name('Fit');
     }
 
     (async function () {

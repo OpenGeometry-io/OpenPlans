@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Desk 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let desk;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            desk = openPlans.desk2D({
+                labelName: 'Office Desk'
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Desk 2D');
+            folder.add({ labelName: desk.labelName }, 'labelName').name('Label').onChange(v => desk.labelName = v);
+            folder.add({ width: desk.dimensions.width }, 'width', 1.0, 2.5, 0.01).name('Width').onChange(v => {
+                desk.dimensions = { ...desk.dimensions, width: v };
+            });
+            folder.add({ depth: desk.dimensions.depth }, 'depth', 0.5, 1.5, 0.01).name('Depth').onChange(v => {
+                desk.dimensions = { ...desk.dimensions, depth: v };
+            });
+            folder.addColor({ deskColor: desk.deskColor }, 'deskColor').name('Desk Color').onChange(v => desk.deskColor = v);
+            folder.addColor({ chairColor: desk.chairColor }, 'chairColor').name('Chair Color').onChange(v => desk.chairColor = v);
+            folder.add({ poleSize: desk.poleSize }, 'poleSize', 0.02, 0.15, 0.01).name('Pole Size').onChange(v => desk.poleSize = v);
+            folder.add({ fit: () => openPlans.fit(desk.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

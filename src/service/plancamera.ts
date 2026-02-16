@@ -33,16 +33,14 @@ export class PlanCamera {
   }
 
   isometricCamera() {
-    
+
   }
 
-  fitToElement(meshes: THREE.Mesh[]) {
+  async fitToElement(mesh: THREE.Mesh) {
     const box = new THREE.Box3();
-    for (const mesh of meshes) {
-      box.expandByObject(mesh);
-    }
-    box.expandByScalar(2);
-    this.controls.fitToSphere(box.getBoundingSphere(new THREE.Sphere()), true);
+    box.expandByObject(mesh);
+    // box.expandByScalar(2);
+    await this.controls.fitToSphere(box.getBoundingSphere(new THREE.Sphere()), true);
   }
 
   update() {

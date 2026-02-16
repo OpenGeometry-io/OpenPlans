@@ -95,21 +95,29 @@
         line.lineColor = value;
       });
 
-      lineFolder.add({ getConfig: () => {
-        const config = line.getOPConfig();
-        console.log('Line Config:', config);
-      }}, 'getConfig');
+      lineFolder.add({
+        getConfig: () => {
+          const config = line.getOPConfig();
+          console.log('Line Config:', config);
+        }
+      }, 'getConfig');
 
-      lineFolder.add({ preloadLine: () => {
-        const config = {
+      lineFolder.add({
+        preloadLine: () => {
+          const config = {
             ogid: "81c8c201-0b60-41aa-a2dd-19c46e0fee17",
             startPoint: [0, 0, 0],
             endPoint: [10, 0, 2],
             color: 0x000000,
+            fatLines: true,
+            width: 4,
           };
-        const preloadConfig = openPlans.line(config);
-        console.log('Preloaded Line:', preloadConfig.getOPConfig());
-      }}, 'preloadLine');
+          const preloadConfig = openPlans.line(config);
+          console.log('Preloaded Line:', preloadConfig.getOPConfig());
+        }
+      }, 'preloadLine');
+
+      lineFolder.add({ fit: () => openPlans.fit(line.id) }, 'fit').name('Fit');
     }
 
     (async function () {

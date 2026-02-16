@@ -40,6 +40,46 @@ import { Event } from './utils/event';
 
 // Elements
 import { Board, BoardOptions } from './elements/board';
+import { Door2D, DoorOptions } from './elements/planview/door2D';
+import { DoubleDoor2D, DoubleDoorOptions } from './elements/planview/doubleDoor2D';
+import { Window2D, WindowOptions } from './elements/planview/window2D';
+import { DoubleWindow2D, DoubleWindowOptions } from './elements/planview/doubleWindow2D';
+import { Stair2D, StairOptions } from './elements/planview/stair2D';
+
+// Fixtures (Bathroom)
+import { Toilet2D, ToiletOptions } from './elements/planview/fixtures/toilet2D';
+import { Sink2D, SinkOptions } from './elements/planview/fixtures/sink2D';
+import { Bathtub2D, BathtubOptions } from './elements/planview/fixtures/bathtub2D';
+import { Shower2D, ShowerOptions } from './elements/planview/fixtures/shower2D';
+import { Bidet2D, BidetOptions } from './elements/planview/fixtures/bidet2D';
+import { Urinal2D, UrinalOptions } from './elements/planview/fixtures/urinal2D';
+
+// Furniture
+import { Bed2D, BedOptions } from './elements/planview/furniture/bed2D';
+import { Sofa2D, SofaOptions } from './elements/planview/furniture/sofa2D';
+import { DiningTable2D, DiningTableOptions } from './elements/planview/furniture/diningTable2D';
+import { Desk2D, DeskOptions } from './elements/planview/furniture/desk2D';
+import { Chair2D, ChairOptions } from './elements/planview/furniture/chair2D';
+import { Wardrobe2D, WardrobeOptions } from './elements/planview/furniture/wardrobe2D';
+
+// Appliances
+import { Refrigerator2D, RefrigeratorOptions } from './elements/planview/appliances/refrigerator2D';
+import { Stove2D, StoveOptions } from './elements/planview/appliances/stove2D';
+import { Washer2D, WasherOptions } from './elements/planview/appliances/washer2D';
+import { Dishwasher2D, DishwasherOptions } from './elements/planview/appliances/dishwasher2D';
+
+// Kitchen
+import { KitchenSink2D, KitchenSinkOptions } from './elements/planview/kitchen/kitchenSink2D';
+import { Counter2D, CounterOptions } from './elements/planview/kitchen/counter2D';
+import { Cabinet2D, CabinetOptions } from './elements/planview/kitchen/cabinet2D';
+import { Island2D, IslandOptions } from './elements/planview/kitchen/island2D';
+
+// Landscape
+import { Tree2D, TreeOptions } from './elements/planview/landscape/tree2D';
+import { Shrub2D, ShrubOptions } from './elements/planview/landscape/shrub2D';
+import { Planter2D, PlanterOptions } from './elements/planview/landscape/planter2D';
+import { Fountain2D, FountainOptions } from './elements/planview/landscape/fountain2D';
+import { Bench2D, BenchOptions } from './elements/planview/landscape/bench2D';
 
 // Shapes
 export * from "./primitives/index";
@@ -52,9 +92,9 @@ export class OpenPlans {
   private container: HTMLElement
   private openThree: OpenThree
   static sOThree: OpenThree;
- 
+
   // private pencil: Pencil | undefined;
-  
+
   private planCamera: PlanCamera
 
   private og: OpenGeometry | undefined
@@ -76,7 +116,7 @@ export class OpenPlans {
     OpenPlans.sOThree = this.openThree;
 
     this.planCamera = this.openThree.planCamera
-    
+
     this.openThree.planCamera.controls.addEventListener("update", () => {
       Glyphs.updateManager(this.openThree.threeCamera)
     });
@@ -90,7 +130,7 @@ export class OpenPlans {
   // TODO: Create proper 2D view management system, where user can create multiple 2D views at different heights and that view will be rendered accordingly in given container
   // TODO: Using this system, we can create section views as well and get reference to those views which can be used to generate 2D drawings later
   // TODO: These views can be also saved as part of the Element Views
-  
+
   /**
    * Create a 2D view in the given container.
    * @param container The HTML container element where the 2D view will be rendered.
@@ -112,9 +152,9 @@ export class OpenPlans {
 
     this.profileViews.set(container.id, { camera, renderer, container });
 
-    return { camera, renderer  };
+    return { camera, renderer };
   }
-  
+
   /**
    * Show or hide the 2D view.
    * @param show Whether to show or hide the 2D view
@@ -216,7 +256,7 @@ export class OpenPlans {
     // this.pencil?.onCursorDown.add((coords) => {
     //   console.log('Cursor Down', coords)
     // });
-    
+
     // if (this.pencil) {
     //   ShapeSelector.pencil = this.pencil;
     //   // ShapeEditor.pencil = this.pencil;
@@ -280,6 +320,222 @@ export class OpenPlans {
     this.openThree.scene.add(cylinder);
     this.ogElements.push(cylinder);
     return cylinder;
+  }
+
+  /* 2D Elements */
+  door2D(config?: DoorOptions): Door2D {
+    const door = new Door2D(config);
+    this.openThree.scene.add(door);
+    this.ogElements.push(door);
+    return door;
+  }
+
+  doubleDoor2D(config?: DoubleDoorOptions): DoubleDoor2D {
+    const door = new DoubleDoor2D(config);
+    this.openThree.scene.add(door);
+    this.ogElements.push(door);
+    return door;
+  }
+
+  singleWindow2D(config?: WindowOptions): Window2D {
+    const window = new Window2D(config);
+    this.openThree.scene.add(window);
+    this.ogElements.push(window);
+    return window;
+  }
+
+  doubleWindow2D(config?: DoubleWindowOptions): DoubleWindow2D {
+    const window = new DoubleWindow2D(config);
+    this.openThree.scene.add(window);
+    this.ogElements.push(window);
+    return window;
+  }
+
+  stair2D(config?: StairOptions): Stair2D {
+    const stair = new Stair2D(config);
+    this.openThree.scene.add(stair);
+    this.ogElements.push(stair);
+    return stair;
+  }
+
+  /* Fixtures (Bathroom) */
+  toilet2D(config?: Partial<ToiletOptions>): Toilet2D {
+    const toilet = new Toilet2D(config);
+    this.openThree.scene.add(toilet);
+    this.ogElements.push(toilet);
+    return toilet;
+  }
+
+  sink2D(config?: Partial<SinkOptions>): Sink2D {
+    const sink = new Sink2D(config);
+    this.openThree.scene.add(sink);
+    this.ogElements.push(sink);
+    return sink;
+  }
+
+  bathtub2D(config?: Partial<BathtubOptions>): Bathtub2D {
+    const bathtub = new Bathtub2D(config);
+    this.openThree.scene.add(bathtub);
+    this.ogElements.push(bathtub);
+    return bathtub;
+  }
+
+  shower2D(config?: Partial<ShowerOptions>): Shower2D {
+    const shower = new Shower2D(config);
+    this.openThree.scene.add(shower);
+    this.ogElements.push(shower);
+    return shower;
+  }
+
+  bidet2D(config?: Partial<BidetOptions>): Bidet2D {
+    const bidet = new Bidet2D(config);
+    this.openThree.scene.add(bidet);
+    this.ogElements.push(bidet);
+    return bidet;
+  }
+
+  urinal2D(config?: Partial<UrinalOptions>): Urinal2D {
+    const urinal = new Urinal2D(config);
+    this.openThree.scene.add(urinal);
+    this.ogElements.push(urinal);
+    return urinal;
+  }
+
+  /* Furniture */
+  bed2D(config?: Partial<BedOptions>): Bed2D {
+    const bed = new Bed2D(config);
+    this.openThree.scene.add(bed);
+    this.ogElements.push(bed);
+    return bed;
+  }
+
+  sofa2D(config?: Partial<SofaOptions>): Sofa2D {
+    const sofa = new Sofa2D(config);
+    this.openThree.scene.add(sofa);
+    this.ogElements.push(sofa);
+    return sofa;
+  }
+
+  diningTable2D(config?: Partial<DiningTableOptions>): DiningTable2D {
+    const table = new DiningTable2D(config);
+    this.openThree.scene.add(table);
+    this.ogElements.push(table);
+    return table;
+  }
+
+  desk2D(config?: Partial<DeskOptions>): Desk2D {
+    const desk = new Desk2D(config);
+    this.openThree.scene.add(desk);
+    this.ogElements.push(desk);
+    return desk;
+  }
+
+  chair2D(config?: Partial<ChairOptions>): Chair2D {
+    const chair = new Chair2D(config);
+    this.openThree.scene.add(chair);
+    this.ogElements.push(chair);
+    return chair;
+  }
+
+  wardrobe2D(config?: Partial<WardrobeOptions>): Wardrobe2D {
+    const wardrobe = new Wardrobe2D(config);
+    this.openThree.scene.add(wardrobe);
+    this.ogElements.push(wardrobe);
+    return wardrobe;
+  }
+
+  /* Appliances */
+  refrigerator2D(config?: Partial<RefrigeratorOptions>): Refrigerator2D {
+    const fridge = new Refrigerator2D(config);
+    this.openThree.scene.add(fridge);
+    this.ogElements.push(fridge);
+    return fridge;
+  }
+
+  stove2D(config?: Partial<StoveOptions>): Stove2D {
+    const stove = new Stove2D(config);
+    this.openThree.scene.add(stove);
+    this.ogElements.push(stove);
+    return stove;
+  }
+
+  washer2D(config?: Partial<WasherOptions>): Washer2D {
+    const washer = new Washer2D(config);
+    this.openThree.scene.add(washer);
+    this.ogElements.push(washer);
+    return washer;
+  }
+
+  dishwasher2D(config?: Partial<DishwasherOptions>): Dishwasher2D {
+    const dishwasher = new Dishwasher2D(config);
+    this.openThree.scene.add(dishwasher);
+    this.ogElements.push(dishwasher);
+    return dishwasher;
+  }
+
+  /* Kitchen */
+  kitchenSink2D(config?: Partial<KitchenSinkOptions>): KitchenSink2D {
+    const sink = new KitchenSink2D(config);
+    this.openThree.scene.add(sink);
+    this.ogElements.push(sink);
+    return sink;
+  }
+
+  counter2D(config?: Partial<CounterOptions>): Counter2D {
+    const counter = new Counter2D(config);
+    this.openThree.scene.add(counter);
+    this.ogElements.push(counter);
+    return counter;
+  }
+
+  cabinet2D(config?: Partial<CabinetOptions>): Cabinet2D {
+    const cabinet = new Cabinet2D(config);
+    this.openThree.scene.add(cabinet);
+    this.ogElements.push(cabinet);
+    return cabinet;
+  }
+
+  island2D(config?: Partial<IslandOptions>): Island2D {
+    const island = new Island2D(config);
+    this.openThree.scene.add(island);
+    this.ogElements.push(island);
+    return island;
+  }
+
+  /* Landscape */
+  tree2D(config?: Partial<TreeOptions>): Tree2D {
+    const tree = new Tree2D(config);
+    this.openThree.scene.add(tree);
+    this.ogElements.push(tree);
+    return tree;
+  }
+
+  shrub2D(config?: Partial<ShrubOptions>): Shrub2D {
+    const shrub = new Shrub2D(config);
+    this.openThree.scene.add(shrub);
+    this.ogElements.push(shrub);
+    return shrub;
+  }
+
+  planter2D(config?: Partial<PlanterOptions>): Planter2D {
+    const planter = new Planter2D(config);
+    this.openThree.scene.add(planter);
+    this.ogElements.push(planter);
+    return planter;
+  }
+
+  fountain2D(config?: Partial<FountainOptions>): Fountain2D {
+    const fountain = new Fountain2D(config);
+    this.openThree.scene.add(fountain);
+    this.ogElements.push(fountain);
+    return fountain;
+  }
+
+  bench2D(config?: Partial<BenchOptions>): Bench2D {
+    const bench = new Bench2D(config);
+    this.openThree.scene.add(bench);
+    this.ogElements.push(bench);
+    return bench;
   }
 
   // baseWall(config: IBaseWall): BaseWall {
@@ -393,11 +649,15 @@ export class OpenPlans {
     return this.ogElements.filter((el) => el.ogType === type)
   }
 
-  fit(element: string) {
-    if (!element) return
-    const entities = this.getEntitiesByType(element)
-    if (entities.length === 0) return
-    this.planCamera.fitToElement(entities)
+  getEntityById(id: string) {
+    return this.ogElements.find((el) => el.id === id)
+  }
+
+  async fit(elementId: string) {
+    if (!elementId) return
+    const entity = this.getEntityById(elementId)
+    if (!entity) return
+    await this.planCamera.fitToElement(entity)
   }
 
   glyph(text: string, size: number, color: number, staticZoom: boolean = true) {
@@ -495,10 +755,12 @@ export class OpenPlans {
     // if (!this.pencil) {
     //   throw new Error('Pencil not initialized')
     // }
-    const paperFrame = new PaperFrame(config)
-    this.openThree.scene.add(paperFrame)
-    this.ogElements.push(paperFrame)
-    return paperFrame
+    const paperFrame = new PaperFrame(config);
+    paperFrame.renderer = this.openThree.renderer;
+    paperFrame.scene = this.openThree.scene;
+    this.openThree.scene.add(paperFrame);
+    this.ogElements.push(paperFrame);
+    return paperFrame;
   }
 
   // logoInfoBlock(options:LogoInfoBlockOptions) {
@@ -515,10 +777,10 @@ export class OpenPlans {
 
   static toScreenPosition(pos: THREE.Vector3): { x: number; y: number } {
     const vector = pos.clone().project(OpenPlans.sOThree.threeCamera);
-  
+
     const halfWidth = OpenPlans.sOThree.renderer.domElement.clientWidth / 2;
     const halfHeight = OpenPlans.sOThree.renderer.domElement.clientHeight / 2;
-  
+
     return {
       x: vector.x * halfWidth + halfWidth,
       y: -vector.y * halfHeight + halfHeight
@@ -544,7 +806,7 @@ export class OpenPlans {
     // if (!this.pencil) {
     //   throw new Error('Pencil not initialized');
     // }
-    
+
     // const link = document.createElement('a');
     // link.href = dataURL;
     // link.download = 'image.png'; // You can change the file name/format
@@ -559,7 +821,7 @@ export class OpenPlans {
       );
       const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(geometry, material);
-      
+
       // Set position and scale as needed
       mesh.position.set(0, -0.1, 0);
       mesh.scale.set(0.239, 0.239, 0.239); // Adjust scale as needed

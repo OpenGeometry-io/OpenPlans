@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Double Door 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenGeometry Demo">
+    <meta name="author" content="Vishwajeet Mane">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" style="width: 100%; height: 100vh;">
+    </div>
+    <div id="profileViewContainer"
+        style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+        <!-- 2D Profile View will be rendered here -->
+    </div>
+
+    <script type="module">
+        import { OpenPlans } from './../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let doubleDoor;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            doubleDoor = openPlans.doubleDoor2D();
+
+            const profileContainer = document.getElementById('profileViewContainer');
+            const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+            profileContainer.appendChild(renderer.domElement);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const doorFolder = gui.addFolder('Double Door 2D');
+            const doorControls = {
+                'labelName': doubleDoor.labelName,
+                'leftSwingRotation': doubleDoor.leftSwingRotation,
+                'rightSwingRotation': doubleDoor.rightSwingRotation,
+                'doorWidth': doubleDoor.doorDimensions.width,
+                'doorThickness': doubleDoor.doorDimensions.thickness,
+                'doorColor': doubleDoor.doorColor,
+                'mullionWidth': doubleDoor.mullionWidth,
+                'frameWidth': doubleDoor.frameDimensions.width,
+                'frameThickness': doubleDoor.frameDimensions.thickness,
+                'frameColor': doubleDoor.frameColor
+            };
+
+            doorFolder.add(doorControls, 'labelName').name('Label Name').onChange((value) => {
+                doubleDoor.labelName = value;
+            });
+            doorFolder.add(doorControls, 'leftSwingRotation', 0, 90).name('Left Swing').onChange((value) => {
+                doubleDoor.leftSwingRotation = value;
+            });
+            doorFolder.add(doorControls, 'rightSwingRotation', 0, 90).name('Right Swing').onChange((value) => {
+                doubleDoor.rightSwingRotation = value;
+            });
+            doorFolder.add(doorControls, 'doorWidth', 0.5, 3).name('Door Width').onChange((value) => {
+                doubleDoor.doorDimensions = { ...doubleDoor.doorDimensions, width: value };
+            });
+            doorFolder.add(doorControls, 'doorThickness', 0.1, 0.5).name('Door Thickness').onChange((value) => {
+                doubleDoor.doorDimensions = { ...doubleDoor.doorDimensions, thickness: value };
+            });
+            doorFolder.addColor(doorControls, 'doorColor').name('Door Color').onChange((value) => {
+                doubleDoor.doorColor = value;
+            });
+            doorFolder.add(doorControls, 'mullionWidth', 0.05, 0.3).name('Mullion Width').onChange((value) => {
+                doubleDoor.mullionWidth = value;
+            });
+            doorFolder.add(doorControls, 'frameWidth', 0.1, 0.5).name('Frame Width').onChange((value) => {
+                doubleDoor.frameDimensions = { ...doubleDoor.frameDimensions, width: value };
+            });
+            doorFolder.add(doorControls, 'frameThickness', 0.1, 0.5).name('Frame Thickness').onChange((value) => {
+                doubleDoor.frameDimensions = { ...doubleDoor.frameDimensions, thickness: value };
+            });
+            doorFolder.addColor(doorControls, 'frameColor').name('Frame Color').onChange((value) => {
+                doubleDoor.frameColor = value;
+            });
+            doorFolder.add({ fit: () => openPlans.fit(doubleDoor.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

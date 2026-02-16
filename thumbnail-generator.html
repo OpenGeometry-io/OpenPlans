@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Thumbnail Generator</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './src/index.ts';
+        import * as THREE from 'three';
+
+        // Parse query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const elementKey = urlParams.get('element'); // e.g., 'chair2D'
+
+        if (!elementKey) {
+            console.error("No 'element' parameter provided.");
+        }
+
+        async function init() {
+            const container = document.getElementById('app');
+            const openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            // Clear default scene if needed
+            if (openPlans.openThree && openPlans.openThree.openGrid) {
+                openPlans.openThree.openGrid.visible = false;
+            }
+
+            // Set background to transparent
+            if (openPlans.openThree && openPlans.openThree.renderer) {
+                openPlans.openThree.renderer.setClearColor(0xffffff, 0);
+                openPlans.openThree.scene.background = null;
+            }
+
+            // Create the element dynamically
+            if (openPlans[elementKey]) {
+                const config = {};
+                // Only pass labelName if it's likely a 2D element that supports it
+                if (elementKey.endsWith('2D')) {
+                    config.labelName = "";
+                } else if (elementKey === 'board') {
+                    config.width = 30;
+                    config.height = 20;
+                    config.boardColor = 0xdddddd;
+                } else if (elementKey === 'paperFrame') {
+                    config.format = 'A3';
+                    config.orientation = 'landscape';
+                }
+
+                const element = openPlans[elementKey](config);
+
+                // Wait for a frame
+                await fitCamera(openPlans, element);
+            } else {
+                console.error(`Element '${elementKey}' not found in OpenPlans.`);
+            }
+        }
+
+        async function fitCamera(openPlans, element) {
+            await openPlans.fit(element.id);
+            // Signal ready for Puppeteer
+            document.body.setAttribute('data-ready', 'true');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

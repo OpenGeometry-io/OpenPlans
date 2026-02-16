@@ -11,6 +11,10 @@ export enum ElementType {
   SPACECONTAINER = 'SPACECONTAINER',
   BOARD = 'BOARD',
   PAPER = 'PAPER',
+  FIXTURE = 'FIXTURE',
+  FURNITURE = 'FURNITURE',
+  APPLIANCE = 'APPLIANCE',
+  LANDSCAPE = 'LANDSCAPE',
 }
 
 export enum DoorType {

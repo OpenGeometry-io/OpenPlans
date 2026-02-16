@@ -44,17 +44,20 @@
       paperFrame.margin = 10;
       paperFrame.paperName = 'VerticalPaper';
 
+      // Door
+      // const door = openPlans.baseDoor();
+      // door.position.set(0, 0, 0);
 
-      // Paper Frame with Config
-      paperFrame = openPlans.paperFrame({
-        ogid: 'fb844b7a-9306-408a-bd2d-1b78ec2402f4',
-        format: 'A2',
-        orientation: 'landscape',
-        margin: 2,
-        backgroundColor: 0xffffff,
-        borderColor: 0x000000,
-      });
-      paperFrame.position.set(50, 0, 0);
+      // // Paper Frame with Config
+      // paperFrame = openPlans.paperFrame({
+      //   ogid: 'fb844b7a-9306-408a-bd2d-1b78ec2402f4',
+      //   format: 'A2',
+      //   orientation: 'landscape',
+      //   margin: 2,
+      //   backgroundColor: 0xffffff,
+      //   borderColor: 0x000000,
+      // });
+      // paperFrame.position.set(50, 0, 0);
 
       // infoBlock = openPlans.infoBlock();
       
@@ -136,6 +139,9 @@
         subPaperFrame.add({ 'Get Config': () => {
           console.log(paperFrame.getOPConfig());
         }}, 'Get Config').name('Get Config');
+        subPaperFrame.add({ 'Export to PDF': () => {
+          paperFrame.exportToPDF();
+        }}, 'Export to PDF').name('Export to PDF');
       });
 
       const studioFolder = gui.addFolder('Studio Info');

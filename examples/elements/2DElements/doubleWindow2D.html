@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Double Window 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenGeometry Demo">
+    <meta name="author" content="Vishwajeet Mane">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" style="width: 100%; height: 100vh;">
+    </div>
+    <div id="profileViewContainer"
+        style="width: 300px; height: 300px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #000;">
+        <!-- 2D Profile View will be rendered here -->
+    </div>
+
+    <script type="module">
+        import { OpenPlans } from './../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let doubleWindow;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            doubleWindow = openPlans.doubleWindow2D();
+
+            const profileContainer = document.getElementById('profileViewContainer');
+            const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+            profileContainer.appendChild(renderer.domElement);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const windowFolder = gui.addFolder('Double Window 2D');
+            const windowControls = {
+                'labelName': doubleWindow.labelName,
+                'windowWidth': doubleWindow.windowDimensions.width,
+                'windowThickness': doubleWindow.windowDimensions.thickness,
+                'glassColor': doubleWindow.glassColor,
+                'mullionWidth': doubleWindow.mullionWidth,
+                'frameWidth': doubleWindow.frameDimensions.width,
+                'frameThickness': doubleWindow.frameDimensions.thickness,
+                'frameColor': doubleWindow.frameColor
+            };
+
+            windowFolder.add(windowControls, 'labelName').name('Label Name').onChange((value) => {
+                doubleWindow.labelName = value;
+            });
+            windowFolder.add(windowControls, 'windowWidth', 0.5, 2.5).name('Pane Width').onChange((value) => {
+                doubleWindow.windowDimensions = { ...doubleWindow.windowDimensions, width: value };
+            });
+            windowFolder.add(windowControls, 'windowThickness', 0.05, 0.3).name('Window Thickness').onChange((value) => {
+                doubleWindow.windowDimensions = { ...doubleWindow.windowDimensions, thickness: value };
+            });
+            windowFolder.addColor(windowControls, 'glassColor').name('Glass Color').onChange((value) => {
+                doubleWindow.glassColor = value;
+            });
+            windowFolder.add(windowControls, 'mullionWidth', 0.03, 0.2).name('Mullion Width').onChange((value) => {
+                doubleWindow.mullionWidth = value;
+            });
+            windowFolder.add(windowControls, 'frameWidth', 0.05, 0.25).name('Frame Width').onChange((value) => {
+                doubleWindow.frameDimensions = { ...doubleWindow.frameDimensions, width: value };
+            });
+            windowFolder.add(windowControls, 'frameThickness', 0.1, 0.4).name('Frame Thickness').onChange((value) => {
+                doubleWindow.frameDimensions = { ...doubleWindow.frameDimensions, thickness: value };
+            });
+            windowFolder.addColor(windowControls, 'frameColor').name('Frame Color').onChange((value) => {
+                doubleWindow.frameColor = value;
+            });
+            windowFolder.add({ fit: () => openPlans.fit(doubleWindow.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

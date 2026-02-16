@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Toilet 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let toilet;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            toilet = openPlans.toilet2D();
+        }
+
+        async function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Toilet 2D');
+            folder.add({ labelName: toilet.labelName }, 'labelName').name('Label').onChange(v => toilet.labelName = v);
+            folder.add({ width: toilet.dimensions.width }, 'width', 1.3, 2.0, 0.01).name('Width').onChange(v => {
+                toilet.dimensions = { ...toilet.dimensions, width: v };
+            });
+            folder.add({ depth: toilet.dimensions.depth }, 'depth', 1.8, 2.8, 0.01).name('Depth').onChange(v => {
+                toilet.dimensions = { ...toilet.dimensions, depth: v };
+            });
+            folder.addColor({ bowlColor: toilet.bowlColor }, 'bowlColor').name('Bowl Color').onChange(v => toilet.bowlColor = v);
+            folder.addColor({ tankColor: toilet.tankColor }, 'tankColor').name('Tank Color').onChange(v => toilet.tankColor = v);
+
+            folder.add({ fit: () => openPlans.fit(toilet.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

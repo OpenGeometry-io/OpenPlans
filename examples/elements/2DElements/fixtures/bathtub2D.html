@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlans Bathtub 2D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { OpenPlans } from './../../../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+        let openPlans;
+        let bathtub;
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            bathtub = openPlans.bathtub2D({
+                labelName: 'Bathtub'
+            });
+        }
+
+        function setUI() {
+            const gui = new GUI();
+            const folder = gui.addFolder('Bathtub 2D');
+            folder.add({ labelName: bathtub.labelName }, 'labelName').name('Label').onChange(v => bathtub.labelName = v);
+            folder.add({ width: bathtub.dimensions.width }, 'width', 0.75, 2.0, 0.01).name('Width').onChange(v => {
+                bathtub.dimensions = { ...bathtub.dimensions, width: v };
+            });
+            folder.add({ depth: bathtub.dimensions.depth }, 'depth', 1.7, 4.0, 0.01).name('Depth').onChange(v => {
+                bathtub.dimensions = { ...bathtub.dimensions, depth: v };
+            });
+            folder.addColor({ tubColor: bathtub.tubColor }, 'tubColor').name('Tub Color').onChange(v => bathtub.tubColor = v);
+            folder.add({ fit: () => openPlans.fit(bathtub.id) }, 'fit').name('Fit');
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

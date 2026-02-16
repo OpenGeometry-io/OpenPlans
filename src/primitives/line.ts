@@ -7,6 +7,8 @@ export interface LineOptions {
   startPoint: Array<number>;
   endPoint: Array<number>;
   color: number;
+  fatLines: boolean;
+  width: number;
 }
 
 /*
@@ -25,6 +27,8 @@ export class LinePrimitive extends Line implements IPrimitive {
     startPoint: [0, 0, 0],
     endPoint: [1, 0, 0],
     color: 0x000000,
+    fatLines: true,
+    width: 4,
   };
 
 
