@@ -1,5 +1,9 @@
 import { LineDimension } from "./line-dimension";
+import { AngleDimension } from "./angle-dimension";
+import { RadiusDimension } from "./radius-dimension";
 import * as THREE from "three";
+
+export { LineDimension, AngleDimension, RadiusDimension };
 
 export type DimensionType = 'length' | 'angle' | 'area' | 'radius' | 'diameter' | 'volume' | 'custom';
 
@@ -63,12 +67,17 @@ export class Dimensions {
         return lengthDimension;
       case 'angle':
         // Create an angle dimension
-        break;
+        const angleDimension = new AngleDimension();
+        this.sceneRef.add(angleDimension);
+        this.store.set(angleDimension.uuid, angleDimension);
+        return angleDimension;
+      case "radius":
+        const radiusDimension = new RadiusDimension();
+        this.sceneRef.add(radiusDimension);
+        this.store.set(radiusDimension.uuid, radiusDimension);
+        return radiusDimension;
       case 'area':
         // Create an area dimension
-        break;
-      case 'radius':
-        // Create a radius dimension
         break;
       case 'diameter':
         // Create a diameter dimension

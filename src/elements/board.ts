@@ -38,6 +38,7 @@ export class Board extends Polygon implements IShape {
   ogType = 'BOARD';
 
   subElements: Map<string, THREE.Object3D> = new Map();
+  locked: boolean = false;
     
   private labelDivMesh: CSS2DObject | null = null;
 

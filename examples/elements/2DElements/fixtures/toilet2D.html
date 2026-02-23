@@ -70,6 +70,7 @@
             folder.addColor({ tankColor: toilet.tankColor }, 'tankColor').name('Tank Color').onChange(v => toilet.tankColor = v);
 
             folder.add({ fit: () => openPlans.fit(toilet.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(toilet.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

@@ -71,6 +71,7 @@
             });
             folder.addColor({ floorColor: shower.floorColor }, 'floorColor').name('Floor Color').onChange(v => shower.floorColor = v);
             folder.add({ fit: () => openPlans.fit(shower.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(shower.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

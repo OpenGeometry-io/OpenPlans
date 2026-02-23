@@ -71,6 +71,7 @@
             folder.add({ legSize: chair.legSize }, 'legSize', 0.02, 0.1, 0.01).name('Leg Size').onChange(v => chair.legSize = v);
             folder.addColor({ chairColor: chair.chairColor }, 'chairColor').name('Chair Color').onChange(v => chair.chairColor = v);
             folder.add({ fit: () => openPlans.fit(chair.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(chair.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

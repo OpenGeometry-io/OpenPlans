@@ -154,6 +154,7 @@
       }, 'preloadRectangle');
 
       rectangleFolder.add({ fit: () => openPlans.fit(rectangle.id) }, 'fit').name('Fit');
+      rectangleFolder.add({ getConfig: () => console.log(rectangle.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

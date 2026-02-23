@@ -72,6 +72,7 @@
             folder.addColor({ chairColor: desk.chairColor }, 'chairColor').name('Chair Color').onChange(v => desk.chairColor = v);
             folder.add({ poleSize: desk.poleSize }, 'poleSize', 0.02, 0.15, 0.01).name('Pole Size').onChange(v => desk.poleSize = v);
             folder.add({ fit: () => openPlans.fit(desk.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(desk.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

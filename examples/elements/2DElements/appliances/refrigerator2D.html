@@ -70,6 +70,7 @@
             });
             folder.addColor({ bodyColor: fridge.bodyColor }, 'bodyColor').name('Body Color').onChange(v => fridge.bodyColor = v);
             folder.add({ fit: () => openPlans.fit(fridge.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(fridge.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

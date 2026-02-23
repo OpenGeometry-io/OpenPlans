@@ -107,6 +107,7 @@
                 doubleWindow.frameColor = value;
             });
             windowFolder.add({ fit: () => openPlans.fit(doubleWindow.id) }, 'fit').name('Fit');
+            windowFolder.add({ getConfig: () => console.log(doubleWindow.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

@@ -71,6 +71,7 @@
             folder.addColor({ sofaColor: sofa.sofaColor }, 'sofaColor').name('Frame Color').onChange(v => sofa.sofaColor = v);
             folder.addColor({ cushionColor: sofa.cushionColor }, 'cushionColor').name('Cushion Color').onChange(v => sofa.cushionColor = v);
             folder.add({ fit: () => openPlans.fit(sofa.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(sofa.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

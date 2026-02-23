@@ -103,6 +103,7 @@
                 singleWindow.frameColor = value;
             });
             windowFolder.add({ fit: () => openPlans.fit(singleWindow.id) }, 'fit').name('Fit');
+            windowFolder.add({ getConfig: () => console.log(singleWindow.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

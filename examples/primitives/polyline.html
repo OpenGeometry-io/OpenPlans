@@ -138,6 +138,7 @@
       }, 'addPoint');
 
       polyline1Folder.add({ fit: () => openPlans.fit(polyline1.id) }, 'fit').name('Fit');
+      polyline1Folder.add({ getConfig: () => console.log(polyline1.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

@@ -60,7 +60,22 @@
                     config.boardColor = 0xdddddd;
                 } else if (elementKey === 'paperFrame') {
                     config.format = 'A3';
+                    config.format = 'A3';
                     config.orientation = 'landscape';
+                } else if (elementKey === 'lineDimension') {
+                    config.startPoint = [1.5, 0, 1];
+                    config.endPoint = [-3.5, 0, 0];
+                    config.offset = 3.5; // 'spacing' in example
+                } else if (elementKey === 'angleDimension') {
+                    config.center = [0, 0, 0];
+                    config.radius = 2;
+                    config.vector1 = [3, 0, 0];
+                    config.vector2 = [0, 0, 3];
+                } else if (elementKey === 'radiusDimension') {
+                    config.center = [0, 0, 0];
+                    config.radius = 5;
+                    config.angle = Math.PI / 4; // 45 degrees
+                    config.textOffset = 0.2;
                 }
 
                 const element = openPlans[elementKey](config);

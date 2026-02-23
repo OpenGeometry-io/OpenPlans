@@ -71,6 +71,7 @@
             });
             folder.addColor({ counterColor: counter.counterColor }, 'counterColor').name('Counter Color').onChange(v => counter.counterColor = v);
             folder.add({ fit: () => openPlans.fit(counter.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(counter.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

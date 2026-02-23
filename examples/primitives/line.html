@@ -139,6 +139,7 @@
       }, 'preloadLine');
 
       lineFolder.add({ fit: () => openPlans.fit(line.id) }, 'fit').name('Fit');
+      lineFolder.add({ getConfig: () => console.log(line.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

@@ -74,6 +74,7 @@
             folder.addColor({ cabinetColor: cabinet.cabinetColor }, 'cabinetColor').name('Cabinet Color').onChange(v => cabinet.cabinetColor = v);
             folder.addColor({ doorColor: cabinet.doorColor }, 'doorColor').name('Door Color').onChange(v => cabinet.doorColor = v);
             folder.add({ fit: () => openPlans.fit(cabinet.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(cabinet.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

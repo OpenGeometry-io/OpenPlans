@@ -71,6 +71,7 @@
             folder.addColor({ basinColor: sink.basinColor }, 'basinColor').name('Basin Color').onChange(v => sink.basinColor = v);
             folder.addColor({ counterColor: sink.counterColor }, 'counterColor').name('Counter Color').onChange(v => sink.counterColor = v);
             folder.add({ fit: () => openPlans.fit(sink.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(sink.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

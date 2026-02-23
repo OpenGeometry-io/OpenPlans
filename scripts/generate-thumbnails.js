@@ -42,6 +42,10 @@ const elements = [
     'line',
     'polyline',
     'rectangle',
+    // Dimensions
+    'lineDimension',
+    'angleDimension',
+    'radiusDimension',
     // Shapes
     'cuboid',
     'cylinder',

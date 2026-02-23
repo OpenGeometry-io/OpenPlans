@@ -67,6 +67,7 @@
             folder.addColor({ basinColor: fountain.basinColor }, 'basinColor').name('Basin Color').onChange(v => fountain.basinColor = v);
             folder.addColor({ waterColor: fountain.waterColor }, 'waterColor').name('Water Color').onChange(v => fountain.waterColor = v);
             folder.add({ fit: () => openPlans.fit(fountain.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(fountain.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

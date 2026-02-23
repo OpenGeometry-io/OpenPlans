@@ -127,6 +127,7 @@
       }, 'logConfig');
 
       cylinderFolder.add({ fit: () => { if (cylinder) openPlans.fit(cylinder.id) } }, 'fit').name('Fit');
+      cylinderFolder.add({ getConfig: () => console.log(cylinder.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

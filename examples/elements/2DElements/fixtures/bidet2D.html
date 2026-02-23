@@ -70,6 +70,7 @@
             });
             folder.addColor({ bodyColor: bidet.bodyColor }, 'bodyColor').name('Body Color').onChange(v => bidet.bodyColor = v);
             folder.add({ fit: () => openPlans.fit(bidet.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(bidet.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

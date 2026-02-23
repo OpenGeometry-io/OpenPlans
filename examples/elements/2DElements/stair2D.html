@@ -103,6 +103,7 @@
                 stair.arrowColor = value;
             });
             stairFolder.add({ fit: () => openPlans.fit(stair.id) }, 'fit').name('Fit');
+            stairFolder.add({ getConfig: () => console.log(stair.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

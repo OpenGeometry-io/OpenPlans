@@ -70,6 +70,7 @@
             });
             folder.addColor({ islandColor: island.islandColor }, 'islandColor').name('Island Color').onChange(v => island.islandColor = v);
             folder.add({ fit: () => openPlans.fit(island.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(island.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

@@ -173,12 +173,14 @@ export class Door2D extends Polyline implements IShape {
     }
 
     setOPConfig(config: Record<string, any>): void {
-        // Implementation here
+        if (config) {
+            this.propertySet = { ...this.propertySet, ...config };
+            this.setOPGeometry();
+        }
     }
 
     getOPConfig(): Record<string, any> {
-        // Implementation here
-        return {};
+        return this.propertySet;
     }
 
     setOPGeometry(): void {

@@ -115,6 +115,7 @@
                 doubleDoor.frameColor = value;
             });
             doorFolder.add({ fit: () => openPlans.fit(doubleDoor.id) }, 'fit').name('Fit');
+            doorFolder.add({ getConfig: () => console.log(doubleDoor.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

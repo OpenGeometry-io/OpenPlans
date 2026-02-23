@@ -64,9 +64,9 @@
 
       paperFrame = openPlans.paperFrame();
       console.log(paperFrame);
-      paperFrame.format = 'A4';
-      paperFrame.margin = 10;
-      paperFrame.paperName = 'VerticalPaper';
+      // paperFrame.format = 'A4';
+      // paperFrame.margin = 10;
+      // paperFrame.paperName = 'VerticalPaper';
 
       // Door
       // const door = openPlans.baseDoor();
@@ -149,7 +149,7 @@
 
       const paperFrames = openPlans.getEntitiesByType('paperFrame');
       paperFrames.forEach((paperFrame) => {
-        const subPaperFrame = frameFolder.addFolder(paperFrame.options.name);
+        const subPaperFrame = frameFolder.addFolder(paperFrame.propertySet.labelName);
 
         subPaperFrame.add(frameControls, 'format', ['A4', 'A3', 'A2']).name('Format').onChange((value) => {
           paperFrame.format = value;

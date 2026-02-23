@@ -2,6 +2,7 @@ import { Polygon, Vector3 } from "../kernel/";
 import * as THREE from 'three';
 import { IShape } from "../shapes/base-type";
 import jsPDF from "jspdf";
+import { ViewportBlock, ViewportConfig } from "./viewport-block";
 
 export type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
 export type PaperOrientation = 'portrait' | 'landscape';
@@ -34,6 +35,7 @@ export class PaperFrame extends Polygon implements IShape {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
   // References for PDF export (set by the application)
   renderer!: THREE.WebGLRenderer;
@@ -220,6 +222,19 @@ export class PaperFrame extends Polygon implements IShape {
     this.add(innerBorderMesh);
 
     this.subElements.set('InnerBorder', innerBorderMesh);
+  }
+
+  /*
+  * Add Viewport to the Paper Frame
+  * @param viewport - Viewport to be added
+  * 
+  * Creates a Viewport Block which captures a specific region of the scene and renders it as an image/texture on the paper frame
+  */
+  addViewport(viewport: ViewportConfig): void {
+    // Create a new Viewport Block
+    const viewportBlock = new ViewportBlock(viewport);
+    this.add(viewportBlock);
+    this.subElements.set(viewport.id, viewportBlock);
   }
 
   /**

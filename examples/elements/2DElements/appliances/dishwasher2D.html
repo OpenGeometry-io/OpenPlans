@@ -70,6 +70,7 @@
             });
             folder.addColor({ bodyColor: dishwasher.bodyColor }, 'bodyColor').name('Body Color').onChange(v => dishwasher.bodyColor = v);
             folder.add({ fit: () => openPlans.fit(dishwasher.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(dishwasher.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

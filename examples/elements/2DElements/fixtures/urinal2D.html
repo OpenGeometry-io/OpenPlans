@@ -70,6 +70,7 @@
             });
             folder.addColor({ urinalColor: urinal.urinalColor }, 'urinalColor').name('Body Color').onChange(v => urinal.urinalColor = v);
             folder.add({ fit: () => openPlans.fit(urinal.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(urinal.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

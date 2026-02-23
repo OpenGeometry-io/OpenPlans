@@ -126,6 +126,7 @@
       // }}, 'dispose').name('Dispose');
 
       doorFolder.add({ fit: () => openPlans.fit(door.id) }, 'fit').name('Fit');
+      doorFolder.add({ getConfig: () => console.log(door.getOPConfig()) }, 'getConfig').name('Get Config');
 
     }
 

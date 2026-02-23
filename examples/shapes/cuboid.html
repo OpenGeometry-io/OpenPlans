@@ -118,6 +118,7 @@
       }, 'logConfig');
 
       cuboidFolder.add({ fit: () => { if (cuboid) openPlans.fit(cuboid.id) } }, 'fit').name('Fit');
+      cuboidFolder.add({ getConfig: () => console.log(cuboid.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

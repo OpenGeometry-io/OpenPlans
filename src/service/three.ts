@@ -1,9 +1,8 @@
 import * as THREE from 'three'
-import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { PlanCamera } from './plancamera'
 import { activeTheme, ICanvasTheme } from '../base-type'
 
-import { ShapeSelector } from '../selector/shape-selector.ts'
+// import { ShapeSelector } from '../selector/shape-selector.ts'
 // import { ShapeEditor } from '../selector/shape-editor.ts'
 
 import * as OpenGrid from '../helpers/OpenGridHelper.ts'
@@ -13,7 +12,6 @@ import CameraControls from 'camera-controls'
 export class OpenThree {
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
-  labelRenderer: CSS2DRenderer | undefined
   planCamera: PlanCamera
   threeCamera: THREE.PerspectiveCamera
   container: HTMLElement
@@ -100,7 +98,7 @@ export class OpenThree {
     this.scene.add(this.openGrid);
 
     // Remove this later
-    ShapeSelector.scene = this.scene;
+    // ShapeSelector.scene = this.scene;
     // ShapeEditor.scene = this.scene;
   }
 
@@ -126,7 +124,7 @@ export class OpenThree {
     this.planCamera.update()
     // console.log('OpenThree animate')
     this.callback()
-    ShapeSelector.update();
+    // ShapeSelector.update();
     // ShapeEditor.update(this.threeCamera, this.renderer);
 
     requestAnimationFrame(() => this.animate())

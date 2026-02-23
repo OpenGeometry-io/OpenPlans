@@ -70,6 +70,7 @@
             });
             folder.addColor({ bodyColor: stove.bodyColor }, 'bodyColor').name('Body Color').onChange(v => stove.bodyColor = v);
             folder.add({ fit: () => openPlans.fit(stove.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(stove.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

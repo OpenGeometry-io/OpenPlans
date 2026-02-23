@@ -106,11 +106,14 @@ export class Window2D extends Polyline implements IShape {
     }
 
     setOPConfig(config: Record<string, any>): void {
-        // Implementation here
+        if (config) {
+            this.propertySet = { ...this.propertySet, ...config };
+            this.setOPGeometry();
+        }
     }
 
     getOPConfig(): Record<string, any> {
-        return {};
+        return this.propertySet;
     }
 
     setOPGeometry(): void {

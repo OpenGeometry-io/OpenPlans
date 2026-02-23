@@ -1,1 +1,0 @@
-export const OPENPLANS_VERSION = '0.0.9';

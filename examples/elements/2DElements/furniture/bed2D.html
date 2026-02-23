@@ -72,6 +72,7 @@
             folder.addColor({ bedColor: bed.bedColor }, 'bedColor').name('Bed Color').onChange(v => bed.bedColor = v);
             folder.addColor({ pillowColor: bed.pillowColor }, 'pillowColor').name('Pillow Color').onChange(v => bed.pillowColor = v);
             folder.add({ fit: () => openPlans.fit(bed.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(bed.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

@@ -70,6 +70,7 @@
             });
             folder.addColor({ tubColor: bathtub.tubColor }, 'tubColor').name('Tub Color').onChange(v => bathtub.tubColor = v);
             folder.add({ fit: () => openPlans.fit(bathtub.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(bathtub.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

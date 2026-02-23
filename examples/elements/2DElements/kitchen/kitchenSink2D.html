@@ -70,6 +70,7 @@
             });
             folder.addColor({ sinkColor: kitchenSink.sinkColor }, 'sinkColor').name('Sink Color').onChange(v => kitchenSink.sinkColor = v);
             folder.add({ fit: () => openPlans.fit(kitchenSink.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(kitchenSink.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

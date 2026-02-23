@@ -22,7 +22,7 @@ import convertToOGFormat from './parser/ImpleniaConverter';
 
 // Primitives, 2D Elements and Shapes
 import { ArcPrimitive } from './primitives/arc';
-import { DimensionTool, DimensionType } from './dimensions';
+import { DimensionTool, DimensionType, LineDimension, RadiusDimension, AngleDimension } from './dimensions';
 import { PolylinePrimitive, RectanglePrimitive } from './primitives/index';
 import { LinePrimitive } from './primitives/line';
 import { CuboidShape } from './shapes/cuboid';
@@ -46,6 +46,7 @@ import { DoubleDoor2D, DoubleDoorOptions } from './elements/planview/doubleDoor2
 import { Window2D, WindowOptions } from './elements/planview/window2D';
 import { DoubleWindow2D, DoubleWindowOptions } from './elements/planview/doubleWindow2D';
 import { Stair2D, StairOptions } from './elements/planview/stair2D';
+import { Wall2D, WallOptions } from './elements/planview/wall2D';
 
 // Fixtures (Bathroom)
 import { Toilet2D, ToiletOptions } from './elements/planview/fixtures/toilet2D';
@@ -81,6 +82,7 @@ import { Shrub2D, ShrubOptions } from './elements/planview/landscape/shrub2D';
 import { Planter2D, PlanterOptions } from './elements/planview/landscape/planter2D';
 import { Fountain2D, FountainOptions } from './elements/planview/landscape/fountain2D';
 import { Bench2D, BenchOptions } from './elements/planview/landscape/bench2D';
+import { ViewportBlock, ViewportConfig } from './layouts/viewport-block';
 
 // Camera Modes
 export { CameraMode } from './service/plancamera';
@@ -91,6 +93,9 @@ export * from "./primitives/index";
 // Shape Builders
 export * from "./shape-builder/index";
 export * from './kernel/';
+
+// Exports from Planview Elements
+export { Wall2D, type WallOptions } from './elements/planview/wall2D';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -233,6 +238,11 @@ export class OpenPlans {
         profileRenderer.render(this.openThree.scene, profileCamera);
       });
     }
+
+    const viewportBlocks = this.getEntitiesByType('VIEWPORT_BLOCK');
+    viewportBlocks.forEach((viewportBlock: ViewportBlock) => {
+      viewportBlock.render(this.openThree.renderer, this.openThree.scene);
+    });
   }
 
   //   for (const element of this.ogElements) {
@@ -320,6 +330,28 @@ export class OpenPlans {
     return polyline;
   }
 
+  // Dimensions
+  lineDimension(config?: any) {
+    const dim = new LineDimension(config);
+    this.openThree.scene.add(dim);
+    this.ogElements.push(dim);
+    return dim;
+  }
+
+  angleDimension(config?: any) {
+    const dim = new AngleDimension(config);
+    this.openThree.scene.add(dim);
+    this.ogElements.push(dim);
+    return dim;
+  }
+
+  radiusDimension(config?: any) {
+    const dim = new RadiusDimension(config);
+    this.openThree.scene.add(dim);
+    this.ogElements.push(dim);
+    return dim;
+  }
+
   // Shapes
   cuboid(config?: ICuboidOptions) {
     const cuboid = new CuboidShape(config);
@@ -336,6 +368,13 @@ export class OpenPlans {
   }
 
   /* 2D Elements */
+  wall2D(config?: Partial<WallOptions>): Wall2D {
+    const wall = new Wall2D(config);
+    this.openThree.scene.add(wall);
+    this.ogElements.push(wall);
+    return wall;
+  }
+
   door2D(config?: DoorOptions): Door2D {
     const door = new Door2D(config);
     this.openThree.scene.add(door);
@@ -774,6 +813,25 @@ export class OpenPlans {
     this.openThree.scene.add(paperFrame);
     this.ogElements.push(paperFrame);
     return paperFrame;
+  }
+
+  viewportBlock(config?: Partial<ViewportConfig>): ViewportBlock {
+    const fullConfig: ViewportConfig = {
+      id: config?.id ?? `viewport-${Date.now()}`,
+      ogType: 'VIEWPORT_BLOCK',
+      size: config?.size ?? [10, 10],
+      position: config?.position ?? [0, 0, 0],
+      scale: config?.scale ?? 1,
+      rotation: config?.rotation ?? 0,
+      viewCamera: config?.viewCamera ?? 'top',
+      viewCenter: config?.viewCenter ?? [0, 0, 0],
+      viewSize: config?.viewSize ?? 20,
+      viewportBackground: config?.viewportBackground,
+    };
+    const viewportBlock = new ViewportBlock(fullConfig);
+    this.openThree.scene.add(viewportBlock);
+    this.ogElements.push(viewportBlock);
+    return viewportBlock;
   }
 
   // logoInfoBlock(options:LogoInfoBlockOptions) {

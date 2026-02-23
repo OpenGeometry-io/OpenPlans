@@ -71,6 +71,7 @@
             folder.add({ doorSlots: wardrobe.doorSlots }, 'doorSlots', 1, 6, 1).name('Door Slots').onChange(v => wardrobe.doorSlots = v);
             folder.addColor({ wardrobeColor: wardrobe.wardrobeColor }, 'wardrobeColor').name('Color').onChange(v => wardrobe.wardrobeColor = v);
             folder.add({ fit: () => openPlans.fit(wardrobe.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(wardrobe.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

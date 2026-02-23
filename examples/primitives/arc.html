@@ -152,6 +152,7 @@
       }, 'preloadArc');
 
       arcFolder.add({ fit: () => openPlans.fit(arc.id) }, 'fit').name('Fit');
+      arcFolder.add({ getConfig: () => console.log(arc.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
     (async function () {

@@ -73,6 +73,7 @@
             folder.addColor({ tableColor: table.tableColor }, 'tableColor').name('Table Color').onChange(v => table.tableColor = v);
             folder.addColor({ chairColor: table.chairColor }, 'chairColor').name('Chair Color').onChange(v => table.chairColor = v);
             folder.add({ fit: () => openPlans.fit(table.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(table.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

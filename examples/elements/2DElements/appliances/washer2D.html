@@ -70,6 +70,7 @@
             });
             folder.addColor({ bodyColor: washer.bodyColor }, 'bodyColor').name('Body Color').onChange(v => washer.bodyColor = v);
             folder.add({ fit: () => openPlans.fit(washer.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(washer.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>OpenPlan Angle Dimensions</title>
+    <!-- MIXPANEL_TRACKING -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="OpenGeometry Demo">
+    <meta name="author" content="Vishwajeet Mane">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+            cursor: unset !important;
+        }
+
+        .example-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 12px 24px;
+            z-index: 1000;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="example-title">Angle Dimension</div>
+    <div id="app">
+    </div>
+    <script type="module">
+        import { OpenPlans, CameraMode } from './../../src/index.ts';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+        import * as THREE from 'three';
+
+        let openPlans;
+        let angleDim;
+        let helperLine1, helperLine2;
+
+        // GUI parameters object
+        // Using Points A and B relative to Center to define vectors
+        const params = {
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0,
+            pointAX: 3,
+            pointAY: 0,
+            pointAZ: 0,
+            pointBX: 0,
+            pointBY: 0,
+            pointBZ: 3,
+            radius: 2,
+            lineColor: '#000000',
+            lineWidth: 2,
+            fontColor: '#000000',
+            fontSize: 2,
+            label: '', // Empty means auto-calculate
+            opposite: false,
+        };
+
+        async function init() {
+            const container = document.getElementById('app');
+            openPlans = new OpenPlans(container);
+            await openPlans.setupOpenGeometry();
+
+            openPlans.CameraMode = CameraMode.Model;
+
+            // Helper lines to visualize the vectors
+            const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa, depthTest: false, transparent: true, opacity: 0.5 });
+
+            const geometry1 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0)]);
+            helperLine1 = new THREE.Line(geometry1, material);
+            openPlans.openThree.scene.add(helperLine1);
+
+            const geometry2 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1)]);
+            helperLine2 = new THREE.Line(geometry2, material);
+            openPlans.openThree.scene.add(helperLine2);
+
+            angleDim = openPlans.createDimension("angle");
+            updateDimension();
+        }
+
+        function updateDimension() {
+            const center = [params.centerX, params.centerY, params.centerZ];
+            const pointA = [params.pointAX, params.pointAY, params.pointAZ];
+            const pointB = [params.pointBX, params.pointBY, params.pointBZ];
+
+            const v1 = [
+                pointA[0] - center[0],
+                pointA[1] - center[1],
+                pointA[2] - center[2]
+            ];
+
+            const v2 = [
+                pointB[0] - center[0],
+                pointB[1] - center[1],
+                pointB[2] - center[2]
+            ];
+
+            // Update helpers
+            helperLine1.geometry.setFromPoints([
+                new THREE.Vector3(...center),
+                new THREE.Vector3(...pointA)
+            ]);
+            helperLine2.geometry.setFromPoints([
+                new THREE.Vector3(...center),
+                new THREE.Vector3(...pointB)
+            ]);
+
+            angleDim.center = center;
+            angleDim.vector1 = v1;
+            angleDim.vector2 = v2;
+            angleDim.radius = params.radius;
+            angleDim.dimColor = hexToNumber(params.lineColor);
+            angleDim.lineWidth = params.lineWidth;
+            angleDim.fontSize = params.fontSize;
+            angleDim.fontColor = hexToNumber(params.fontColor);
+            angleDim.label = params.label || undefined;
+            angleDim.opposite = params.opposite;
+        }
+
+        function hexToNumber(hex) {
+            return parseInt(hex.replace('#', ''), 16);
+        }
+
+        function setUI() {
+            const gui = new GUI();
+
+            // Center Point folder
+            const centerFolder = gui.addFolder('Center');
+            centerFolder.add(params, 'centerX', -10, 10, 0.1).name('X').onChange(updateDimension);
+            centerFolder.add(params, 'centerY', -10, 10, 0.1).name('Y').onChange(updateDimension);
+            centerFolder.add(params, 'centerZ', -10, 10, 0.1).name('Z').onChange(updateDimension);
+            centerFolder.open();
+
+            // Point A (Vector 1)
+            const p1Folder = gui.addFolder('Point A (Vector 1)');
+            p1Folder.add(params, 'pointAX', -10, 10, 0.1).name('X').onChange(updateDimension);
+            p1Folder.add(params, 'pointAY', -10, 10, 0.1).name('Y').onChange(updateDimension);
+            p1Folder.add(params, 'pointAZ', -10, 10, 0.1).name('Z').onChange(updateDimension);
+            p1Folder.open();
+
+            // Point B (Vector 2)
+            const p2Folder = gui.addFolder('Point B (Vector 2)');
+            p2Folder.add(params, 'pointBX', -10, 10, 0.1).name('X').onChange(updateDimension);
+            p2Folder.add(params, 'pointBY', -10, 10, 0.1).name('Y').onChange(updateDimension);
+            p2Folder.add(params, 'pointBZ', -10, 10, 0.1).name('Z').onChange(updateDimension);
+            p2Folder.open();
+
+            // Settings
+            const settingsFolder = gui.addFolder('Settings');
+            settingsFolder.add(params, 'radius', 0.5, 10, 0.1).name('Radius').onChange(updateDimension);
+            settingsFolder.addColor(params, 'lineColor').name('Color').onChange(updateDimension);
+            settingsFolder.add(params, 'lineWidth', 1, 10, 0.5).name('Line Width').onChange(updateDimension);
+            settingsFolder.add(params, 'opposite').name('Opposite Angle').onChange(updateDimension);
+            settingsFolder.open();
+
+            // Label
+            const labelFolder = gui.addFolder('Label');
+            labelFolder.add(params, 'label').name('Override Text').onChange(updateDimension);
+            labelFolder.add(params, 'fontSize', 1, 10, 0.5).name('Font Size').onChange(updateDimension);
+            labelFolder.addColor(params, 'fontColor').name('Font Color').onChange(updateDimension);
+            labelFolder.open();
+        }
+
+        (async function () {
+            await init();
+            setUI();
+        })();
+    </script>
+</body>
+
+</html>

@@ -69,6 +69,7 @@
             folder.addColor({ canopyColor: tree.canopyColor }, 'canopyColor').name('Canopy Color').onChange(v => tree.canopyColor = v);
             folder.addColor({ trunkColor: tree.trunkColor }, 'trunkColor').name('Trunk Color').onChange(v => tree.trunkColor = v);
             folder.add({ fit: () => openPlans.fit(tree.id) }, 'fit').name('Fit');
+            folder.add({ getConfig: () => console.log(tree.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 
         (async function () {

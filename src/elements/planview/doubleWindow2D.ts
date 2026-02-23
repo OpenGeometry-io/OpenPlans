@@ -121,11 +121,14 @@ export class DoubleWindow2D extends Polyline implements IShape {
     }
 
     setOPConfig(config: Record<string, any>): void {
-        // Implementation here
+        if (config) {
+            this.propertySet = { ...this.propertySet, ...config };
+            this.setOPGeometry();
+        }
     }
 
     getOPConfig(): Record<string, any> {
-        return {};
+        return this.propertySet;
     }
 
     setOPGeometry(): void {
@@ -168,7 +171,7 @@ export class DoubleWindow2D extends Polyline implements IShape {
     }
 
     private createGlassGeometry(glassWidth: number, totalWidth: number) {
-        const { windowDimensions, frameDimensions, mullionWidth } = this.propertySet;
+        const { windowDimensions, frameDimensions } = this.propertySet;
         const glassThickness = windowDimensions.thickness * 0.8;
 
         // Left glass pane position: after left frame

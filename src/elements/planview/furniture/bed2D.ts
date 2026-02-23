@@ -62,8 +62,16 @@ export class Bed2D extends Polyline implements IShape {
         this.setOPGeometry();
     }
 
-    setOPConfig(config: Record<string, any>): void { }
-    getOPConfig(): Record<string, any> { return {}; }
+    setOPConfig(config: Record<string, any>): void {
+        if (config) {
+            this.propertySet = { ...this.propertySet, ...config };
+            this.setOPGeometry();
+        }
+    }
+
+    getOPConfig(): Record<string, any> {
+        return this.propertySet;
+    }
 
     setOPGeometry(): void {
         this.subElements.forEach((el) => {
