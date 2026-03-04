@@ -21,7 +21,7 @@
 <body>
     <div id="app"></div>
     <script type="module">
-        import { OpenPlans } from './src/index.ts';
+        import { OpenPlans } from '../src/index.ts';
         import * as THREE from 'three';
 
         // Parse query parameters
@@ -51,8 +51,20 @@
             // Create the element dynamically
             if (openPlans[elementKey]) {
                 const config = {};
-                // Only pass labelName if it's likely a 2D element that supports it
-                if (elementKey.endsWith('2D')) {
+                // Element-specific thumbnail defaults
+                if (elementKey === 'wall2D') {
+                    config.labelName = "";
+                    config.points = [
+                        { x: -5, y: 0, z: -2 },
+                        { x: 5, y: 0, z: -2 },
+                        { x: 5, y: 0, z: 5 },
+                        { x: -2, y: 0, z: 5 }
+                    ];
+                    config.wallThickness = 0.3;
+                    config.wallHeight = 3.0;
+                    config.wallColor = 0xcccccc;
+                } else if (elementKey.endsWith('2D')) {
+                    // Most 2D elements only need a label override.
                     config.labelName = "";
                 } else if (elementKey === 'board') {
                     config.width = 30;

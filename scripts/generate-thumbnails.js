@@ -53,14 +53,19 @@ const elements = [
     'door2D',
     'doubleDoor2D',
     'doubleWindow2D',
+    'wall2D',
     'stair2D',
     // Drafting Elements
     'paperFrame',
     'board'
 ];
 
-const BASE_URL = 'http://localhost:5555/thumbnail-generator.html'; // Assuming default Vite port
+const BASE_URL = process.env.THUMBNAIL_BASE_URL || 'http://localhost:5555/scripts/thumbnail-generator.html';
 const OUTPUT_DIR = path.join(__dirname, '../public/thumbnails');
+const requestedElements = process.env.THUMBNAIL_ELEMENTS
+    ? process.env.THUMBNAIL_ELEMENTS.split(',').map((value) => value.trim()).filter(Boolean)
+    : null;
+const elementsToProcess = requestedElements && requestedElements.length > 0 ? requestedElements : elements;
 
 async function ensureDirectoryExistence(filePath) {
     if (fs.existsSync(filePath)) {
@@ -86,13 +91,18 @@ async function run() {
         }
     });
 
-    console.log(`Starting thumbnail generation for ${elements.length} elements...`);
+    console.log(`Starting thumbnail generation for ${elementsToProcess.length} elements...`);
 
-    for (const element of elements) {
+    for (const element of elementsToProcess) {
         console.log(`Processing ${element}...`);
 
         try {
             await page.goto(`${BASE_URL}?element=${element}`);
+
+            const pageTitle = await page.title();
+            if (pageTitle !== 'Thumbnail Generator') {
+                throw new Error(`Loaded unexpected page title "${pageTitle}" from ${BASE_URL}. Check THUMBNAIL_BASE_URL.`);
+            }
 
             // Wait for the specific signal that the scene is ready
             await page.waitForSelector('body[data-ready="true"]', { timeout: 5000 });
