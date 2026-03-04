@@ -1,0 +1,945 @@
+---
+title: 'OpenPlans'
+description: 'Main class for creating 2D floor plans and architectural drawings with Three.js'
+icon: 'cube'
+---
+
+## Overview
+
+The `OpenPlans` class is the core of the OpenPlans library. It provides a complete rendering environment with camera controls, scene management, and methods for creating architectural elements like lines, arcs, doors, windows, and more.
+
+## Constructor
+
+### OpenPlans()
+
+Creates a new OpenPlans instance in the specified HTML container.
+
+<ParamField path="container" type="HTMLElement" required>
+  The HTML element where the 3D scene will be rendered
+</ParamField>
+
+```typescript
+const container = document.getElementById('viewport');
+const op = new OpenPlans(container);
+```
+
+## Initialization
+
+### setupOpenGeometry()
+
+Initializes the OpenGeometry kernel and glyph rendering system. Must be called before using geometry methods.
+
+<ParamField path="wasmURL" type="string">
+  Optional URL to the WebAssembly module
+</ParamField>
+
+<ResponseField name="Promise<void>" type="Promise<void>">
+  Returns a promise that resolves when initialization is complete
+</ResponseField>
+
+```typescript
+await op.setupOpenGeometry();
+// or with custom WASM URL
+await op.setupOpenGeometry('/path/to/opengeometry.wasm');
+```
+
+## 2D Primitives
+
+### line()
+
+Creates a straight line primitive.
+
+<ParamField path="config" type="ILineOptions">
+  Configuration object for the line
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="startPoint" type="number[]" required>
+      Starting point as [x, y, z]
+    </ParamField>
+    <ParamField path="endPoint" type="number[]" required>
+      Ending point as [x, y, z]
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value (e.g., 0x000000)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="LinePrimitive" type="LinePrimitive">
+  The created line object
+</ResponseField>
+
+```typescript
+const line = op.line({
+  startPoint: [0, 0, 0],
+  endPoint: [5, 0, 0],
+  color: 0x000000
+});
+```
+
+### arc()
+
+Creates an arc primitive.
+
+<ParamField path="config" type="IArcOptions">
+  Configuration object for the arc
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="center" type="number[]" required>
+      Center point as [x, y, z]
+    </ParamField>
+    <ParamField path="radius" type="number" required>
+      Radius of the arc
+    </ParamField>
+    <ParamField path="startAngle" type="number" required>
+      Starting angle in radians
+    </ParamField>
+    <ParamField path="endAngle" type="number" required>
+      Ending angle in radians
+    </ParamField>
+    <ParamField path="segments" type="number" required>
+      Number of segments for smoothness
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="ArcPrimitive" type="ArcPrimitive">
+  The created arc object
+</ResponseField>
+
+```typescript
+const arc = op.arc({
+  center: [0, 0, 0],
+  radius: 2,
+  startAngle: 0,
+  endAngle: Math.PI,
+  segments: 32,
+  color: 0x000000
+});
+```
+
+### rectangle()
+
+Creates a rectangular primitive.
+
+<ParamField path="config" type="IRectangleOptions">
+  Configuration object for the rectangle
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="center" type="number[]" required>
+      Center point as [x, y, z]
+    </ParamField>
+    <ParamField path="width" type="number" required>
+      Width of the rectangle
+    </ParamField>
+    <ParamField path="breadth" type="number" required>
+      Breadth (height) of the rectangle
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="RectanglePrimitive" type="RectanglePrimitive">
+  The created rectangle object
+</ResponseField>
+
+```typescript
+const rect = op.rectangle({
+  center: [0, 0, 0],
+  width: 4,
+  breadth: 2,
+  color: 0x0000ff
+});
+```
+
+### polyline()
+
+Creates a polyline (multi-segment line) primitive.
+
+<ParamField path="config" type="IPolylineOptions">
+  Configuration object for the polyline
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="points" type="number[][]" required>
+      Array of points, each as [x, y, z]
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="PolylinePrimitive" type="PolylinePrimitive">
+  The created polyline object
+</ResponseField>
+
+```typescript
+const polyline = op.polyline({
+  points: [
+    [0, 0, 0],
+    [1, 0, 0],
+    [1, 0, 1],
+    [2, 0, 1]
+  ],
+  color: 0x0000ff
+});
+```
+
+## 3D Shapes
+
+### cuboid()
+
+Creates a 3D cuboid (box) shape.
+
+<ParamField path="config" type="ICuboidOptions">
+  Configuration object for the cuboid
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="center" type="Vector3" required>
+      Center point of the cuboid
+    </ParamField>
+    <ParamField path="width" type="number" required>
+      Width dimension
+    </ParamField>
+    <ParamField path="height" type="number" required>
+      Height dimension
+    </ParamField>
+    <ParamField path="depth" type="number" required>
+      Depth dimension
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="CuboidShape" type="CuboidShape">
+  The created cuboid object
+</ResponseField>
+
+```typescript
+import { Vector3 } from '@opengeometry/openplans';
+
+const cuboid = op.cuboid({
+  center: new Vector3(0, 1, 0),
+  width: 2,
+  height: 3,
+  depth: 1,
+  color: 0x8B4513
+});
+```
+
+### cylinder()
+
+Creates a 3D cylinder shape.
+
+<ParamField path="config" type="ICylinderOptions">
+  Configuration object for the cylinder
+  
+  <Expandable title="properties">
+    <ParamField path="ogid" type="string">
+      Optional unique identifier
+    </ParamField>
+    <ParamField path="center" type="Vector3" required>
+      Center point of the cylinder
+    </ParamField>
+    <ParamField path="radius" type="number" required>
+      Radius of the cylinder
+    </ParamField>
+    <ParamField path="height" type="number" required>
+      Height of the cylinder
+    </ParamField>
+    <ParamField path="color" type="number" required>
+      Hexadecimal color value
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="CylinderShape" type="CylinderShape">
+  The created cylinder object
+</ResponseField>
+
+```typescript
+import { Vector3 } from '@opengeometry/openplans';
+
+const cylinder = op.cylinder({
+  center: new Vector3(0, 1.5, 0),
+  radius: 0.5,
+  height: 3,
+  color: 0xCCCCCC
+});
+```
+
+## Architectural Elements
+
+### baseDoor()
+
+Creates a door element with frame and panel.
+
+<ParamField path="config" type="OPDoor">
+  Configuration object for the door
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name/label for the door
+    </ParamField>
+    <ParamField path="doorPosition" type="[number, number, number]" required>
+      Position as [x, y, z]
+    </ParamField>
+    <ParamField path="dimensions.length" type="number" required>
+      Width of the door opening
+    </ParamField>
+    <ParamField path="doorHeight" type="number">
+      Height of the door panel (default: 2.1)
+    </ParamField>
+    <ParamField path="doorThickness" type="number">
+      Thickness of the door panel (default: 0.1)
+    </ParamField>
+    <ParamField path="frameThickness" type="number">
+      Thickness of the door frame (default: 0.2)
+    </ParamField>
+    <ParamField path="doorColor" type="number">
+      Color of the door panel (default: 0x8B4513)
+    </ParamField>
+    <ParamField path="frameColor" type="number">
+      Color of the door frame (default: 0x000000)
+    </ParamField>
+    <ParamField path="doorRotation" type="number">
+      Opening rotation (1-2 range, default: 1.5)
+    </ParamField>
+    <ParamField path="doorQuadrant" type="number">
+      Hinge quadrant (1-4, default: 1)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="BaseDoor" type="BaseDoor">
+  The created door object
+</ResponseField>
+
+```typescript
+const door = op.baseDoor({
+  labelName: 'Main Entrance',
+  doorPosition: [5, 0, 0],
+  dimensions: {
+    start: { x: -0.5, y: 0, z: 0 },
+    end: { x: 0.5, y: 0, z: 0 },
+    length: 1
+  },
+  doorHeight: 2.1,
+  doorThickness: 0.1,
+  frameThickness: 0.2,
+  doorColor: 0x8B4513,
+  frameColor: 0x000000,
+  doorQuadrant: 1
+});
+```
+
+### baseSingleWindow()
+
+Creates a single window element with frame and panel.
+
+<ParamField path="config" type="OPSingleWindow">
+  Configuration object for the window
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name/label for the window
+    </ParamField>
+    <ParamField path="windowPosition" type="[number, number, number]" required>
+      Position as [x, y, z]
+    </ParamField>
+    <ParamField path="dimensions.length" type="number" required>
+      Width of the window opening
+    </ParamField>
+    <ParamField path="windowHeight" type="number">
+      Height of the window (default: 1.2)
+    </ParamField>
+    <ParamField path="windowThickness" type="number">
+      Thickness of the window panel (default: 0.05)
+    </ParamField>
+    <ParamField path="frameThickness" type="number">
+      Thickness of the window frame (default: 0.15)
+    </ParamField>
+    <ParamField path="windowColor" type="number">
+      Color of the window panel (default: 0x87CEEB)
+    </ParamField>
+    <ParamField path="frameColor" type="number">
+      Color of the window frame (default: 0x000000)
+    </ParamField>
+    <ParamField path="sillHeight" type="number">
+      Height from floor to window bottom (default: 0.9)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="BaseSingleWindow" type="BaseSingleWindow">
+  The created window object
+</ResponseField>
+
+```typescript
+const window = op.baseSingleWindow({
+  labelName: 'Living Room Window',
+  windowPosition: [3, 0, 0],
+  dimensions: {
+    start: { x: -0.6, y: 0, z: 0 },
+    end: { x: 0.6, y: 0, z: 0 },
+    length: 1.2
+  },
+  windowHeight: 1.2,
+  sillHeight: 0.9,
+  windowColor: 0x87CEEB,
+  frameColor: 0x000000
+});
+```
+
+### baseDoubleWindow()
+
+Creates a double window element.
+
+<ParamField path="config" type="OPDoubleWindow">
+  Configuration object for the double window (similar structure to single window)
+</ParamField>
+
+<ResponseField name="BaseDoubleWindow" type="BaseDoubleWindow">
+  The created double window object
+</ResponseField>
+
+```typescript
+const doubleWindow = op.baseDoubleWindow({
+  labelName: 'Large Window',
+  windowPosition: [0, 0, 5],
+  dimensions: {
+    start: { x: -1.0, y: 0, z: 0 },
+    end: { x: 1.0, y: 0, z: 0 },
+    length: 2.0
+  },
+  windowHeight: 1.5,
+  sillHeight: 0.9
+});
+```
+
+### baseSlab()
+
+Creates a floor or ceiling slab element.
+
+<ParamField path="config" type="OPSlab">
+  Configuration object for the slab
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name/label for the slab
+    </ParamField>
+    <ParamField path="slabPosition" type="[number, number, number]" required>
+      Position as [x, y, z]
+    </ParamField>
+    <ParamField path="dimensions.width" type="number" required>
+      Width of the slab
+    </ParamField>
+    <ParamField path="dimensions.length" type="number" required>
+      Length of the slab
+    </ParamField>
+    <ParamField path="slabThickness" type="number">
+      Thickness of the slab (default: 0.2)
+    </ParamField>
+    <ParamField path="slabColor" type="number">
+      Color of the slab (default: 0xCCCCCC)
+    </ParamField>
+    <ParamField path="slabMaterial" type="string">
+      Material type (default: 'concrete')
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="BaseSlab" type="BaseSlab">
+  The created slab object
+</ResponseField>
+
+```typescript
+const slab = op.baseSlab({
+  labelName: 'Ground Floor',
+  slabPosition: [0, 0, 0],
+  dimensions: {
+    start: { x: -5, y: 0, z: -5 },
+    end: { x: 5, y: 0, z: 5 },
+    width: 10,
+    length: 10
+  },
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC,
+  slabMaterial: 'concrete'
+});
+```
+
+### baseStair()
+
+Creates a staircase element.
+
+<ParamField path="config" type="OPStair">
+  Configuration object for the stair
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name/label for the stair
+    </ParamField>
+    <ParamField path="stairPosition" type="[number, number, number]" required>
+      Position as [x, y, z]
+    </ParamField>
+    <ParamField path="dimensions.width" type="number" required>
+      Width of the staircase
+    </ParamField>
+    <ParamField path="dimensions.totalHeight" type="number" required>
+      Total vertical rise
+    </ParamField>
+    <ParamField path="riserHeight" type="number">
+      Height of each step (default: 0.17)
+    </ParamField>
+    <ParamField path="treadDepth" type="number">
+      Depth of each step (default: 0.28)
+    </ParamField>
+    <ParamField path="stairColor" type="number">
+      Color of the stairs (default: 0x8B7355)
+    </ParamField>
+    <ParamField path="stairMaterial" type="string">
+      Material type (default: 'wood')
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="BaseStair" type="BaseStair">
+  The created stair object
+</ResponseField>
+
+```typescript
+const stair = op.baseStair({
+  labelName: 'Main Stairs',
+  stairPosition: [0, 0, 0],
+  dimensions: {
+    width: 1.2,
+    totalHeight: 3.0,
+    totalLength: 4.5
+  },
+  riserHeight: 0.17,
+  treadDepth: 0.28,
+  stairColor: 0x8B7355,
+  stairMaterial: 'wood'
+});
+```
+
+## Drawing Elements
+
+### board()
+
+Creates a drawing board for organizing elements.
+
+<ParamField path="config" type="BoardOptions">
+  Configuration object for the board
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name of the board
+    </ParamField>
+    <ParamField path="dimensions.start" type="{x: number, y: number, z: number}" required>
+      Starting corner position
+    </ParamField>
+    <ParamField path="dimensions.width" type="number" required>
+      Width of the board
+    </ParamField>
+    <ParamField path="dimensions.height" type="number" required>
+      Height of the board
+    </ParamField>
+    <ParamField path="color" type="number">
+      Background color (default: 0xffffff)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="Board" type="Board">
+  The created board object
+</ResponseField>
+
+```typescript
+const board = op.board({
+  labelName: 'Floor Plan',
+  dimensions: {
+    start: { x: 0, y: 0, z: 0 },
+    end: { x: 20, y: -20, z: 0 },
+    width: 20,
+    height: 20
+  },
+  color: 0xffffff
+});
+```
+
+### paperFrame()
+
+Creates a paper frame for technical drawings with standard paper sizes.
+
+<ParamField path="config" type="PaperFrameOptions">
+  Configuration object for the paper frame
+  
+  <Expandable title="properties">
+    <ParamField path="labelName" type="string" required>
+      Name of the paper frame
+    </ParamField>
+    <ParamField path="format" type="'A4' | 'A3' | 'A2' | 'Custom'">
+      Paper size format (default: 'A4')
+    </ParamField>
+    <ParamField path="orientation" type="'portrait' | 'landscape'">
+      Paper orientation (default: 'portrait')
+    </ParamField>
+    <ParamField path="margin" type="number">
+      Margin size in units (default: 10)
+    </ParamField>
+    <ParamField path="backgroundColor" type="number">
+      Background color (default: 0xffffff)
+    </ParamField>
+    <ParamField path="borderColor" type="number">
+      Border color (default: 0x000000)
+    </ParamField>
+    <ParamField path="borderWidth" type="number">
+      Border width (default: 1)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="PaperFrame" type="PaperFrame">
+  The created paper frame object
+</ResponseField>
+
+```typescript
+const paper = op.paperFrame({
+  labelName: 'Sheet 1',
+  format: 'A3',
+  orientation: 'landscape',
+  margin: 10,
+  backgroundColor: 0xffffff,
+  borderColor: 0x000000
+});
+```
+
+## Text and Glyphs
+
+### glyph()
+
+Creates a text glyph (label) in the scene.
+
+<ParamField path="text" type="string" required>
+  The text to display
+</ParamField>
+
+<ParamField path="size" type="number" required>
+  Font size
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  Text color as hexadecimal
+</ParamField>
+
+<ParamField path="staticZoom" type="boolean">
+  Whether the text size remains constant when zooming (default: true)
+</ParamField>
+
+<ResponseField name="GlyphNode" type="GlyphNode">
+  The created glyph object with unique ID
+</ResponseField>
+
+```typescript
+const label = op.glyph('Room A', 0.5, 0x000000, true);
+label.position.set(5, 0, 5);
+```
+
+### getGlyph()
+
+Retrieves a glyph by its ID.
+
+<ParamField path="id" type="string" required>
+  The unique ID of the glyph
+</ParamField>
+
+<ResponseField name="GlyphNode" type="GlyphNode">
+  The glyph object
+</ResponseField>
+
+```typescript
+const glyph = op.getGlyph('glyph-id');
+```
+
+### updateGlyphText()
+
+Updates the text content of a glyph.
+
+<ParamField path="id" type="string" required>
+  The unique ID of the glyph
+</ParamField>
+
+<ParamField path="text" type="string" required>
+  The new text content
+</ParamField>
+
+```typescript
+op.updateGlyphText('glyph-id', 'Updated Text');
+```
+
+### rotateGlyph()
+
+Rotates a glyph by a specified angle.
+
+<ParamField path="id" type="string" required>
+  The unique ID of the glyph
+</ParamField>
+
+<ParamField path="angle" type="number" required>
+  Rotation angle in radians
+</ParamField>
+
+```typescript
+op.rotateGlyph('glyph-id', Math.PI / 4);
+```
+
+### selectGlyph()
+
+Selects a glyph for editing.
+
+<ParamField path="id" type="string" required>
+  The unique ID of the glyph
+</ParamField>
+
+```typescript
+op.selectGlyph('glyph-id');
+```
+
+### clearGlyphSelection()
+
+Clears the current glyph selection.
+
+```typescript
+op.clearGlyphSelection();
+```
+
+## View Management
+
+### create2DView()
+
+Creates a 2D orthographic view in a separate container.
+
+<ParamField path="container" type="HTMLElement" required>
+  The HTML container for the 2D view
+</ParamField>
+
+<ParamField path="sectionHeight" type="number">
+  Height at which to section the view (default: 0)
+</ParamField>
+
+<ResponseField name="object" type="{camera: THREE.Camera, renderer: THREE.WebGLRenderer}">
+  Object containing the camera and renderer for the 2D view
+</ResponseField>
+
+```typescript
+const view2DContainer = document.getElementById('plan-view');
+const { camera, renderer } = op.create2DView(view2DContainer, 1.5);
+```
+
+### update()
+
+Updates the label renderer. Should be called in your render loop.
+
+<ParamField path="scene" type="THREE.Scene" required>
+  The Three.js scene
+</ParamField>
+
+<ParamField path="camera" type="THREE.Camera" required>
+  The Three.js camera
+</ParamField>
+
+```typescript
+function animate() {
+  requestAnimationFrame(animate);
+  op.update(scene, camera);
+}
+```
+
+## Utility Methods
+
+### disposeElement()
+
+Removes and disposes an element by its ID.
+
+<ParamField path="ogid" type="string" required>
+  The unique ID of the element to dispose
+</ParamField>
+
+```typescript
+op.disposeElement('element-id');
+```
+
+### getEntitiesByType()
+
+Retrieves all entities of a specific type.
+
+<ParamField path="type" type="string" required>
+  The type of entities to retrieve (e.g., 'LinePrimitive', 'BaseDoor')
+</ParamField>
+
+<ResponseField name="array" type="any[]">
+  Array of entities matching the type
+</ResponseField>
+
+```typescript
+const allDoors = op.getEntitiesByType('DOOR');
+const allLines = op.getEntitiesByType('LinePrimitive');
+```
+
+### fit()
+
+Fits the camera to show all elements of a specific type.
+
+<ParamField path="element" type="string" required>
+  The type of elements to fit to
+</ParamField>
+
+```typescript
+op.fit('BaseDoor');
+```
+
+## Properties
+
+### showGrid
+
+Setter to show or hide the grid.
+
+```typescript
+op.showGrid = true;  // Show grid
+op.showGrid = false; // Hide grid
+```
+
+### glyphNodes
+
+Getter that returns all glyph nodes in the scene.
+
+<ResponseField name="Map" type="Map<string, GlyphNode>">
+  Map of glyph IDs to glyph nodes
+</ResponseField>
+
+```typescript
+const allGlyphs = op.glyphNodes;
+for (const [id, glyph] of allGlyphs) {
+  console.log(`Glyph ${id}:`, glyph);
+}
+```
+
+## Static Methods
+
+### OpenPlans.toScreenPosition()
+
+Converts a 3D world position to 2D screen coordinates.
+
+<ParamField path="pos" type="THREE.Vector3" required>
+  The 3D world position
+</ParamField>
+
+<ResponseField name="object" type="{x: number, y: number}">
+  The 2D screen coordinates
+</ResponseField>
+
+```typescript
+import * as THREE from 'three';
+
+const worldPos = new THREE.Vector3(5, 0, 5);
+const screenPos = OpenPlans.toScreenPosition(worldPos);
+console.log(`Screen position: ${screenPos.x}, ${screenPos.y}`);
+```
+
+## Example: Complete Floor Plan
+
+```typescript
+import { OpenPlans, Vector3 } from '@opengeometry/openplans';
+
+const container = document.getElementById('viewport');
+const op = new OpenPlans(container);
+
+// Initialize OpenGeometry
+await op.setupOpenGeometry();
+
+// Create a floor slab
+const floor = op.baseSlab({
+  labelName: 'Ground Floor',
+  slabPosition: [0, 0, 0],
+  dimensions: {
+    start: { x: -5, y: 0, z: -5 },
+    end: { x: 5, y: 0, z: 5 },
+    width: 10,
+    length: 10
+  },
+  slabThickness: 0.2,
+  slabColor: 0xEEEEEE
+});
+
+// Create walls using polylines
+const wall1 = op.polyline({
+  points: [
+    [-5, 0, -5],
+    [5, 0, -5],
+    [5, 0, 5],
+    [-5, 0, 5],
+    [-5, 0, -5]
+  ],
+  color: 0x000000
+});
+
+// Add a door
+const door = op.baseDoor({
+  labelName: 'Main Entrance',
+  doorPosition: [0, 0, -5],
+  dimensions: {
+    start: { x: -0.5, y: 0, z: 0 },
+    end: { x: 0.5, y: 0, z: 0 },
+    length: 1
+  },
+  doorHeight: 2.1,
+  doorColor: 0x8B4513
+});
+
+// Add a window
+const window = op.baseSingleWindow({
+  labelName: 'Living Room Window',
+  windowPosition: [5, 0, 0],
+  dimensions: {
+    start: { x: -0.6, y: 0, z: 0 },
+    end: { x: 0.6, y: 0, z: 0 },
+    length: 1.2
+  },
+  windowHeight: 1.2,
+  sillHeight: 0.9
+});
+
+// Add labels
+const roomLabel = op.glyph('Living Room', 0.3, 0x333333);
+roomLabel.position.set(0, 0, 0);
+
+// Show grid
+op.showGrid = true;
+
+// Fit camera to show all doors
+op.fit('DOOR');
+```

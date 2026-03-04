@@ -1,0 +1,200 @@
+---
+title: "CuboidShape"
+description: "Create and manage 3D cuboid shapes in OpenPlans"
+---
+
+## Overview
+
+`CuboidShape` is a 3D cuboid (rectangular box) shape class that extends the base `Cuboid` class from the OpenGeometry kernel. It provides methods for creating, configuring, and managing cuboid shapes in your 3D scene.
+
+## Constructor
+
+<ParamField path="properties" type="ICuboidOptions" optional>
+  Configuration options for the cuboid shape
+</ParamField>
+
+### Example
+
+```typescript
+import { OpenPlans, ICuboidOptions } from '@opengeometry/openplans';
+
+const openplans = new OpenPlans(container);
+
+// Create a cuboid with default options
+const cuboid1 = openplans.cuboid();
+
+// Create a cuboid with custom options
+const cuboid2 = openplans.cuboid({
+  width: 10,
+  height: 5,
+  depth: 8,
+  color: 0x00ff00
+});
+```
+
+## ICuboidOptions Interface
+
+Configuration options for creating a cuboid shape.
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the shape. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="width" type="number" optional>
+  Width of the cuboid along the X-axis. Default: `1`
+</ParamField>
+
+<ParamField path="height" type="number" optional>
+  Height of the cuboid along the Y-axis. Default: `1`
+</ParamField>
+
+<ParamField path="depth" type="number" optional>
+  Depth of the cuboid along the Z-axis. Default: `1`
+</ParamField>
+
+<ParamField path="color" type="number" optional>
+  Hexadecimal color value for the cuboid. Default: `0xffffff`
+</ParamField>
+
+<ParamField path="position" type="{ x: number, y: number, z: number }" optional>
+  Position of the cuboid in 3D space
+</ParamField>
+
+<ParamField path="rotation" type="{ x: number, y: number, z: number }" optional>
+  Rotation of the cuboid in radians
+</ParamField>
+
+## Properties
+
+### ogType
+
+```typescript
+readonly ogType: string = 'CuboidShape'
+```
+
+Type identifier for the shape.
+
+### subNodes
+
+```typescript
+subNodes: Map<string, THREE.Object3D>
+```
+
+Map of child objects attached to this cuboid.
+
+### selected
+
+```typescript
+selected: boolean
+```
+
+Indicates whether the cuboid is currently selected.
+
+### edit
+
+```typescript
+edit: boolean
+```
+
+Indicates whether the cuboid is in edit mode.
+
+### propertySet
+
+```typescript
+propertySet: ICuboidOptions
+```
+
+Current configuration properties of the cuboid.
+
+## Methods
+
+### setOPConfig
+
+Update the cuboid's configuration.
+
+<ParamField path="config" type="ICuboidOptions" required>
+  New configuration options to apply
+</ParamField>
+
+```typescript
+cuboid.setOPConfig({
+  width: 15,
+  height: 10,
+  depth: 12,
+  color: 0xff0000
+});
+```
+
+<Warning>
+Calling `setOPConfig` will discard the current geometry and rebuild it with the new configuration.
+</Warning>
+
+### getOPConfig
+
+Retrieve the current configuration of the cuboid.
+
+**Returns:** `ICuboidOptions`
+
+```typescript
+const config = cuboid.getOPConfig();
+console.log(config.width, config.height, config.depth);
+```
+
+### setOPGeometry
+
+Update the geometry of the cuboid. This method is called internally when configuration changes.
+
+```typescript
+cuboid.setOPGeometry();
+```
+
+### setOPMaterial
+
+Update the material properties of the cuboid.
+
+```typescript
+cuboid.setOPMaterial();
+```
+
+## Complete Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+
+// Initialize OpenPlans
+const container = document.getElementById('canvas');
+const openplans = new OpenPlans(container);
+
+await openplans.setupOpenGeometry();
+
+// Create a cuboid
+const cuboid = openplans.cuboid({
+  width: 20,
+  height: 15,
+  depth: 10,
+  color: 0x3498db
+});
+
+// Position the cuboid
+cuboid.position.set(0, 7.5, 0);
+
+// Update configuration
+cuboid.setOPConfig({
+  width: 25,
+  height: 15,
+  depth: 10,
+  color: 0x2ecc71
+});
+
+// Get current properties
+const properties = cuboid.getOPConfig();
+console.log('Cuboid dimensions:', properties);
+
+// Mark as selected
+cuboid.selected = true;
+```
+
+## Related
+
+- [CylinderShape](/api/shapes/cylinder) - Create cylindrical shapes
+- [Shapes Overview](/api/shapes) - Overview of all shape types

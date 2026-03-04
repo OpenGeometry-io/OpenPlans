@@ -1,0 +1,565 @@
+---
+title: 'Shapes'
+description: '3D geometric forms for creating solid models'
+---
+
+## Overview
+
+Shapes are 3D geometric primitives that provide solid modeling capabilities in OpenPlans. They extend the OpenGeometry kernel classes and are used both as standalone objects and as building blocks for more complex elements.
+
+<Info>
+Shapes implement the `IShape` interface and can be used to create custom architectural elements or standalone 3D objects.
+</Info>
+
+## Available Shapes
+
+### Cuboid Shape
+
+A three-dimensional rectangular box defined by center point and dimensions.
+
+**Source:** `src/shapes/cuboid.ts:11`
+
+```typescript
+const cuboid = openPlans.cuboid({
+  center: new Vector3(0, 1, 0),
+  width: 2,      // X-axis dimension
+  height: 1,     // Y-axis dimension
+  depth: 3,      // Z-axis dimension
+  color: 0xFF0000
+});
+
+// Modify cuboid properties
+cuboid.setOPConfig({
+  center: new Vector3(2, 1.5, 0),
+  width: 2.5,
+  height: 1.5,
+  depth: 3.5,
+  color: 0x00FF00
+});
+```
+
+#### Properties
+
+<ParamField path="center" type="Vector3" required>
+  The center point of the cuboid in 3D space
+</ParamField>
+
+<ParamField path="width" type="number" required>
+  Width of the cuboid along the X-axis
+</ParamField>
+
+<ParamField path="height" type="number" required>
+  Height of the cuboid along the Y-axis
+</ParamField>
+
+<ParamField path="depth" type="number" required>
+  Depth of the cuboid along the Z-axis
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  Color of the cuboid in hexadecimal format
+</ParamField>
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the cuboid
+</ParamField>
+
+#### Cuboid in Elements
+
+Cuboids are the primary building blocks for architectural elements:
+
+**Source:** `src/elements/base-door.ts:242`
+
+```typescript
+// Door panel using Cuboid
+const doorPanel = new Cuboid({
+  center: new Vector3(0, doorHeight / 2, 0),
+  width: doorLength - 0.1,
+  height: doorHeight - 0.1,
+  depth: doorThickness,
+  color: doorColor
+});
+
+// Door frame components using Cuboids
+const leftFrame = new Cuboid({
+  center: new Vector3(startX, doorHeight / 2, 0),
+  width: 0.1,
+  height: doorHeight,
+  depth: frameThickness,
+  color: frameColor
+});
+```
+
+**Source:** `src/elements/base-slab.ts:182`
+
+```typescript
+// Slab body using Cuboid
+const slabBody = new Cuboid({
+  center: new Vector3(0, -slabThickness / 2, 0),
+  width: slabWidth,
+  height: slabThickness,
+  depth: slabLength,
+  color: slabColor
+});
+```
+
+### Cylinder Shape
+
+A cylindrical 3D shape defined by center point, radius, and height.
+
+**Source:** `src/shapes/cylinder.ts:11`
+
+```typescript
+const cylinder = openPlans.cylinder({
+  center: new Vector3(0, 0.5, 0),
+  radius: 0.5,
+  height: 1.0,
+  color: 0x0000FF
+});
+
+// Modify cylinder properties
+cylinder.setOPConfig({
+  center: new Vector3(2, 0.75, 0),
+  radius: 0.75,
+  height: 1.5,
+  color: 0xFF00FF
+});
+```
+
+#### Properties
+
+<ParamField path="center" type="Vector3" required>
+  The center point of the cylinder in 3D space
+</ParamField>
+
+<ParamField path="radius" type="number" required>
+  Radius of the cylinder
+</ParamField>
+
+<ParamField path="height" type="number" required>
+  Height of the cylinder along the Y-axis
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  Color of the cylinder in hexadecimal format
+</ParamField>
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the cylinder
+</ParamField>
+
+#### Use Cases
+
+Cylinders are useful for:
+
+- Columns and pillars
+- Circular structural elements
+- Pipes and ducts
+- Decorative elements
+
+```typescript
+// Create a structural column
+const column = openPlans.cylinder({
+  center: new Vector3(3, 1.5, 3),
+  radius: 0.2,
+  height: 3.0,
+  color: 0x808080
+});
+
+// Create a circular planter
+const planter = openPlans.cylinder({
+  center: new Vector3(0, 0.3, 0),
+  radius: 0.6,
+  height: 0.6,
+  color: 0x8B4513
+});
+```
+
+## Shape Interface
+
+All shapes implement the `IShape` interface:
+
+```typescript
+interface IShape {
+  ogType: string;                          // Type identifier
+  ogid: string;                            // Unique ID
+  subNodes: Map<string, THREE.Object3D>;   // Child objects
+  selected: boolean;                       // Selection state
+  edit: boolean;                           // Edit mode state
+  propertySet: object;                     // Configuration
+  
+  setOPConfig(config: any): void;         // Update configuration
+  getOPConfig(): any;                      // Get configuration
+  setOPGeometry(): void;                   // Update geometry
+  setOPMaterial(): void;                   // Update material
+}
+```
+
+## Kernel Integration
+
+Shapes extend kernel classes from OpenGeometry:
+
+**Source:** `src/shapes/cuboid.ts:11`
+
+```typescript
+import { ICuboidOptions, Cuboid } from '../kernel/';
+
+export class CuboidShape extends Cuboid implements IShape {
+  ogType: string = 'CuboidShape';
+  propertySet: ICuboidOptions;
+  
+  constructor(properties?: ICuboidOptions) {
+    super(properties);
+    this.propertySet = { ...properties, ...this.options };
+  }
+}
+```
+
+This inheritance provides:
+- Efficient geometry generation
+- BREP (Boundary Representation) data
+- Material management
+- Automatic mesh creation
+
+## Property Management
+
+### Getting Configuration
+
+```typescript
+const config = cuboid.getOPConfig();
+console.log(config);
+// {
+//   ogid: "...",
+//   center: Vector3 { x: 0, y: 1, z: 0 },
+//   width: 2,
+//   height: 1,
+//   depth: 3,
+//   color: 0xFF0000
+// }
+```
+
+### Setting Configuration
+
+**Source:** `src/shapes/cuboid.ts:40`
+
+```typescript
+cuboid.setOPConfig({
+  center: new Vector3(1, 1, 1),
+  width: 3,
+  height: 2,
+  depth: 4,
+  color: 0x00FF00
+});
+
+// Internally calls:
+// - this.discardGeometry() to clean up
+// - this.setConfig(config) to regenerate
+```
+
+<Warning>
+Always use `setOPConfig()` rather than modifying `propertySet` directly. This ensures geometry is properly cleaned up and regenerated.
+</Warning>
+
+## Geometry Lifecycle
+
+### Creation
+
+Shapes are added to the scene automatically:
+
+**Source:** `src/index.ts:270`
+
+```typescript
+cuboid(config?: ICuboidOptions) {
+  const cuboid = new CuboidShape(config);
+  this.openThree.scene.add(cuboid);
+  this.ogElements.push(cuboid);
+  return cuboid;
+}
+```
+
+### Updates
+
+When you call `setOPConfig()`, the shape:
+
+1. Calls `discardGeometry()` to clean up existing meshes
+2. Updates the `propertySet`
+3. Calls `setConfig()` to regenerate geometry
+4. Updates materials if needed
+
+**Source:** `src/shapes/cuboid.ts:40`
+
+```typescript
+setOPConfig(config: ICuboidOptions): void {
+  this.discardGeometry();  // Clean up old geometry
+  this.propertySet = config;
+  this.setConfig(config);   // Generate new geometry
+}
+```
+
+### Disposal
+
+Always dispose shapes when no longer needed:
+
+```typescript
+openPlans.disposeElement(cuboid.ogid);
+```
+
+## Working with Shapes
+
+### As Standalone Objects
+
+```typescript
+// Create standalone 3D objects
+const box = openPlans.cuboid({
+  center: new Vector3(0, 0.5, 0),
+  width: 1,
+  height: 1,
+  depth: 1,
+  color: 0xFF0000
+});
+
+const pillar = openPlans.cylinder({
+  center: new Vector3(3, 1.5, 3),
+  radius: 0.3,
+  height: 3.0,
+  color: 0x808080
+});
+```
+
+### As Element Components
+
+Shapes are commonly used within elements:
+
+```typescript
+// Stairs use multiple cuboids for steps
+// Source: src/elements/base-stair.ts:180
+for (let i = 0; i < numberOfSteps; i++) {
+  const tread = new Cuboid({
+    center: new Vector3(stepPosition, stepHeight, width/2),
+    width: treadDepth,
+    height: stepThickness,
+    depth: stairWidth,
+    color: stairColor
+  });
+  stepsGroup.add(tread);
+}
+```
+
+### Creating Custom Elements
+
+You can compose shapes to create custom elements:
+
+```typescript
+class CustomTable extends THREE.Group implements IShape {
+  ogType = 'CustomTable';
+  
+  constructor() {
+    super();
+    
+    // Table top using Cuboid
+    const top = new Cuboid({
+      center: new Vector3(0, 0.75, 0),
+      width: 1.5,
+      height: 0.05,
+      depth: 0.8,
+      color: 0x8B4513
+    });
+    
+    // Table legs using Cylinders
+    const legPositions = [
+      [-0.7, 0.375, -0.35],
+      [0.7, 0.375, -0.35],
+      [-0.7, 0.375, 0.35],
+      [0.7, 0.375, 0.35]
+    ];
+    
+    legPositions.forEach(pos => {
+      const leg = new Cylinder({
+        center: new Vector3(...pos),
+        radius: 0.04,
+        height: 0.75,
+        color: 0x654321
+      });
+      this.add(leg);
+    });
+    
+    this.add(top);
+  }
+}
+```
+
+## Advanced Features
+
+### Sub-Nodes Management
+
+Shapes maintain a map of child objects:
+
+```typescript
+subNodes: Map<string, THREE.Object3D> = new Map();
+
+// Add custom sub-nodes
+cuboid.subNodes.set('decoration', decorationMesh);
+
+// Access sub-nodes
+const decoration = cuboid.subNodes.get('decoration');
+```
+
+### Selection State
+
+```typescript
+// Track selection
+cuboid.selected = true;
+
+// Track edit mode
+cuboid.edit = true;
+```
+
+### Material Updates
+
+Implement custom material logic:
+
+```typescript
+setOPMaterial(): void {
+  // Custom material update logic
+  const material = new THREE.MeshStandardMaterial({
+    color: this.propertySet.color,
+    roughness: 0.7,
+    metalness: 0.3
+  });
+  // Apply to mesh
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use appropriate shapes">
+    Choose the right shape for your needs:
+    
+    ```typescript
+    // Good: Use Cuboid for rectangular objects
+    const beam = openPlans.cuboid({ width: 0.2, height: 0.3, depth: 5 });
+    
+    // Good: Use Cylinder for round objects
+    const column = openPlans.cylinder({ radius: 0.3, height: 3 });
+    ```
+  </Accordion>
+  
+  <Accordion title="Clean up resources">
+    Always dispose of shapes when done:
+    
+    ```typescript
+    // Dispose individual shapes
+    openPlans.disposeElement(cuboid.ogid);
+    
+    // Or get all shapes and dispose
+    const allCuboids = openPlans.getEntitiesByType('CuboidShape');
+    allCuboids.forEach(c => openPlans.disposeElement(c.ogid));
+    ```
+  </Accordion>
+  
+  <Accordion title="Use Vector3 for positions">
+    Import and use Vector3 from the kernel:
+    
+    ```typescript
+    import { Vector3 } from 'openplans';
+    
+    const cuboid = openPlans.cuboid({
+      center: new Vector3(1, 2, 3),
+      // ...
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Examples
+
+### Creating a Simple Building
+
+```typescript
+import { Vector3 } from 'openplans';
+
+// Foundation
+const foundation = openPlans.cuboid({
+  center: new Vector3(0, -0.2, 0),
+  width: 10,
+  height: 0.4,
+  depth: 10,
+  color: 0x808080
+});
+
+// Walls (4 walls using cuboids)
+const walls = [
+  { center: new Vector3(0, 1.5, -5), width: 10, depth: 0.2 },  // Back
+  { center: new Vector3(0, 1.5, 5), width: 10, depth: 0.2 },   // Front
+  { center: new Vector3(-5, 1.5, 0), width: 0.2, depth: 10 },  // Left
+  { center: new Vector3(5, 1.5, 0), width: 0.2, depth: 10 }    // Right
+];
+
+walls.forEach(wall => {
+  openPlans.cuboid({
+    center: wall.center,
+    width: wall.width,
+    height: 3,
+    depth: wall.depth,
+    color: 0xDDDDDD
+  });
+});
+
+// Columns at corners
+const cornerPositions = [
+  [-5, 1.5, -5],
+  [5, 1.5, -5],
+  [-5, 1.5, 5],
+  [5, 1.5, 5]
+];
+
+cornerPositions.forEach(pos => {
+  openPlans.cylinder({
+    center: new Vector3(...pos),
+    radius: 0.3,
+    height: 3,
+    color: 0x888888
+  });
+});
+```
+
+### Creating Furniture
+
+```typescript
+// Bookshelf using multiple cuboids
+const shelfHeight = 0.03;
+const shelfCount = 5;
+const shelfSpacing = 0.4;
+
+// Back panel
+openPlans.cuboid({
+  center: new Vector3(0, 1, 0),
+  width: 1.2,
+  height: 2,
+  depth: 0.02,
+  color: 0x8B4513
+});
+
+// Shelves
+for (let i = 0; i < shelfCount; i++) {
+  openPlans.cuboid({
+    center: new Vector3(0, i * shelfSpacing, 0.15),
+    width: 1.2,
+    height: shelfHeight,
+    depth: 0.3,
+    color: 0x8B4513
+  });
+}
+
+// Side panels
+[-0.6, 0.6].forEach(x => {
+  openPlans.cuboid({
+    center: new Vector3(x, 1, 0.15),
+    width: 0.02,
+    height: 2,
+    depth: 0.3,
+    color: 0x8B4513
+  });
+});
+```

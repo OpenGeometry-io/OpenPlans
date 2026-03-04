@@ -1,0 +1,363 @@
+---
+title: "PaperFrame"
+description: "Create customizable paper frames for 2D drawings and layouts"
+---
+
+## Overview
+
+`PaperFrame` is a layout component that creates paper-like frames for architectural and engineering drawings. It supports standard paper formats (A4, A3, A2) with customizable margins, borders, and orientations.
+
+## Constructor
+
+<ParamField path="paperFrameConfig" type="Partial<PaperFrameOptions>" optional>
+  Configuration options for the paper frame
+</ParamField>
+
+### Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+
+const openplans = new OpenPlans(container);
+
+// Create A4 paper frame with default settings
+const frame1 = openplans.paperFrame({
+  labelName: 'Drawing Sheet 1',
+  format: 'A4',
+  orientation: 'portrait'
+});
+
+// Create custom paper frame
+const frame2 = openplans.paperFrame({
+  labelName: 'Custom Layout',
+  format: 'Custom',
+  orientation: 'landscape',
+  margin: 15,
+  backgroundColor: 0xffffff,
+  borderColor: 0x000000,
+  paperSize: { width: 50, height: 35 }
+});
+```
+
+## PaperFrameOptions Interface
+
+Configuration options for creating a paper frame.
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the paper frame. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="labelName" type="string" required>
+  Display name for the paper frame
+</ParamField>
+
+<ParamField path="type" type="'PAPERFRAME'" required>
+  Type identifier. Must be `'PAPERFRAME'`
+</ParamField>
+
+<ParamField path="format" type="PaperFormat" required>
+  Paper format size. Options: `'A4'`, `'A3'`, `'A2'`, `'Custom'`
+  
+  Standard sizes:
+  - A4: 21.0cm × 29.7cm
+  - A3: 29.7cm × 42.0cm
+  - A2: 42.0cm × 59.4cm
+</ParamField>
+
+<ParamField path="orientation" type="PaperOrientation" required>
+  Paper orientation. Options: `'portrait'`, `'landscape'`
+</ParamField>
+
+<ParamField path="margin" type="number" required>
+  Margin width in millimeters for the inner border. Default: `10`
+</ParamField>
+
+<ParamField path="backgroundColor" type="number" required>
+  Hexadecimal color value for the paper background. Default: `0xffffff`
+</ParamField>
+
+<ParamField path="borderColor" type="number" required>
+  Hexadecimal color value for the border lines. Default: `0x000000`
+</ParamField>
+
+<ParamField path="borderWidth" type="number" required>
+  Width of the border lines. Default: `1`
+</ParamField>
+
+<ParamField path="paperSize" type="{ width: number; height: number }" required>
+  Dimensions of the paper in centimeters. Auto-set based on format.
+</ParamField>
+
+## Type Definitions
+
+### PaperFormat
+
+```typescript
+type PaperFormat = 'A4' | 'A3' | 'A2' | 'Custom';
+```
+
+### PaperOrientation
+
+```typescript
+type PaperOrientation = 'portrait' | 'landscape';
+```
+
+## Properties
+
+### ogType
+
+```typescript
+readonly ogType: string = 'paperFrame'
+```
+
+Type identifier for the paper frame.
+
+### subElements
+
+```typescript
+subElements: Map<string, THREE.Object3D>
+```
+
+Map of child elements (borders, blocks) attached to the paper frame.
+
+### selected
+
+```typescript
+selected: boolean = false
+```
+
+Indicates whether the paper frame is currently selected.
+
+### edit
+
+```typescript
+edit: boolean = false
+```
+
+Indicates whether the paper frame is in edit mode.
+
+### propertySet
+
+```typescript
+propertySet: PaperFrameOptions
+```
+
+Current configuration properties of the paper frame.
+
+### paperName
+
+Setter for updating the paper frame's label name.
+
+```typescript
+frame.paperName = 'Updated Sheet Name';
+```
+
+### format
+
+Setter for changing the paper format. Updates geometry automatically.
+
+```typescript
+frame.format = 'A3';
+```
+
+### orientation
+
+Setter for changing the paper orientation. Updates geometry automatically.
+
+```typescript
+frame.orientation = 'landscape';
+```
+
+### margin
+
+Getter and setter for the margin width.
+
+```typescript
+// Get margin
+const currentMargin = frame.margin;
+
+// Set margin
+frame.margin = 15;
+```
+
+### backgroundColor
+
+Setter for the background color.
+
+```typescript
+frame.backgroundColor = 0xf5f5f5;
+```
+
+### borderColor
+
+Setter for the border color. Updates geometry automatically.
+
+```typescript
+frame.borderColor = 0x333333;
+```
+
+### borderWidth
+
+Setter for the border width.
+
+```typescript
+frame.borderWidth = 2;
+```
+
+### paperSize
+
+Getter for the paper size. Setter only works with Custom format.
+
+```typescript
+// Get paper size
+const size = frame.paperSize;
+console.log(size.width, size.height);
+
+// Set paper size (only for Custom format)
+if (frame.format === 'Custom') {
+  frame.paperSize = { width: 60, height: 40 };
+}
+```
+
+<Warning>
+The `paperSize` setter will throw an error if the format is not set to `'Custom'`.
+</Warning>
+
+## Methods
+
+### setOPConfig
+
+Update the paper frame's configuration.
+
+<ParamField path="config" type="PaperFrameOptions" required>
+  Configuration object with paper frame settings
+</ParamField>
+
+```typescript
+frame.setOPConfig({
+  paperName: 'Updated Frame',
+  format: 'A3',
+  orientation: 'landscape'
+});
+```
+
+### getOPConfig
+
+Retrieve the current configuration of the paper frame.
+
+**Returns:** `PaperFrameOptions`
+
+```typescript
+const config = frame.getOPConfig();
+console.log(config.format, config.orientation);
+```
+
+### setOPGeometry
+
+Update the geometry of the paper frame. Called automatically when properties change.
+
+```typescript
+frame.setOPGeometry();
+```
+
+### setOPMaterial
+
+Update the material properties of the paper frame.
+
+```typescript
+frame.setOPMaterial();
+```
+
+## Standard Paper Sizes
+
+The `paperSizes` constant defines standard paper dimensions:
+
+```typescript
+const paperSizes: Record<PaperFormat, { width: number; height: number }> = {
+  A4: { width: 21.0, height: 29.7 },
+  A3: { width: 29.7, height: 42.0 },
+  A2: { width: 42.0, height: 59.4 },
+  Custom: { width: 0, height: 0 },
+};
+```
+
+## Complete Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+
+// Initialize OpenPlans
+const container = document.getElementById('canvas');
+const openplans = new OpenPlans(container);
+
+await openplans.setupOpenGeometry();
+
+// Create A3 landscape paper frame
+const frame = openplans.paperFrame({
+  labelName: 'Site Plan',
+  format: 'A3',
+  orientation: 'landscape',
+  margin: 12,
+  backgroundColor: 0xfefefe,
+  borderColor: 0x1a1a1a,
+  borderWidth: 1.5
+});
+
+// Update properties dynamically
+frame.paperName = 'Site Plan - Updated';
+frame.borderColor = 0x0066cc;
+
+// Switch to portrait orientation
+frame.orientation = 'portrait';
+
+// Change to A4 format
+frame.format = 'A4';
+
+// Get current configuration
+const config = frame.getOPConfig();
+console.log('Current format:', config.format);
+console.log('Current size:', config.paperSize);
+```
+
+## Creating Custom Size Frames
+
+```typescript
+// Create a custom-sized paper frame
+const customFrame = openplans.paperFrame({
+  labelName: 'Custom Drawing',
+  format: 'Custom',
+  orientation: 'landscape',
+  margin: 10,
+  backgroundColor: 0xffffff,
+  borderColor: 0x000000,
+  paperSize: { width: 100, height: 70 } // 100cm × 70cm
+});
+
+// Update custom size later
+customFrame.paperSize = { width: 120, height: 80 };
+```
+
+## Working with Different Orientations
+
+```typescript
+// Portrait A4
+const portrait = openplans.paperFrame({
+  labelName: 'Portrait Sheet',
+  format: 'A4',
+  orientation: 'portrait' // 21.0cm wide × 29.7cm tall
+});
+
+// Landscape A4
+const landscape = openplans.paperFrame({
+  labelName: 'Landscape Sheet',
+  format: 'A4',
+  orientation: 'landscape' // 29.7cm wide × 21.0cm tall
+});
+
+// Toggle orientation
+portrait.orientation = 'landscape';
+```
+
+## Related
+
+- [Layouts Overview](/api/layouts) - Overview of all layout components

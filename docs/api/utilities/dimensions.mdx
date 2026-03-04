@@ -1,0 +1,173 @@
+---
+title: 'DimensionTool'
+description: 'Create and manage dimensions for measuring distances, angles, and other geometric properties'
+icon: 'ruler'
+---
+
+## Overview
+
+The `DimensionTool` is a singleton utility for creating and managing dimension annotations in your OpenPlans scenes. It provides a centralized way to add visual measurements like length dimensions with labels.
+
+## Getting Started
+
+The DimensionTool is automatically initialized when you call `setupOpenGeometry()` on your OpenPlans instance:
+
+```typescript
+const openplans = new OpenPlans(container);
+await openplans.setupOpenGeometry();
+
+// DimensionTool is now ready to use
+```
+
+## DimensionTool
+
+### Properties
+
+<ParamField path="sceneRef" type="THREE.Scene">
+  Reference to the Three.js scene where dimensions will be rendered. This is automatically set during OpenPlans initialization.
+</ParamField>
+
+### Methods
+
+<ParamField path="createDimension(key, type)" type="function">
+  Creates a new dimension and adds it to the scene.
+  
+  **Parameters:**
+  - `key` (string): Unique identifier for the dimension
+  - `type` (DimensionType): Type of dimension to create
+  
+  **Supported dimension types:**
+  - `'length'`: Linear distance measurement
+  - `'angle'`: Angular measurement (coming soon)
+  - `'area'`: Area measurement (coming soon)
+  - `'radius'`: Radius measurement (coming soon)
+  - `'diameter'`: Diameter measurement (coming soon)
+  - `'volume'`: Volume measurement (coming soon)
+  - `'custom'`: Custom dimension type (coming soon)
+</ParamField>
+
+<ParamField path="getDimensionsById(key)" type="function">
+  Retrieves a dimension by its unique identifier.
+  
+  **Parameters:**
+  - `key` (string): The unique identifier of the dimension
+  
+  **Returns:** The dimension object associated with the key, or undefined if not found.
+</ParamField>
+
+## LineDimension
+
+The `LineDimension` class creates visual dimension annotations for linear measurements between two points.
+
+### Constructor
+
+```typescript
+const dimension = new LineDimension({
+  start: { x: 0, y: 0, z: 0 },
+  end: { x: 5, y: 0, z: 0 },
+  color: 0x000000
+});
+```
+
+<ParamField path="dimensionData" type="ILineOptions">
+  Configuration object for the dimension line.
+  
+  **Properties:**
+  - `start` (Vector3): Starting point of the dimension
+  - `end` (Vector3): Ending point of the dimension
+  - `color` (number): Color of the dimension line (hex value)
+</ParamField>
+
+### Methods
+
+<ParamField path="setDimensionLabel(label)" type="function">
+  Updates the text label displayed on the dimension.
+  
+  **Parameters:**
+  - `label` (string): The text to display (typically the measured distance)
+  
+  **Example:**
+  ```typescript
+  dimension.setDimensionLabel('5.00 m');
+  ```
+</ParamField>
+
+<ParamField path="setDimensionData(data, length)" type="function">
+  Updates the dimension's position and length.
+  
+  **Parameters:**
+  - `data` (ILineOptions): New start and end points
+  - `length` (number): The measured length to display
+  
+  **Example:**
+  ```typescript
+  dimension.setDimensionData(
+    { 
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 10, y: 0, z: 0 }
+    },
+    10.0
+  );
+  ```
+</ParamField>
+
+<ParamField path="getDimensionLabel()" type="function">
+  Gets the current dimension label text.
+  
+  **Returns:** String containing the current label.
+</ParamField>
+
+## Usage Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+import { DimensionTool, LineDimension } from '@opengeometry/openplans';
+
+// Initialize OpenPlans
+const container = document.getElementById('canvas');
+const openplans = new OpenPlans(container);
+await openplans.setupOpenGeometry();
+
+// Create a line to measure
+const line = openplans.line({
+  startPoint: [0, 0, 0],
+  endPoint: [5, 0, 0],
+  color: 0x000000
+});
+
+// Create a dimension for the line
+DimensionTool.createDimension('wall-length', 'length');
+const dimension = DimensionTool.getDimensionsById('wall-length');
+
+// Update dimension to show measurement
+dimension.setDimensionData(
+  {
+    start: { x: 0, y: 0.5, z: 0 },
+    end: { x: 5, y: 0.5, z: 0 }
+  },
+  5.0
+);
+dimension.setDimensionLabel('5.00 m');
+```
+
+## Styling
+
+Dimension labels are rendered using CSS2D and can be customized through CSS:
+
+```css
+.label {
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  padding: 2px 5px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+```
+
+## Notes
+
+- Dimensions are automatically added to the scene when created via `DimensionTool.createDimension()`
+- The dimension line includes perpendicular tick marks at both ends
+- Labels are positioned at the midpoint of the dimension line
+- Currently, only 'length' dimension type is fully implemented

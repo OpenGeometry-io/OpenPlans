@@ -1,0 +1,430 @@
+---
+title: Quick Start
+description: Build your first floor plan with OpenPlans in minutes
+---
+
+## Your First Floor Plan
+
+This guide will walk you through creating a simple floor plan with walls, a door, and a window using OpenPlans.
+
+<Note>
+  Make sure you've completed the [installation](/installation) before proceeding.
+</Note>
+
+## Basic Setup
+
+<Steps>
+  <Step title="Create the HTML container">
+    Set up a container element for OpenPlans to render into:
+    
+    ```html index.html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>My First Floor Plan</title>
+      <style>
+        body { margin: 0; overflow: hidden; }
+        #app { width: 100%; height: 100vh; }
+      </style>
+    </head>
+    <body>
+      <div id="app"></div>
+      <script type="module" src="/main.js"></script>
+    </body>
+    </html>
+    ```
+  </Step>
+  
+  <Step title="Initialize OpenPlans">
+    Create a new OpenPlans instance and set up the geometry engine:
+    
+    ```javascript main.js
+    import { OpenPlans } from '@opengeometry/openplans';
+    
+    async function init() {
+      // Get the container element
+      const container = document.getElementById('app');
+      
+      // Create OpenPlans instance
+      const openPlans = new OpenPlans(container);
+      
+      // Initialize the OpenGeometry engine (required)
+      await openPlans.setupOpenGeometry();
+      
+      // Optional: Show or hide the grid
+      openPlans.showGrid = true;
+      
+      console.log('OpenPlans ready!');
+    }
+    
+    init();
+    ```
+  </Step>
+  
+  <Step title="Create your first primitive">
+    Add a simple line to verify everything works:
+    
+    ```javascript main.js
+    // Add this after setupOpenGeometry()
+    const line = openPlans.line({
+      startPoint: [0, 0, 0],
+      endPoint: [10, 0, 0],
+      color: 0x000000
+    });
+    ```
+  </Step>
+</Steps>
+
+You should now see a black line rendered in your viewport!
+
+## Building a Simple Room
+
+Let's create a complete room with walls, a door, and a window:
+
+```javascript main.js
+import { OpenPlans } from '@opengeometry/openplans';
+
+async function createRoom() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Hide the grid for a cleaner look
+  openPlans.showGrid = false;
+  
+  // Create room outline with a polyline (5m x 4m room)
+  const roomWalls = openPlans.polyline({
+    points: [
+      [0, 0, 0],    // Bottom-left corner
+      [5, 0, 0],    // Bottom-right corner
+      [5, 0, 4],    // Top-right corner
+      [0, 0, 4],    // Top-left corner
+      [0, 0, 0]     // Close the shape
+    ],
+    color: 0x000000  // Black walls
+  });
+  
+  // Add a floor using a rectangle
+  const floor = openPlans.rectangle({
+    center: [2.5, -0.1, 2],  // Slightly below walls
+    width: 5,
+    breadth: 4,
+    color: 0xf0f0f0  // Light gray floor
+  });
+  
+  // Add a door on the bottom wall
+  const door = openPlans.baseDoor({
+    doorPosition: [1.5, 0, 0],  // Position on wall
+    doorLength: 1,              // 1 meter wide
+    doorHeight: 2.1,            // Standard door height
+    doorThickness: 0.05,        // 5cm thick
+    doorColor: 0x8b4513,        // Brown color
+    doorRotation: 1,            // Rotation factor
+    doorQuadrant: 1             // Opening direction
+  });
+  
+  // Add a window on the right wall
+  const window = openPlans.baseSingleWindow({
+    windowPosition: [5, 0, 2],  // Middle of right wall
+    windowWidth: 1.2,           // 1.2m wide
+    windowHeight: 1.2,          // 1.2m tall
+    windowSillHeight: 0.9,      // 90cm from floor
+    windowColor: 0x87ceeb       // Sky blue
+  });
+  
+  console.log('Room created successfully!');
+}
+
+createRoom();
+```
+
+<Tip>
+  In OpenPlans, the Y-axis is typically used for height (vertical), while X and Z represent the floor plane (horizontal).
+</Tip>
+
+## Working with Shapes
+
+Add 3D shapes to your scene for furniture or structural elements:
+
+```javascript
+// Create a cuboid (like a table)
+const table = openPlans.cuboid({
+  center: [2.5, 0, 2],  // Center of the room
+  width: 1.5,           // 1.5m wide
+  depth: 0.8,           // 80cm deep
+  height: 0.75,         // Standard table height
+  color: 0x8b4513       // Wood color
+});
+
+// Create a cylinder (like a column)
+const column = openPlans.cylinder({
+  center: [0.5, 0, 0.5],
+  radius: 0.2,
+  height: 2.4,
+  color: 0xcccccc
+});
+```
+
+## Interactive Elements
+
+OpenPlans elements can be modified after creation:
+
+<CodeGroup>
+
+```javascript Modify Properties
+// Change door color
+door.doorColor = 0xff0000;  // Red
+
+// Adjust door rotation
+door.doorRotation = 1.5;
+
+// Resize rectangle
+floor.width = 6;
+floor.breadth = 5;
+```
+
+```javascript Get Configuration
+// Retrieve element configuration
+const doorConfig = door.getOPConfig();
+console.log('Door config:', doorConfig);
+
+// Get all elements of a type
+const allDoors = openPlans.getEntitiesByType('baseDoor');
+console.log('Number of doors:', allDoors.length);
+```
+
+```javascript Remove Elements
+// Dispose of an element
+openPlans.disposeElement(door.ogid);
+
+// Remove from scene
+openPlans.scene.remove(table);
+```
+
+</CodeGroup>
+
+## Adding Labels and Dimensions
+
+Add text labels using the built-in glyph system:
+
+```javascript
+// Create a text label
+const roomLabel = openPlans.glyph(
+  'Living Room',  // Text
+  0.5,            // Size
+  0x000000,       // Color (black)
+  true            // Static zoom
+);
+
+// Position the label
+roomLabel.position.set(2.5, 0, 2);
+```
+
+## Camera Controls
+
+OpenPlans includes built-in camera controls powered by `camera-controls`:
+
+- **Rotate**: Left mouse button + drag
+- **Pan**: Right mouse button + drag (or middle mouse)
+- **Zoom**: Mouse wheel
+
+```javascript
+// Fit camera to specific elements
+openPlans.fit('baseDoor');  // Fit to all doors
+
+// Or fit to all spaces
+openPlans.fitToAllSpaces();
+```
+
+## Complete Example
+
+Here's a complete working example you can copy and run:
+
+<CodeGroup>
+
+```javascript main.js
+import { OpenPlans } from '@opengeometry/openplans';
+
+async function createFloorPlan() {
+  // Initialize
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  openPlans.showGrid = false;
+  
+  // Create room outline (5m x 4m)
+  const walls = openPlans.polyline({
+    points: [
+      [0, 0, 0], [5, 0, 0], [5, 0, 4],
+      [0, 0, 4], [0, 0, 0]
+    ],
+    color: 0x000000
+  });
+  
+  // Add floor
+  const floor = openPlans.rectangle({
+    center: [2.5, -0.1, 2],
+    width: 5,
+    breadth: 4,
+    color: 0xf5f5f5
+  });
+  
+  // Add door
+  const door = openPlans.baseDoor({
+    doorPosition: [1.5, 0, 0],
+    doorLength: 1,
+    doorHeight: 2.1,
+    doorColor: 0x8b4513
+  });
+  
+  // Add window
+  const window = openPlans.baseSingleWindow({
+    windowPosition: [5, 0, 2],
+    windowWidth: 1.2,
+    windowHeight: 1.2,
+    windowSillHeight: 0.9
+  });
+  
+  // Add a table
+  const table = openPlans.cuboid({
+    center: [2.5, 0.375, 2],
+    width: 1.5,
+    depth: 0.8,
+    height: 0.75,
+    color: 0x8b4513
+  });
+  
+  console.log('Floor plan complete!');
+}
+
+createFloorPlan();
+```
+
+```html index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>My Floor Plan</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #app { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
+```
+
+</CodeGroup>
+
+## Understanding the Coordinate System
+
+OpenPlans uses a 3D coordinate system:
+
+- **X-axis**: Horizontal (left-right)
+- **Y-axis**: Vertical (up-down, height)
+- **Z-axis**: Horizontal (forward-backward)
+
+<Info>
+  Most 2D floor plan elements are created on the XZ plane (Y = 0). The Y coordinate is used for elevation and height.
+</Info>
+
+## Common Patterns
+
+### Creating from Configuration
+
+All OpenPlans elements support configuration objects for programmatic creation:
+
+```javascript
+// Define configuration
+const doorConfig = {
+  ogid: 'my-custom-door-id',
+  doorPosition: [3, 0, 0],
+  doorLength: 1.2,
+  doorHeight: 2.1,
+  doorThickness: 0.05,
+  doorColor: 0x8b4513,
+  doorRotation: 1,
+  doorQuadrant: 2
+};
+
+// Create from config
+const door = openPlans.baseDoor(doorConfig);
+
+// Later, retrieve config
+const savedConfig = door.getOPConfig();
+```
+
+### Rendering Loop Integration
+
+Integrate with your own render loop:
+
+```javascript
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // Update OpenPlans (handles label rendering)
+  openPlans.update(scene, camera);
+  
+  // Your custom rendering code
+  // ...
+}
+
+animate();
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Primitives" icon="shapes" href="/api/primitives/line">
+    Learn about all available primitives
+  </Card>
+  
+  <Card title="Elements" icon="door-open" href="/api/elements/door">
+    Explore architectural elements
+  </Card>
+  
+  <Card title="Shapes" icon="cube" href="/api/shapes/cuboid">
+    Work with 3D shapes
+  </Card>
+  
+  <Card title="Advanced Guides" icon="book-open" href="/guides/json-generation">
+    Generate floor plans from JSON
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Nothing renders on screen">
+    Make sure you:
+    1. Called `await openPlans.setupOpenGeometry()` before creating elements
+    2. Set the container element's width and height (should be visible)
+    3. Check the browser console for errors
+  </Accordion>
+  
+  <Accordion title="Elements appear very small or large">
+    OpenPlans uses meters as the default unit. Adjust your dimensions:
+    - Typical door: 1-1.2m wide
+    - Room: 3-6m wide
+    - Table height: 0.75m
+  </Accordion>
+  
+  <Accordion title="Camera controls not working">
+    Ensure `camera-controls` is installed as a peer dependency:
+    ```bash
+    npm install camera-controls
+    ```
+  </Accordion>
+  
+  <Accordion title="TypeScript errors">
+    Install type definitions:
+    ```bash
+    npm install --save-dev @types/three
+    ```
+  </Accordion>
+</AccordionGroup>
