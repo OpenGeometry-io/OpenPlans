@@ -83,6 +83,7 @@ import { Planter2D, PlanterOptions } from './elements/planview/landscape/planter
 import { Fountain2D, FountainOptions } from './elements/planview/landscape/fountain2D';
 import { Bench2D, BenchOptions } from './elements/planview/landscape/bench2D';
 import { ViewportBlock, ViewportConfig } from './layouts/viewport-block';
+import { PaperLayoutService, PaperLayoutOptions as PaperLayoutOpts } from './layouts/paper-layout';
 
 // Camera Modes
 export { CameraMode } from './service/plancamera';
@@ -95,7 +96,7 @@ export * from "./shape-builder/index";
 export * from './kernel/';
 
 // Exports from Planview Elements
-export { Wall2D, type WallOptions } from './elements/planview/wall2D';
+export { Wall2D, WallHatchPattern, type WallOptions } from './elements/planview/wall2D';
 
 export class OpenPlans {
   private container: HTMLElement
@@ -239,10 +240,6 @@ export class OpenPlans {
       });
     }
 
-    const viewportBlocks = this.getEntitiesByType('VIEWPORT_BLOCK');
-    viewportBlocks.forEach((viewportBlock: ViewportBlock) => {
-      viewportBlock.render(this.openThree.renderer, this.openThree.scene);
-    });
   }
 
   //   for (const element of this.ogElements) {
@@ -834,6 +831,17 @@ export class OpenPlans {
     return viewportBlock;
   }
 
+  /**
+   * Create an HTML-based paper layout with viewport windows.
+   * This is the recommended way to create technical drawing layouts.
+   * 
+   * @param container The HTML element to host the paper layout
+   * @param options Paper format, orientation, margin, etc.
+   */
+  createPaperLayout(container: HTMLElement, options: PaperLayoutOpts): PaperLayoutService {
+    return new PaperLayoutService(container, this.openThree.scene, options);
+  }
+
   // logoInfoBlock(options:LogoInfoBlockOptions) {
   //   const logoBlock = new LogoInfoBlock(options);
   //   this.openThree.scene.add(logoBlock);
@@ -969,5 +977,3 @@ export class OpenPlans {
     return DimensionTool.createDimension(type);
   }
 }
-
-

@@ -2,149 +2,198 @@
 <html lang="en">
 
 <head>
-  <title>OpenPlan Viewport Block</title>
+  <title>OpenPlan Paper Layout</title>
   <!-- MIXPANEL_TRACKING -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="OpenGeometry Viewport Block Demo">
+  <meta name="description" content="OpenGeometry CSS3D Paper Layout with Viewports">
   <meta name="author" content="Vishwajeet Mane">
   <style>
-    body {
+    * {
       margin: 0;
-      overflow: hidden;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    #app {
-      width: 100%;
-      height: 100vh;
+    body {
+      overflow: hidden;
+      background: #2d3748;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Hidden scene container — not displayed, but Three.js needs it */
+    #scene-container {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Paper layout container — full viewport */
+    #layout-container {
+      position: fixed;
+      inset: 0;
+      background: #4a5568;
     }
 
     .example-title {
       position: fixed;
-      top: 20px;
+      top: 16px;
       left: 50%;
       transform: translateX(-50%);
       font-family: 'Space Mono', monospace;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
+      color: #e2e8f0;
+      background: rgba(26, 32, 44, 0.85);
+      padding: 10px 20px;
       z-index: 1000;
+      pointer-events: none;
+      border-radius: 4px;
+    }
+
+    .help-text {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: #a0aec0;
+      background: rgba(26, 32, 44, 0.7);
+      padding: 8px 16px;
+      z-index: 1000;
+      pointer-events: none;
+      border-radius: 4px;
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <div class="example-title">Viewport Block</div>
-  <div id="app" style="width: 100%; height: 100vh;">
-  </div>
+  <div class="example-title">Paper Layout — CSS3D Viewports</div>
+  <div class="help-text">Scroll to zoom • Middle-click to pan</div>
+
+  <!-- Hidden scene container -->
+  <div id="scene-container"></div>
+
+  <!-- CSS3D paper layout lives here -->
+  <div id="layout-container"></div>
+
   <script type="module">
     import { OpenPlans, CameraMode } from './../../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
+    let paperLayout;
     let topViewport, frontViewport;
 
     async function init() {
-      const container = document.getElementById('app');
-      openPlans = new OpenPlans(container);
+      const sceneContainer = document.getElementById('scene-container');
+      openPlans = new OpenPlans(sceneContainer);
       await openPlans.setupOpenGeometry();
-
       openPlans.CameraMode = CameraMode.Model;
-      openPlans.openThree.toggleTheme('darkBlue');
 
       // ── Scene content ──
-      // Add some elements so the viewports have something to render
       const door = openPlans.baseDoor();
       door.position.set(0, 0, 0);
 
-      // const slab = openPlans.baseSlab();
-      // slab.position.set(3, 0, 0);
+      const cuboid = openPlans.cuboid({ width: 2, height: 1.5, depth: 3 });
+      cuboid.position.set(5, 0.75, 0);
 
-      // ── Viewport: Top view ──
-      topViewport = openPlans.viewportBlock({
-        id: 'viewport-top',
-        size: [12, 8],
-        position: [20, 0.01, 0],
-        viewCamera: 'top',
-        viewCenter: [0, 0, 0],
-        viewSize: 8,
-        viewportBackground: 0xffffff
+      const cylinder = openPlans.cylinder({ radius: 0.5, height: 2 });
+      cylinder.position.set(-3, 1, 2);
+
+      // ── Paper Layout (CSS3D-based) ──
+      const layoutContainer = document.getElementById('layout-container');
+      paperLayout = openPlans.createPaperLayout(layoutContainer, {
+        format: 'A4',
+        orientation: 'landscape',
+        margin: 10,
       });
 
-      // ── Viewport: Front view ──
-      frontViewport = openPlans.viewportBlock({
-        id: 'viewport-front',
-        size: [12, 8],
-        position: [20, 0.01, -12],
+      // ── Viewports ──
+      topViewport = paperLayout.addViewport({
+        id: 'top-view',
+        size: [125, 85],
+        position: [15, 15],
+        viewCamera: 'top',
+        viewCenter: [0, 0, 0],
+        viewSize: 10,
+        background: 0xffffff,
+      });
+
+      frontViewport = paperLayout.addViewport({
+        id: 'front-view',
+        size: [125, 85],
+        position: [155, 15],
         viewCamera: 'front',
         viewCenter: [0, 0, 0],
-        viewSize: 8,
-        viewportBackground: 0xffffff
+        viewSize: 10,
+        background: 0xffffff,
       });
     }
 
     function setUI() {
       const gui = new GUI();
 
+      // PDF Export
+      gui.add({ exportPDF: () => paperLayout.exportToPDF() }, 'exportPDF').name('📄 Export PDF');
+
+      // Zoom info
+      const zoomFolder = gui.addFolder('Zoom');
+      const zoomInfo = { level: '100%' };
+      zoomFolder.add(zoomInfo, 'level').name('Current').listen().disable();
+      setInterval(() => {
+        zoomInfo.level = `${Math.round(paperLayout.currentZoom * 100)}%`;
+      }, 200);
+
       // Top viewport controls
       const topFolder = gui.addFolder('Top Viewport');
-      const topControls = {
-        viewCamera: 'top',
-        centerX: 0,
-        centerY: 0,
-        centerZ: 0,
-        viewSize: 8,
-      };
+      const topCtrl = { viewCamera: 'top', cx: 0, cy: 0, cz: 0, zoom: 10 };
 
-      topFolder.add(topControls, 'viewCamera', ['top', 'front', 'right', 'left', 'back']).name('View').onChange((v) => {
+      topFolder.add(topCtrl, 'viewCamera', ['top', 'front', 'right', 'left', 'back']).name('View').onChange(v => {
         topViewport.viewCamera = v;
       });
-      topFolder.add(topControls, 'centerX', -50, 50).name('Center X').onChange((v) => {
-        topViewport.viewCenter = [v, topControls.centerY, topControls.centerZ];
+      topFolder.add(topCtrl, 'cx', -50, 50).name('Center X').onChange(v => {
+        topViewport.viewCenter = [v, topCtrl.cy, topCtrl.cz];
       });
-      topFolder.add(topControls, 'centerY', -50, 50).name('Center Y').onChange((v) => {
-        topControls.centerY = v;
-        topViewport.viewCenter = [topControls.centerX, v, topControls.centerZ];
+      topFolder.add(topCtrl, 'cy', -50, 50).name('Center Y').onChange(v => {
+        topCtrl.cy = v;
+        topViewport.viewCenter = [topCtrl.cx, v, topCtrl.cz];
       });
-      topFolder.add(topControls, 'centerZ', -50, 50).name('Center Z').onChange((v) => {
-        topControls.centerZ = v;
-        topViewport.viewCenter = [topControls.centerX, topControls.centerY, v];
+      topFolder.add(topCtrl, 'cz', -50, 50).name('Center Z').onChange(v => {
+        topCtrl.cz = v;
+        topViewport.viewCenter = [topCtrl.cx, topCtrl.cy, v];
       });
-      topFolder.add(topControls, 'viewSize', 1, 50).name('Zoom').onChange((v) => {
+      topFolder.add(topCtrl, 'zoom', 1, 50).name('Zoom').onChange(v => {
         topViewport.viewSize = v;
       });
 
       // Front viewport controls
       const frontFolder = gui.addFolder('Front Viewport');
-      const frontControls = {
-        viewCamera: 'front',
-        centerX: 0,
-        centerY: 0,
-        centerZ: 0,
-        viewSize: 8,
-      };
+      const frontCtrl = { viewCamera: 'front', cx: 0, cy: 0, cz: 0, zoom: 10 };
 
-      frontFolder.add(frontControls, 'viewCamera', ['top', 'front', 'right', 'left', 'back']).name('View').onChange((v) => {
+      frontFolder.add(frontCtrl, 'viewCamera', ['top', 'front', 'right', 'left', 'back']).name('View').onChange(v => {
         frontViewport.viewCamera = v;
       });
-      frontFolder.add(frontControls, 'centerX', -50, 50).name('Center X').onChange((v) => {
-        frontControls.centerX = v;
-        frontViewport.viewCenter = [v, frontControls.centerY, frontControls.centerZ];
+      frontFolder.add(frontCtrl, 'cx', -50, 50).name('Center X').onChange(v => {
+        frontCtrl.cx = v;
+        frontViewport.viewCenter = [v, frontCtrl.cy, frontCtrl.cz];
       });
-      frontFolder.add(frontControls, 'centerY', -50, 50).name('Center Y').onChange((v) => {
-        frontControls.centerY = v;
-        frontViewport.viewCenter = [frontControls.centerX, v, frontControls.centerZ];
+      frontFolder.add(frontCtrl, 'cy', -50, 50).name('Center Y').onChange(v => {
+        frontCtrl.cy = v;
+        frontViewport.viewCenter = [frontCtrl.cx, v, frontCtrl.cz];
       });
-      frontFolder.add(frontControls, 'centerZ', -50, 50).name('Center Z').onChange((v) => {
-        frontControls.centerZ = v;
-        frontViewport.viewCenter = [frontControls.centerX, frontControls.centerY, v];
+      frontFolder.add(frontCtrl, 'cz', -50, 50).name('Center Z').onChange(v => {
+        frontCtrl.cz = v;
+        frontViewport.viewCenter = [frontCtrl.cx, frontCtrl.cy, v];
       });
-      frontFolder.add(frontControls, 'viewSize', 1, 50).name('Zoom').onChange((v) => {
+      frontFolder.add(frontCtrl, 'zoom', 1, 50).name('Zoom').onChange(v => {
         frontViewport.viewSize = v;
       });
     }

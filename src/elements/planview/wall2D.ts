@@ -3,6 +3,12 @@ import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
 import { Polygon, Polyline, Vector3 } from "../../kernel";
 
+export enum WallHatchPattern {
+    NONE = "NONE",
+    ANSI31 = "ANSI31",
+    ANSI32 = "ANSI32"
+}
+
 export interface Point {
     x: number;
     y: number;
@@ -17,9 +23,25 @@ export interface WallOptions {
     wallColor: number;
     wallThickness: number;
     wallHeight: number;
+    wallHatchPattern: WallHatchPattern;
+    wallHatchColor: number;
+}
+
+interface HatchPoint2D {
+    x: number;
+    y: number;
+}
+
+interface HatchSegment2D {
+    start: HatchPoint2D;
+    end: HatchPoint2D;
 }
 
 export class Wall2D extends Polyline implements IShape {
+    private static readonly HATCH_SPACING = 0.2;
+    private static readonly HATCH_Y_OFFSET = 0.002;
+    private static readonly HATCH_EPSILON = 1e-6;
+
     ogType: string = ElementType.WALL;
     subElements: Map<string, THREE.Object3D> = new Map();
     selected: boolean = false;
@@ -32,7 +54,9 @@ export class Wall2D extends Polyline implements IShape {
         points: [],
         wallColor: 0xcccccc,
         wallThickness: 0.2,
-        wallHeight: 3.0
+        wallHeight: 3.0,
+        wallHatchPattern: WallHatchPattern.NONE,
+        wallHatchColor: 0x000000
     };
 
     get labelName() { return this.propertySet.labelName; }
@@ -47,7 +71,17 @@ export class Wall2D extends Polyline implements IShape {
     get wallHeight() { return this.propertySet.wallHeight; }
     set wallHeight(value: number) { this.propertySet.wallHeight = value; }
 
+    get wallHatchPattern() { return this.propertySet.wallHatchPattern; }
+    set wallHatchPattern(value: WallHatchPattern) {
+        this.propertySet.wallHatchPattern = this.normalizeHatchPattern(value);
+        this.setOPGeometry();
+    }
 
+    get wallHatchColor() { return this.propertySet.wallHatchColor; }
+    set wallHatchColor(value: number) {
+        this.propertySet.wallHatchColor = value;
+        this.setOPGeometry();
+    }
 
     constructor(wallConfig?: Partial<WallOptions> | any) {
         const initialVectorPoints = wallConfig?.points
@@ -69,11 +103,29 @@ export class Wall2D extends Polyline implements IShape {
             }
         }
 
+        this.propertySet.wallHatchPattern = this.normalizeHatchPattern(this.propertySet.wallHatchPattern);
         this.propertySet.ogid = this.ogid;
         this.setOPGeometry();
     }
 
-    setOPConfig(_config: Record<string, any>): void { }
+    setOPConfig(config: Record<string, any>): void {
+        if (!config) return;
+
+        const normalizedConfig: Record<string, any> = { ...config };
+        if (config.points) {
+            normalizedConfig.points = config.points.map((p: any) => ({ x: p.x, y: p.y, z: p.z }));
+        }
+
+        this.propertySet = { ...this.propertySet, ...normalizedConfig } as WallOptions;
+        this.propertySet.wallHatchPattern = this.normalizeHatchPattern(this.propertySet.wallHatchPattern);
+
+        const vectorPoints = this.propertySet.points.map((p) => new Vector3(p.x, p.y, p.z));
+        this.setConfig({
+            points: vectorPoints,
+            color: this.propertySet.wallColor
+        });
+        this.setOPGeometry();
+    }
     getOPConfig(): Record<string, any> { return this.propertySet; }
 
     addPoint(point: Vector3): void {
@@ -97,13 +149,16 @@ export class Wall2D extends Polyline implements IShape {
             if (this.subElements.has("wallPolygon")) {
                 const poly = this.subElements.get("wallPolygon") as Polygon;
                 poly?.removeFromParent();
+                poly?.dispose();
                 this.subElements.delete("wallPolygon");
             }
+            this.clearHatchGeometry();
             return;
         }
 
         const vectorPoints = points.map(p => new Vector3(p.x, p.y, p.z));
         const polygonVertices = this.computeOffsetPolygonVertices(vectorPoints, this.propertySet.wallThickness);
+        const hatchPolygon2D = this.getPolygon2D(polygonVertices);
 
         let wallPolygon: Polygon;
         if (this.subElements.has("wallPolygon")) {
@@ -122,6 +177,9 @@ export class Wall2D extends Polyline implements IShape {
         // We will just add it.
         this.subElements.set("wallPolygon", wallPolygon);
         this.add(wallPolygon);
+
+        this.clearHatchGeometry();
+        this.applyHatchPattern(hatchPolygon2D);
     }
 
     private computeOffsetPolygonVertices(points: Vector3[], thickness: number): Vector3[] {
@@ -171,6 +229,158 @@ export class Wall2D extends Polyline implements IShape {
             polygonVertices.push(rightOffset[i]);
         }
         return polygonVertices;
+    }
+
+    private normalizeHatchPattern(pattern: WallHatchPattern | string | undefined): WallHatchPattern {
+        if (pattern === WallHatchPattern.ANSI31) return WallHatchPattern.ANSI31;
+        if (pattern === WallHatchPattern.ANSI32) return WallHatchPattern.ANSI32;
+        return WallHatchPattern.NONE;
+    }
+
+    private clearHatchGeometry(): void {
+        for (const [key, element] of this.subElements.entries()) {
+            if (!key.startsWith("wallHatch")) continue;
+
+            element.removeFromParent();
+
+            if (element instanceof THREE.LineSegments) {
+                element.geometry.dispose();
+                if (Array.isArray(element.material)) {
+                    element.material.forEach((material) => material.dispose());
+                } else {
+                    element.material.dispose();
+                }
+            }
+
+            this.subElements.delete(key);
+        }
+    }
+
+    private getPolygon2D(polygonVertices: Vector3[]): HatchPoint2D[] {
+        return polygonVertices.map((vertex) => ({ x: vertex.x, y: vertex.z }));
+    }
+
+    private applyHatchPattern(polygon2D: HatchPoint2D[]): void {
+        const pattern = this.normalizeHatchPattern(this.propertySet.wallHatchPattern);
+        if (pattern === WallHatchPattern.NONE) return;
+
+        const ansi31Segments = this.buildHatchSegments(polygon2D, 45, Wall2D.HATCH_SPACING);
+        this.createHatchLineSegments("wallHatchAnsi31", ansi31Segments);
+
+        if (pattern === WallHatchPattern.ANSI32) {
+            const ansi32Segments = this.buildHatchSegments(polygon2D, -45, Wall2D.HATCH_SPACING);
+            this.createHatchLineSegments("wallHatchAnsi32", ansi32Segments);
+        }
+    }
+
+    private buildHatchSegments(polygon2D: HatchPoint2D[], angleDeg: number, spacing: number): HatchSegment2D[] {
+        if (polygon2D.length < 3) return [];
+
+        const theta = THREE.MathUtils.degToRad(angleDeg);
+        const dir = new THREE.Vector2(Math.cos(theta), Math.sin(theta)).normalize();
+        const normal = new THREE.Vector2(-dir.y, dir.x).normalize();
+
+        let minProjection = Number.POSITIVE_INFINITY;
+        let maxProjection = Number.NEGATIVE_INFINITY;
+
+        for (const point of polygon2D) {
+            const projected = point.x * normal.x + point.y * normal.y;
+            minProjection = Math.min(minProjection, projected);
+            maxProjection = Math.max(maxProjection, projected);
+        }
+
+        const startProjection = Math.floor(minProjection / spacing) * spacing;
+        const endProjection = Math.ceil(maxProjection / spacing) * spacing;
+        const segments: HatchSegment2D[] = [];
+
+        for (let sweep = startProjection; sweep <= endProjection + Wall2D.HATCH_EPSILON; sweep += spacing) {
+            const intersections: HatchPoint2D[] = [];
+            for (let index = 0; index < polygon2D.length; index++) {
+                const current = polygon2D[index];
+                const next = polygon2D[(index + 1) % polygon2D.length];
+
+                const currentDistance = current.x * normal.x + current.y * normal.y - sweep;
+                const nextDistance = next.x * normal.x + next.y * normal.y - sweep;
+
+                if (Math.abs(currentDistance) < Wall2D.HATCH_EPSILON && Math.abs(nextDistance) < Wall2D.HATCH_EPSILON) {
+                    intersections.push({ x: current.x, y: current.y }, { x: next.x, y: next.y });
+                    continue;
+                }
+
+                if ((currentDistance > 0 && nextDistance > 0) || (currentDistance < 0 && nextDistance < 0)) {
+                    continue;
+                }
+
+                const denominator = currentDistance - nextDistance;
+                if (Math.abs(denominator) < Wall2D.HATCH_EPSILON) continue;
+
+                const t = currentDistance / denominator;
+                if (t < -Wall2D.HATCH_EPSILON || t > 1 + Wall2D.HATCH_EPSILON) continue;
+
+                const clampedT = THREE.MathUtils.clamp(t, 0, 1);
+                intersections.push({
+                    x: current.x + (next.x - current.x) * clampedT,
+                    y: current.y + (next.y - current.y) * clampedT
+                });
+            }
+
+            const uniqueIntersections = this.deduplicateIntersections(intersections, dir);
+            if (uniqueIntersections.length < 2) continue;
+
+            for (let i = 0; i + 1 < uniqueIntersections.length; i += 2) {
+                const start = uniqueIntersections[i];
+                const end = uniqueIntersections[i + 1];
+                const length = Math.hypot(end.x - start.x, end.y - start.y);
+                if (length <= Wall2D.HATCH_EPSILON) continue;
+                segments.push({ start, end });
+            }
+        }
+
+        return segments;
+    }
+
+    private deduplicateIntersections(intersections: HatchPoint2D[], direction: THREE.Vector2): HatchPoint2D[] {
+        const sorted = intersections
+            .map((point) => ({
+                point,
+                scalar: point.x * direction.x + point.y * direction.y
+            }))
+            .sort((a, b) => a.scalar - b.scalar);
+
+        const unique: HatchPoint2D[] = [];
+        for (const entry of sorted) {
+            const previous = unique[unique.length - 1];
+            if (!previous) {
+                unique.push(entry.point);
+                continue;
+            }
+
+            const distance = Math.hypot(entry.point.x - previous.x, entry.point.y - previous.y);
+            if (distance > Wall2D.HATCH_EPSILON) {
+                unique.push(entry.point);
+            }
+        }
+        return unique;
+    }
+
+    private createHatchLineSegments(key: string, segments: HatchSegment2D[]): void {
+        if (segments.length === 0) return;
+
+        const positions: number[] = [];
+        for (const segment of segments) {
+            positions.push(segment.start.x, Wall2D.HATCH_Y_OFFSET, segment.start.y);
+            positions.push(segment.end.x, Wall2D.HATCH_Y_OFFSET, segment.end.y);
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+
+        const material = new THREE.LineBasicMaterial({ color: this.propertySet.wallHatchColor });
+        const hatchLines = new THREE.LineSegments(geometry, material);
+        hatchLines.renderOrder = 10;
+
+        this.subElements.set(key, hatchLines);
+        this.add(hatchLines);
     }
 
     setOPMaterial(): void { }

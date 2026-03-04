@@ -44,7 +44,7 @@
     </div>
 
     <script type="module">
-        import { OpenPlans, CameraMode, Vector3 } from './../../../src/index.ts';
+        import { OpenPlans, CameraMode, Vector3, WallHatchPattern } from './../../../src/index.ts';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         let openPlans;
@@ -66,7 +66,9 @@
                 ],
                 wallThickness: 0.3,
                 wallHeight: 3.0,
-                wallColor: 0xcccccc
+                wallColor: 0xcccccc,
+                wallHatchPattern: WallHatchPattern.NONE,
+                wallHatchColor: 0x000000
             });
         }
 
@@ -79,6 +81,8 @@
                 wallThickness: wall.wallThickness,
                 wallHeight: wall.wallHeight,
                 wallColor: wall.propertySet.wallColor,
+                wallHatchPattern: wall.wallHatchPattern,
+                wallHatchColor: wall.wallHatchColor,
                 addPoint: function () {
                     // Add a random point to the wall
                     const lastIndex = wall.propertySet.points.length - 1;
@@ -101,6 +105,12 @@
             wallFolder.addColor(controls, 'wallColor').name('Wall Color').onChange(v => {
                 wall.propertySet.wallColor = v;
                 wall.setOPGeometry();
+            });
+            wallFolder.add(controls, 'wallHatchPattern', Object.values(WallHatchPattern)).name('Hatch Pattern').onChange(v => {
+                wall.wallHatchPattern = v;
+            });
+            wallFolder.addColor(controls, 'wallHatchColor').name('Hatch Color').onChange(v => {
+                wall.wallHatchColor = v;
             });
 
             wallFolder.add(controls, 'addPoint').name('Add Random Point');
