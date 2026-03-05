@@ -4,4 +4,4 @@
 OpenPlans public API contracts, legacy boundaries, factory patterns, and compatibility decisions.
 
 ## Seed Notes
-- Add `<topic>--<slug>.md` notes here as findings are promoted.
+- [semantic-export--openplans-sidecar-pattern](/Users/gangsta/Work/OpenGeometry/OpenPlans/brain/research/topics/api-design/semantic-export--openplans-sidecar-pattern.md)

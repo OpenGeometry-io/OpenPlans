@@ -84,10 +84,16 @@ export class Wall2D extends Polyline implements IShape {
 
     updatePoints(points: Vector3[]): void {
         this.propertySet.points = points.map(p => ({ x: p.x, y: p.y, z: p.z }));
-        this.setConfig({
-            points: points,
-            color: this.color
-        });
+        try {
+            this.setConfig({
+                points: points,
+                color: this.propertySet.wallColor
+            });
+        } catch (error) {
+            // Keep wall-polygon updates working even when the underlying polyline
+            // BREP builder rejects repeated directed edges during reconfiguration.
+            console.warn("Wall2D polyline update fallback:", error);
+        }
         this.setOPGeometry();
     }
 

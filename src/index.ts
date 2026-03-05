@@ -9,7 +9,7 @@
  */
 
 // External Packages
-import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/';
+import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OGSceneManager, OpenGeometry } from './kernel/';
 import * as THREE from 'three';
 import { ElementType } from './elements/base-type';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
@@ -97,6 +97,68 @@ export * from './kernel/';
 // Exports from Planview Elements
 export { Wall2D, type WallOptions } from './elements/planview/wall2D';
 
+
+
+// NOTE IMP: This needs Kernel to have updated IFC codes
+export type IfcSemanticClass =
+  | 'IFCBUILDINGELEMENTPROXY'
+  | 'IFCWALL'
+  | 'IFCSLAB'
+  | 'IFCCOLUMN'
+  | 'IFCBEAM'
+  | 'IFCMEMBER'
+  | 'IFCDOOR'
+  | 'IFCWINDOW'
+  | 'IFCROOF'
+  | 'IFCSTAIR'
+  | 'IFCRAILING'
+  | 'IFCFOOTING';
+
+export interface IfcElementSemantics {
+  ifc_class?: IfcSemanticClass;
+  name?: string;
+  description?: string;
+  object_type?: string;
+  tag?: string;
+  property_sets?: Record<string, Record<string, string>>;
+  quantity_sets?: Record<string, Record<string, number>>;
+}
+
+export interface OpenPlansIfcExportOptions {
+  sceneName?: string;
+  schema?: 'Ifc4Add2';
+  errorPolicy?: 'Strict' | 'BestEffort';
+  validateTopology?: boolean;
+  requireClosedShell?: boolean;
+  scale?: number;
+  includeDefaultSemantics?: boolean;
+}
+
+export interface OpenPlansStepExportOptions {
+  sceneName?: string;
+  errorPolicy?: 'Strict' | 'BestEffort';
+  validateTopology?: boolean;
+  requireClosedShell?: boolean;
+  scale?: number;
+}
+
+export interface OpenPlansIfcExportPayload {
+  text: string;
+  report: Record<string, unknown>;
+  sceneId: string;
+  semantics: Record<string, IfcElementSemantics>;
+  addedEntities: number;
+  skippedEntities: number;
+}
+
+export interface OpenPlansStepExportPayload {
+  text: string;
+  report: Record<string, unknown>;
+  sceneId: string;
+  addedEntities: number;
+  skippedEntities: number;
+}
+
 export class OpenPlans {
   private container: HTMLElement
   private openThree: OpenThree
@@ -108,6 +170,7 @@ export class OpenPlans {
 
   private og: OpenGeometry | undefined
   private ogElements: any[] = [];
+  private ifcSemanticsByElementId: Map<string, IfcElementSemantics> = new Map();
 
   private labelRenderer: CSS2DRenderer | undefined;
 
@@ -292,6 +355,7 @@ export class OpenPlans {
       element.dispose();
       this.openThree.scene.remove(element);
       this.ogElements.splice(this.ogElements.indexOf(element), 1);
+      this.ifcSemanticsByElementId.delete(ogid.trim());
     } else {
       console.warn(`Element with ogid ${ogid} not found`);
     }
@@ -712,6 +776,301 @@ export class OpenPlans {
     await this.planCamera.fitToElement(entity)
   }
 
+  setIfcSemantics(elementId: string, semantics: IfcElementSemantics) {
+    const normalizedId = elementId.trim();
+    if (!normalizedId) {
+      throw new Error('Element ID is required to assign IFC semantics');
+    }
+    this.ifcSemanticsByElementId.set(normalizedId, { ...semantics });
+  }
+
+  setIfcClass(elementId: string, ifcClass: IfcSemanticClass) {
+    const normalizedId = elementId.trim();
+    if (!normalizedId) {
+      throw new Error('Element ID is required to assign IFC class');
+    }
+    const existing = this.ifcSemanticsByElementId.get(normalizedId) ?? {};
+    this.ifcSemanticsByElementId.set(normalizedId, { ...existing, ifc_class: ifcClass });
+  }
+
+  clearIfcSemantics(elementId?: string) {
+    if (elementId) {
+      this.ifcSemanticsByElementId.delete(elementId.trim());
+      return;
+    }
+    this.ifcSemanticsByElementId.clear();
+  }
+
+  getIfcSemantics(elementId: string): IfcElementSemantics | undefined {
+    const semantics = this.ifcSemanticsByElementId.get(elementId.trim());
+    if (!semantics) {
+      return undefined;
+    }
+    return { ...semantics };
+  }
+
+  getIfcSemanticsMap(): Record<string, IfcElementSemantics> {
+    return Object.fromEntries(
+      Array.from(this.ifcSemanticsByElementId.entries()).map(([key, value]) => [key, { ...value }]),
+    );
+  }
+
+  exportSceneToIfc(options: OpenPlansIfcExportOptions = {}): OpenPlansIfcExportPayload {
+    const sceneName = options.sceneName ?? 'OpenPlans IFC Export';
+    const includeDefaultSemantics = options.includeDefaultSemantics ?? true;
+    const {
+      manager,
+      sceneId,
+      metadata,
+      skippedEntities,
+    } = this.buildSceneManagerFromElements(sceneName);
+
+    if (metadata.length === 0) {
+      manager.free();
+      throw new Error('No exportable BREP entities found in current OpenPlans scene');
+    }
+
+    let result: { text: string; reportJson: string; free: () => void } | null = null;
+    try {
+      const semantics: Record<string, IfcElementSemantics> = {};
+      for (const entry of metadata) {
+        const explicit = this.ifcSemanticsByElementId.get(entry.elementId);
+        let effectiveSemantics: IfcElementSemantics | undefined = explicit ? { ...explicit } : undefined;
+
+        if (!effectiveSemantics && includeDefaultSemantics) {
+          effectiveSemantics = {
+            ifc_class: this.defaultIfcClassForType(entry.kind),
+            name: entry.elementId,
+            object_type: entry.kind,
+          };
+        }
+
+        if (effectiveSemantics) {
+          semantics[entry.sceneEntityId] = effectiveSemantics;
+        }
+      }
+
+      const config = {
+        schema: options.schema ?? 'Ifc4Add2',
+        error_policy: options.errorPolicy ?? 'BestEffort',
+        validate_topology: options.validateTopology ?? true,
+        require_closed_shell: options.requireClosedShell ?? false,
+        scale: options.scale ?? 1.0,
+        semantics: Object.keys(semantics).length > 0 ? semantics : undefined,
+      };
+
+      result = manager.exportSceneToIfc(sceneId, JSON.stringify(config));
+      const payload: OpenPlansIfcExportPayload = {
+        text: result.text,
+        report: JSON.parse(result.reportJson) as Record<string, unknown>,
+        sceneId,
+        semantics,
+        addedEntities: metadata.length,
+        skippedEntities,
+      };
+      return payload;
+    } finally {
+      if (result) {
+        result.free();
+      }
+      manager.free();
+    }
+  }
+
+  exportSceneToStep(options: OpenPlansStepExportOptions = {}): OpenPlansStepExportPayload {
+    const sceneName = options.sceneName ?? 'OpenPlans STEP Export';
+    const {
+      manager,
+      sceneId,
+      metadata,
+      skippedEntities,
+    } = this.buildSceneManagerFromElements(sceneName);
+
+    if (metadata.length === 0) {
+      manager.free();
+      throw new Error('No exportable BREP entities found in current OpenPlans scene');
+    }
+
+    let result: { text: string; reportJson: string; free: () => void } | null = null;
+    try {
+      const config = {
+        schema: 'AutomotiveDesign',
+        product_name: sceneName,
+        error_policy: options.errorPolicy ?? 'BestEffort',
+        validate_topology: options.validateTopology ?? true,
+        require_closed_shell: options.requireClosedShell ?? false,
+        scale: options.scale ?? 1.0,
+      };
+
+      result = manager.exportSceneToStep(sceneId, JSON.stringify(config));
+      const payload: OpenPlansStepExportPayload = {
+        text: result.text,
+        report: JSON.parse(result.reportJson) as Record<string, unknown>,
+        sceneId,
+        addedEntities: metadata.length,
+        skippedEntities,
+      };
+      return payload;
+    } finally {
+      if (result) {
+        result.free();
+      }
+      manager.free();
+    }
+  }
+
+  private buildSceneManagerFromElements(sceneName: string): {
+    manager: OGSceneManager;
+    sceneId: string;
+    metadata: Array<{ sceneEntityId: string; elementId: string; kind: string }>;
+    skippedEntities: number;
+  } {
+    const manager = new OGSceneManager();
+    const sceneId = manager.createScene(sceneName);
+
+    const seenEntityIds = new Set<string>();
+    const metadata: Array<{ sceneEntityId: string; elementId: string; kind: string }> = [];
+    let skippedEntities = 0;
+
+    for (let i = 0; i < this.ogElements.length; i++) {
+      const element = this.ogElements[i];
+      const elementId = this.resolveElementRootId(element, i);
+      const kind = this.resolveElementKind(element);
+      const brepTargets = this.collectBrepTargetsFromElement(element);
+
+      if (brepTargets.length === 0) {
+        skippedEntities += 1;
+        continue;
+      }
+
+      for (let partIndex = 0; partIndex < brepTargets.length; partIndex++) {
+        const target = brepTargets[partIndex];
+        const suffix = target.suffix
+          ? `-${target.suffix}`
+          : brepTargets.length > 1
+            ? `-part-${partIndex + 1}`
+            : '';
+
+        let sceneEntityId = `${elementId}${suffix}`;
+        let uniqueCounter = 1;
+        while (seenEntityIds.has(sceneEntityId)) {
+          uniqueCounter += 1;
+          sceneEntityId = `${elementId}${suffix}-${uniqueCounter}`;
+        }
+
+        try {
+          manager.addBrepEntityToScene(sceneId, sceneEntityId, kind, target.brepSerialized);
+          seenEntityIds.add(sceneEntityId);
+          metadata.push({ sceneEntityId, elementId, kind });
+        } catch {
+          skippedEntities += 1;
+        }
+      }
+    }
+
+    return {
+      manager,
+      sceneId,
+      metadata,
+      skippedEntities,
+    };
+  }
+
+  private collectBrepTargetsFromElement(element: any): Array<{ suffix?: string; brepSerialized: string }> {
+    const subTargets: Array<{ suffix: string; brepSerialized: string }> = [];
+    const subElements = element?.subElements;
+    if (subElements instanceof Map) {
+      for (const [key, child] of subElements.entries()) {
+        const brepSerialized = this.resolveSerializedBrep(child);
+        if (!brepSerialized) {
+          continue;
+        }
+        const suffix = String(key).replace(/[^A-Za-z0-9_-]/g, '-');
+        subTargets.push({ suffix, brepSerialized });
+      }
+    }
+
+    if (subTargets.length > 0) {
+      return subTargets;
+    }
+
+    const directBrep = this.resolveSerializedBrep(element);
+    if (!directBrep) {
+      return [];
+    }
+    return [{ brepSerialized: directBrep }];
+  }
+
+  private resolveSerializedBrep(target: any): string | null {
+    const accessors: Array<'get_brep_serialized' | 'getBrepData' | 'getBrep'> = [
+      'get_brep_serialized',
+      'getBrepData',
+      'getBrep',
+    ];
+
+    for (const accessor of accessors) {
+      const method = target?.[accessor];
+      if (typeof method !== 'function') {
+        continue;
+      }
+      try {
+        const raw = method.call(target);
+        if (typeof raw === 'string') {
+          const trimmed = raw.trim();
+          if (trimmed.length > 0) {
+            return trimmed;
+          }
+          continue;
+        }
+        if (raw && typeof raw === 'object') {
+          return JSON.stringify(raw);
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveElementRootId(element: any, index: number): string {
+    const rawId = [element?.ogid, element?.id, element?.uuid]
+      .find((candidate) => typeof candidate === 'string' && candidate.trim().length > 0);
+
+    if (typeof rawId === 'string') {
+      return rawId.trim().replace(/[^A-Za-z0-9_-]/g, '-');
+    }
+
+    return `entity-${index + 1}`;
+  }
+
+  private resolveElementKind(element: any): string {
+    if (typeof element?.ogType === 'string' && element.ogType.trim().length > 0) {
+      return element.ogType.trim();
+    }
+    return 'OpenPlansEntity';
+  }
+
+  private defaultIfcClassForType(kind: string): IfcSemanticClass {
+    const normalizedKind = kind.toUpperCase();
+    if (normalizedKind.includes('WALL')) {
+      return 'IFCWALL';
+    }
+    if (normalizedKind.includes('WINDOW')) {
+      return 'IFCWINDOW';
+    }
+    if (normalizedKind.includes('DOOR')) {
+      return 'IFCDOOR';
+    }
+    if (normalizedKind.includes('SLAB')) {
+      return 'IFCSLAB';
+    }
+    if (normalizedKind.includes('STAIR')) {
+      return 'IFCSTAIR';
+    }
+    return 'IFCBUILDINGELEMENTPROXY';
+  }
+
   glyph(text: string, size: number, color: number, staticZoom: boolean = true) {
     const glyph = Glyphs.addGlyph(text, size, color, staticZoom)
     return glyph
@@ -969,5 +1328,3 @@ export class OpenPlans {
     return DimensionTool.createDimension(type);
   }
 }
-
-

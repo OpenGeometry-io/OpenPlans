@@ -21,7 +21,7 @@
 <body>
     <div id="app"></div>
     <script type="module">
-        import { OpenPlans } from '../src/index.ts';
+        import { OpenPlans, Vector3 } from '../src/index.ts';
         import * as THREE from 'three';
 
         // Parse query parameters
@@ -46,6 +46,33 @@
             if (openPlans.openThree && openPlans.openThree.renderer) {
                 openPlans.openThree.renderer.setClearColor(0xffffff, 0);
                 openPlans.openThree.scene.background = null;
+            }
+
+            if (elementKey === 'export-ifc') {
+                const wall = openPlans.wall2D({
+                    labelName: '',
+                    type: 'WALL',
+                    wallThickness: 0.28,
+                });
+                wall.updatePoints([
+                    new Vector3(-4.0, 0, -1.0),
+                    new Vector3(4.0, 0, -1.0),
+                ]);
+
+                const door = openPlans.door2D({
+                    labelName: '',
+                    type: 'DOOR',
+                });
+                door.position.set(0, 0, -1.0);
+
+                const window = openPlans.singleWindow2D({
+                    labelName: '',
+                    type: 'WINDOW',
+                });
+                window.position.set(2.2, 0, -1.0);
+
+                await fitCamera(openPlans, wall);
+                return;
             }
 
             // Create the element dynamically

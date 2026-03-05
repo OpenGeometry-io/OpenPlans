@@ -2,16 +2,19 @@
 <html lang="en">
 
 <head>
-  <title>OpenPlans Wall</title>
+  <title>OpenPlans IFC + STEP Export</title>
   <!-- MIXPANEL_TRACKING -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="OpenGeometry Demo">
+  <meta name="description" content="OpenPlans semantic IFC and STEP export demo">
   <meta name="author" content="Vishwajeet Mane">
   <style>
     body {
       margin: 0;
       overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      background: #141414;
+      color: #e4e4e4;
     }
 
     #app {
@@ -21,17 +24,34 @@
 
     .example-title {
       position: fixed;
-      top: 20px;
+      top: 16px;
       left: 50%;
       transform: translateX(-50%);
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
+      letter-spacing: 1.8px;
+      color: #ffffff;
+      background: rgba(26, 26, 26, 0.88);
+      padding: 10px 18px;
+      z-index: 1000;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .report {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      width: min(560px, calc(100vw - 32px));
+      max-height: 38vh;
+      overflow: auto;
+      white-space: pre-wrap;
+      background: rgba(20, 20, 20, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e9e9e9;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.45;
       z-index: 1000;
     }
   </style>
@@ -39,14 +59,35 @@
 </head>
 
 <body>
-  <div class="example-title">IFC Export</div>
-  <div id="app" style="width: 100%; height: 100vh;">
-  </div>
+  <div class="example-title">IFC + STEP Export (Semantic Sidecar)</div>
+  <div id="app" style="width: 100%; height: 100vh;"></div>
+  <pre id="report" class="report">Initializing…</pre>
   <script type="module">
-    import { OpenPlans, CameraMode } from './../src/index.ts';
+    import { OpenPlans, CameraMode, Vector3 } from './../src/index.ts';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     let openPlans;
+    const reportNode = document.getElementById('report');
+    const createdElements = [];
+
+    function logReport(title, data) {
+      reportNode.textContent = `${title}\n\n${JSON.stringify(data, null, 2)}`;
+    }
+
+    function downloadText(fileName, text) {
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function elementIdFor(entity, index) {
+      const raw = entity?.ogid || entity?.id || entity?.uuid || `entity-${index + 1}`;
+      return String(raw);
+    }
 
     async function init() {
       const container = document.getElementById('app');
@@ -55,74 +96,140 @@
 
       openPlans.CameraMode = CameraMode.Plan;
 
-      // TODO: Remove Error with Selection when no element present
-      openPlans.pencil.mode = "select";
+      const wall = openPlans.wall2D({
+        labelName: 'North Wall',
+        type: 'WALL',
+        wallThickness: 0.28,
+        points: [
+          { x: -4.0, y: 0, z: -1.0 },
+          { x: 4.0, y: 0, z: -1.0 },
+        ],
+      });
 
-      const wall1 = openPlans.wall();
-      wall1.position.set(2, 0, 0);
+      const door = openPlans.door2D({
+        labelName: 'Main Door',
+        type: 'DOOR',
+      });
+      door.position.set(0, 0, -1.0);
 
-      const wall2 = openPlans.wall();
-      wall2.position.set(-2, 0, 0);
+      const window = openPlans.singleWindow2D({
+        labelName: 'Kitchen Window',
+        type: 'WINDOW',
+      });
+      window.position.set(2.2, 0, -1.0);
+
+      createdElements.push(wall, door, window);
+
+      openPlans.setIfcSemantics(elementIdFor(wall, 0), {
+        ifc_class: 'IFCWALL',
+        name: 'North Wall',
+        object_type: 'Exterior Wall',
+        property_sets: {
+          Pset_WallCommon: {
+            FireRating: '2h',
+            IsExternal: 'true',
+          },
+        },
+      });
+
+      openPlans.setIfcSemantics(elementIdFor(door, 1), {
+        ifc_class: 'IFCDOOR',
+        name: 'Main Door',
+        tag: 'D-01',
+      });
+
+      openPlans.setIfcSemantics(elementIdFor(window, 2), {
+        ifc_class: 'IFCWINDOW',
+        name: 'Kitchen Window',
+        tag: 'W-01',
+      });
+
+      logReport('Ready', {
+        entities: createdElements.map((entity, index) => ({
+          id: elementIdFor(entity, index),
+          kind: entity.ogType,
+        })),
+        semantics: openPlans.getIfcSemanticsMap(),
+      });
     }
 
     function setUI() {
       const gui = new GUI();
-      const wallFolder = gui.addFolder('Wall');
-      const wallControls = {
-        'color': '#edf2f4',
-      }
-      const pencilFolder = gui.addFolder('Pencil');
-      const pencilControls = {
-        'mode': 'select',
-      }
-      const walls = openPlans.getEntitiesByType('wall');
-      walls.forEach((wall) => {
-        const subWall = wallFolder.addFolder(wall.name);
-        subWall.addColor(wallControls, 'color').name('Color').onChange((value) => {
-          wall.material.color.set(value);
-        });
-        subWall.add({ 'Fit': () => { openPlans.fit(wall.ogType) } }, 'Fit');
-      });
+      const semanticFolder = gui.addFolder('Semantic Layer');
+      const semanticControl = {
+        selectedEntity: elementIdFor(createdElements[0], 0),
+        ifcClass: 'IFCWALL',
+        assign: () => {
+          const entity = createdElements.find((item, index) => elementIdFor(item, index) === semanticControl.selectedEntity);
+          if (!entity) {
+            return;
+          }
 
-      pencilFolder.add(pencilControls, 'mode', ['select', 'draw', 'move', 'delete']).name('Mode').onChange((value) => {
-        openPlans.pencil.mode = value;
-      });
+          openPlans.setIfcSemantics(semanticControl.selectedEntity, {
+            ifc_class: semanticControl.ifcClass,
+            name: entity.labelName || entity.ogType,
+            object_type: entity.ogType,
+          });
+          logReport('Semantics Updated', openPlans.getIfcSemanticsMap());
+        },
+      };
 
-      // Export IFC File
+      const entityMap = Object.fromEntries(createdElements.map((entity, index) => [
+        `${entity.labelName || entity.ogType} (${entity.ogType})`,
+        elementIdFor(entity, index),
+      ]));
+
+      semanticFolder.add(semanticControl, 'selectedEntity', entityMap).name('Element');
+      semanticFolder.add(semanticControl, 'ifcClass', [
+        'IFCWALL',
+        'IFCWINDOW',
+        'IFCDOOR',
+        'IFCSLAB',
+        'IFCSTAIR',
+        'IFCBUILDINGELEMENTPROXY',
+      ]).name('IFC Class');
+      semanticFolder.add(semanticControl, 'assign').name('Assign Class');
+      semanticFolder.open();
+
+      const exportFolder = gui.addFolder('Export');
       const fileControls = {
         'Export IFC': () => {
-          const myHeaders = new Headers();
-          myHeaders.append("Content-Type", "application/json");
-
-          const raw = JSON.stringify({
-            "length": 10
+          const result = openPlans.exportSceneToIfc({
+            sceneName: 'openplans-semantic-ifc',
+            errorPolicy: 'BestEffort',
+            requireClosedShell: false,
+            includeDefaultSemantics: true,
           });
 
-          const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: raw,
-            redirect: "follow"
-          };
+          downloadText('openplans-semantic.ifc', result.text);
+          logReport('IFC Export', {
+            report: result.report,
+            sceneId: result.sceneId,
+            addedEntities: result.addedEntities,
+            skippedEntities: result.skippedEntities,
+            semantics: result.semantics,
+          });
+        },
+        'Export STEP': () => {
+          const result = openPlans.exportSceneToStep({
+            sceneName: 'openplans-semantic-step',
+            errorPolicy: 'BestEffort',
+            requireClosedShell: false,
+          });
 
-          fetch("http://127.0.0.1:5000/generate_ifc", requestOptions)
-            .then(async (response) => {
-              const fileName = "openplans.ifc";
-              const fileText = await response.text();
-              console.log(fileText);
-              const blob = new Blob([fileText], { type: "text/plain" });
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = fileName;
-              a.click();
-            })
-            .then((result) => console.log(result))
-            .catch((error) => console.error(error));
-        }
-      }
+          downloadText('openplans-semantic.step', result.text);
+          logReport('STEP Export', {
+            report: result.report,
+            sceneId: result.sceneId,
+            addedEntities: result.addedEntities,
+            skippedEntities: result.skippedEntities,
+          });
+        },
+      };
 
-      gui.add(fileControls, 'Export IFC');
+      exportFolder.add(fileControls, 'Export IFC');
+      exportFolder.add(fileControls, 'Export STEP');
+      exportFolder.open();
     }
 
     (async function () {

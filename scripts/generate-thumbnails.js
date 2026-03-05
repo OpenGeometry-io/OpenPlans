@@ -57,7 +57,9 @@ const elements = [
     'stair2D',
     // Drafting Elements
     'paperFrame',
-    'board'
+    'board',
+    // Export Examples
+    'export-ifc'
 ];
 
 const BASE_URL = process.env.THUMBNAIL_BASE_URL || 'http://localhost:5555/scripts/thumbnail-generator.html';
