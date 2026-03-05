@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Editor Controls</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans interactive editor controls demo">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 16px;
+      color: white;
+      background: rgba(20, 24, 35, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 10px;
+      letter-spacing: 1.5px;
+      font-size: 12px;
+      z-index: 1000;
+      text-transform: uppercase;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Interactive Editor Controls</div>
+  <div id="app"></div>
+
+  <script type="module">
+    import { OpenPlans, CameraMode, Vector3 } from './../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+      openPlans.CameraMode = CameraMode.Plan;
+      openPlans.showGrid = false;
+
+      const wall = openPlans.wall2D({
+        points: [
+          new Vector3(-5, 0, -3),
+          new Vector3(4, 0, -3),
+          new Vector3(4, 0, 2),
+        ],
+        wallThickness: 0.3,
+      });
+      wall.position.set(0, 0, 0);
+
+      const table = openPlans.diningTable2D({
+        dimensions: { width: 2.0, depth: 1.1 },
+      });
+      table.position.set(-1.5, 0, 2.4);
+
+      const cuboid = openPlans.cuboid({
+        center: new Vector3(2.5, 0.6, 2),
+        width: 1,
+        height: 1.2,
+        depth: 1,
+        color: 0x9ca3af,
+      });
+
+      const cylinder = openPlans.cylinder({
+        center: new Vector3(-3, 0.5, 2.2),
+        radius: 0.5,
+        height: 1,
+        segments: 24,
+        angle: Math.PI * 2,
+        color: 0x7c3aed,
+      });
+
+      const editor = openPlans.enableEditor();
+      editor.setGridOptions({ enabled: true, minor: 0.25, major: 1, extent: 80 });
+      editor.setSnapOptions({ enabled: true, gridEnabled: true, elementEnabled: true, tolerance: 0.35 });
+
+      window.addEventListener('keydown', (event) => {
+        const isCmd = event.metaKey || event.ctrlKey;
+        if (!isCmd) return;
+
+        if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
+          event.preventDefault();
+          openPlans.undoEdit();
+        } else if (event.key.toLowerCase() === 'z' && event.shiftKey) {
+          event.preventDefault();
+          openPlans.redoEdit();
+        }
+      });
+
+      const gui = new GUI();
+      const editorFolder = gui.addFolder('Editor');
+
+      const controls = {
+        mode: 'Plan',
+        snap: true,
+        gridSnap: true,
+        elementSnap: true,
+        majorGridStep: 1,
+        minorGridStep: 0.25,
+        undo: () => openPlans.undoEdit(),
+        redo: () => openPlans.redoEdit(),
+      };
+
+      editorFolder.add(controls, 'mode', ['Plan', 'Model']).name('Camera Mode').onChange((value) => {
+        openPlans.CameraMode = value === 'Plan' ? CameraMode.Plan : CameraMode.Model;
+      });
+
+      editorFolder.add(controls, 'snap').name('Snap Enabled').onChange((value) => {
+        openPlans.setEditorSnapOptions({ enabled: value });
+      });
+
+      editorFolder.add(controls, 'gridSnap').name('Grid Snap').onChange((value) => {
+        openPlans.setEditorSnapOptions({ gridEnabled: value });
+      });
+
+      editorFolder.add(controls, 'elementSnap').name('Element Snap').onChange((value) => {
+        openPlans.setEditorSnapOptions({ elementEnabled: value });
+      });
+
+      editorFolder.add(controls, 'majorGridStep', 0.5, 5, 0.5).name('Major Step').onChange((value) => {
+        openPlans.setEditorSnapOptions({ majorStep: value });
+        openPlans.setEditorGridOptions({ major: value });
+      });
+
+      editorFolder.add(controls, 'minorGridStep', 0.05, 1, 0.05).name('Minor Step').onChange((value) => {
+        openPlans.setEditorSnapOptions({ minorStep: value });
+        openPlans.setEditorGridOptions({ minor: value });
+      });
+
+      editorFolder.add(controls, 'undo').name('Undo');
+      editorFolder.add(controls, 'redo').name('Redo');
+      editorFolder.open();
+
+      openPlans.onEditorHistoryChanged.add((state) => {
+        console.log('[history]', state);
+      });
+
+      openPlans.onEditorSelectionChange.add((state) => {
+        console.log('[selection]', state);
+      });
+
+      openPlans.onEditorTransactionCommitted.add((tx) => {
+        console.log('[tx]', tx);
+      });
+
+      console.log('Ready:', { wall, table, cuboid, cylinder });
+    }
+
+    init();
+  </script>
+</body>
+
+</html>

@@ -83,6 +83,14 @@ import { Planter2D, PlanterOptions } from './elements/planview/landscape/planter
 import { Fountain2D, FountainOptions } from './elements/planview/landscape/fountain2D';
 import { Bench2D, BenchOptions } from './elements/planview/landscape/bench2D';
 import { ViewportBlock, ViewportConfig } from './layouts/viewport-block';
+import {
+  OpenPlansEditor,
+  type OpenPlansEditorOptions,
+  type EditorAdapter,
+  type SelectionChangeEvent,
+  type TransactionEvent,
+  type HistoryState,
+} from './editor';
 
 // Camera Modes
 export { CameraMode } from './service/plancamera';
@@ -93,6 +101,7 @@ export * from "./primitives/index";
 // Shape Builders
 export * from "./shape-builder/index";
 export * from './kernel/';
+export * from "./editor";
 
 // Exports from Planview Elements
 export { Wall2D, type WallOptions } from './elements/planview/wall2D';
@@ -108,10 +117,15 @@ export class OpenPlans {
 
   private og: OpenGeometry | undefined
   private ogElements: any[] = [];
+  private editor: OpenPlansEditor | null = null;
+  private pendingEditorAdapters: EditorAdapter[] = [];
 
   private labelRenderer: CSS2DRenderer | undefined;
 
   private onRender: Event<void> = new Event<void>();
+  readonly onEditorSelectionChange: Event<SelectionChangeEvent> = new Event<SelectionChangeEvent>();
+  readonly onEditorTransactionCommitted: Event<TransactionEvent> = new Event<TransactionEvent>();
+  readonly onEditorHistoryChanged: Event<HistoryState> = new Event<HistoryState>();
 
 
   // 2D Views and Profile Views
@@ -119,6 +133,7 @@ export class OpenPlans {
 
   set CameraMode(mode: CameraMode) {
     this.planCamera.CameraMode = mode;
+    this.editor?.setMode(mode === CameraMode.Plan ? "plan" : "model");
   }
 
   get CameraMode() {
@@ -212,6 +227,8 @@ export class OpenPlans {
     labelRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
     labelRenderer.domElement.style.position = "absolute";
     labelRenderer.domElement.style.top = "0";
+    labelRenderer.domElement.style.left = "0";
+    labelRenderer.domElement.style.pointerEvents = "none";
     this.container.appendChild(labelRenderer.domElement);
     this.labelRenderer = labelRenderer;
   }
@@ -243,6 +260,9 @@ export class OpenPlans {
     viewportBlocks.forEach((viewportBlock: ViewportBlock) => {
       viewportBlock.render(this.openThree.renderer, this.openThree.scene);
     });
+
+    this.editor?.update();
+    this.onRender.trigger();
   }
 
   //   for (const element of this.ogElements) {
@@ -712,6 +732,100 @@ export class OpenPlans {
     await this.planCamera.fitToElement(entity)
   }
 
+  enableEditor(options?: Partial<OpenPlansEditorOptions>): OpenPlansEditor {
+    if (!this.editor) {
+      this.editor = new OpenPlansEditor({
+        scene: this.openThree.scene,
+        camera: this.openThree.threeCamera,
+        canvas: this.openThree.renderer.domElement,
+        interactionElement: this.container,
+        controls: this.planCamera.controls,
+        getEntities: () => this.ogElements as any[],
+        options: {
+          mode: this.CameraMode === CameraMode.Plan ? "plan" : "model",
+          ...options,
+        },
+      });
+
+      this.editor.onSelectionChange.add((event) => {
+        this.onEditorSelectionChange.trigger(event);
+      });
+      this.editor.onTransactionCommitted.add((event) => {
+        this.onEditorTransactionCommitted.trigger(event);
+      });
+      this.editor.onHistoryChanged.add((state) => {
+        this.onEditorHistoryChanged.trigger(state);
+      });
+
+      for (const adapter of this.pendingEditorAdapters) {
+        this.editor.registerAdapter(adapter);
+      }
+      this.pendingEditorAdapters = [];
+    } else if (options) {
+      this.editor.setOptions(options);
+    }
+
+    return this.editor;
+  }
+
+  disableEditor(): void {
+    if (!this.editor) {
+      return;
+    }
+    this.editor.dispose();
+    this.editor = null;
+  }
+
+  getEditor(): OpenPlansEditor | null {
+    return this.editor;
+  }
+
+  registerEditorAdapter(adapter: EditorAdapter): void {
+    if (this.editor) {
+      this.editor.registerAdapter(adapter);
+      return;
+    }
+    this.pendingEditorAdapters.push(adapter);
+  }
+
+  unregisterEditorAdapter(adapterId: string): void {
+    if (this.editor) {
+      this.editor.unregisterAdapter(adapterId);
+      return;
+    }
+    this.pendingEditorAdapters = this.pendingEditorAdapters.filter((adapter) => adapter.id !== adapterId);
+  }
+
+  setEditorSnapOptions(options: Partial<OpenPlansEditorOptions["snap"]>): void {
+    this.enableEditor();
+    this.editor?.setSnapOptions(options);
+  }
+
+  setEditorGridOptions(options: Partial<OpenPlansEditorOptions["grid"]>): void {
+    this.enableEditor();
+    this.editor?.setGridOptions(options);
+  }
+
+  undoEdit(): boolean {
+    return this.editor?.undo() ?? false;
+  }
+
+  redoEdit(): boolean {
+    return this.editor?.redo() ?? false;
+  }
+
+  canUndoEdit(): boolean {
+    return this.editor?.canUndo() ?? false;
+  }
+
+  canRedoEdit(): boolean {
+    return this.editor?.canRedo() ?? false;
+  }
+
+  clearEditHistory(): void {
+    this.editor?.clearHistory();
+  }
+
   glyph(text: string, size: number, color: number, staticZoom: boolean = true) {
     const glyph = Glyphs.addGlyph(text, size, color, staticZoom)
     return glyph
@@ -969,5 +1083,3 @@ export class OpenPlans {
     return DimensionTool.createDimension(type);
   }
 }
-
-

@@ -70,5 +70,12 @@ export class PlanCamera {
     const delta = this.clock.getDelta();
     this.controls.update(delta);
   }
-}
 
+  setControlsEnabled(enabled: boolean) {
+    this.controls.enabled = enabled;
+  }
+
+  get controlsEnabled() {
+    return this.controls.enabled;
+  }
+}
