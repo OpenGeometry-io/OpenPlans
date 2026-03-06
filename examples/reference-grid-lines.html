@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Custom Reference Grid Lines</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans custom reference grid lines demo">
+  <meta name="author" content="OpenGeometry Team">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Inter, Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    #panel {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 260px;
+    }
+
+    #panel button {
+      border: 1px solid #c8c8c8;
+      background: #fff;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    #panel button:hover {
+      background: #f2f2f2;
+    }
+
+    #status {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="panel">
+      <strong>Reference Grid Lines</strong>
+      <button id="create">Create sample lines</button>
+      <button id="update">Update A1 style & label</button>
+      <button id="toggle">Toggle A1 visibility</button>
+      <button id="remove">Remove B1</button>
+      <button id="clear">Clear all lines</button>
+      <div id="status">Ready.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { OpenPlans } from './../src/index.ts';
+
+    const status = document.getElementById('status');
+    const container = document.getElementById('app');
+
+    const openPlans = new OpenPlans(container);
+    await openPlans.setupOpenGeometry();
+
+    openPlans.showGrid = true;
+
+    const writeStatus = (message) => {
+      status.textContent = `${message} | total lines: ${openPlans.referenceGridLines.length}`;
+      console.log(message, openPlans.referenceGridLines);
+    };
+
+    document.getElementById('create').addEventListener('click', () => {
+      if (!openPlans.getReferenceGridLine('A1')) {
+        openPlans.createReferenceGridLine({
+          id: 'A1',
+          start: { x: -8, z: -2 },
+          end: { x: 8, z: -2 },
+          axisLock: 'x',
+          style: {
+            color: 0x0f766e,
+            dashed: true,
+            dashSize: 0.4,
+            gapSize: 0.2
+          },
+          label: {
+            text: 'Grid A1',
+            size: 0.45,
+            color: 0x0f766e
+          }
+        });
+      }
+
+      if (!openPlans.getReferenceGridLine('B1')) {
+        openPlans.createReferenceGridLine({
+          id: 'B1',
+          start: { x: -3, z: -6 },
+          end: { x: -3, z: 6 },
+          axisLock: 'z',
+          style: {
+            color: 0x7c3aed,
+            opacity: 0.9
+          },
+          label: {
+            text: 'Grid B1',
+            size: 0.45,
+            color: 0x7c3aed
+          },
+          metadata: {
+            usage: 'user-reference'
+          }
+        });
+      }
+
+      writeStatus('Created sample lines A1 and B1');
+    });
+
+    document.getElementById('update').addEventListener('click', () => {
+      const a1 = openPlans.getReferenceGridLine('A1');
+      if (!a1) {
+        writeStatus('A1 not found. Create lines first.');
+        return;
+      }
+
+      openPlans.updateReferenceGridLine('A1', {
+        end: { x: 10, z: -2 },
+        style: {
+          color: 0xdc2626,
+          dashed: false,
+          opacity: 1
+        },
+        label: {
+          text: 'Grid A1 (updated)',
+          color: 0xdc2626
+        }
+      });
+
+      writeStatus('Updated A1');
+    });
+
+    document.getElementById('toggle').addEventListener('click', () => {
+      const a1 = openPlans.getReferenceGridLine('A1');
+      if (!a1) {
+        writeStatus('A1 not found.');
+        return;
+      }
+
+      openPlans.updateReferenceGridLine('A1', { visible: !a1.visible });
+      writeStatus(`Toggled A1 visibility to ${!a1.visible}`);
+    });
+
+    document.getElementById('remove').addEventListener('click', () => {
+      const removed = openPlans.removeReferenceGridLine('B1');
+      writeStatus(removed ? 'Removed B1' : 'B1 not found');
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      openPlans.clearReferenceGridLines();
+      writeStatus('Cleared all reference grid lines');
+    });
+  </script>
+</body>
+
+</html>
