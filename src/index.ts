@@ -37,6 +37,7 @@ import { PaperFrame, PaperFrameOptions } from './layouts/';
 
 // Utils
 import { Event } from './utils/event';
+import { CreateGridLineOptions, CustomGridLineManager, GridLineData, UpdateGridLineOptions } from './service/custom-grid-lines';
 
 // Elements
 import { Board, BoardOptions } from './elements/board';
@@ -63,6 +64,7 @@ export class OpenPlans {
   private labelRenderer: CSS2DRenderer | undefined;
 
   private onRender: Event<void> = new Event<void>();
+  private customGridLineManager: CustomGridLineManager;
 
 
   // 2D Views and Profile Views
@@ -76,6 +78,7 @@ export class OpenPlans {
     OpenPlans.sOThree = this.openThree;
 
     this.planCamera = this.openThree.planCamera
+    this.customGridLineManager = new CustomGridLineManager(this.openThree.scene);
     
     this.openThree.planCamera.controls.addEventListener("update", () => {
       Glyphs.updateManager(this.openThree.threeCamera)
@@ -530,6 +533,30 @@ export class OpenPlans {
     this.openThree.toggleGrid(show);
   }
 
+  createReferenceGridLine(options: CreateGridLineOptions): GridLineData {
+    return this.customGridLineManager.create(options);
+  }
+
+  updateReferenceGridLine(id: string, updates: UpdateGridLineOptions): GridLineData {
+    return this.customGridLineManager.update(id, updates);
+  }
+
+  removeReferenceGridLine(id: string): boolean {
+    return this.customGridLineManager.remove(id);
+  }
+
+  getReferenceGridLine(id: string): GridLineData | undefined {
+    return this.customGridLineManager.get(id);
+  }
+
+  clearReferenceGridLines() {
+    this.customGridLineManager.clear();
+  }
+
+  get referenceGridLines(): GridLineData[] {
+    return this.customGridLineManager.list();
+  }
+
   // addCustomObject(genericObject: GenericBuilder) {
   //   if (!this.pencil) {
   //     throw new Error('Pencil not initialized');
@@ -571,5 +598,4 @@ export class OpenPlans {
     });
   }
 }
-
 

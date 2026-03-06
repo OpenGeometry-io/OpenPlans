@@ -18,3 +18,6 @@ OpenPlans can be used in Two Ways
 
 #### Developer Guide
 You can find the developer guide [here](https://github.com/OpenGeometry-io/OpenPlans/blob/main/developer.md)
+
+#### Examples
+- Custom reference grid lines (CAD-style): `examples/reference-grid-lines.html`
