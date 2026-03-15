@@ -91,6 +91,7 @@
         width: 1,
         breadth: 1,
         color: 0x0000ff,
+        lineWidth: 1
       };
 
       rectangleFolder.add(rectangleControls, 'centerX', -50, 50).onChange((value) => {
@@ -126,6 +127,12 @@
       rectangleFolder.addColor(rectangleControls, 'color').onChange((value) => {
         if (rectangle) {
           rectangle.rectangleColor = value;
+        }
+      });
+
+      rectangleFolder.add(rectangleControls, 'lineWidth', 1, 10).onChange((value) => {
+        if (rectangle) {
+          rectangle.lineWidth = value;
         }
       });
 

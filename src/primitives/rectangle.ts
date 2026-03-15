@@ -8,6 +8,7 @@ export interface RectangleOptions {
   width: number;
   breadth: number;
   color: number;
+  lineWidth?: number;
 }
 
 /**
@@ -15,7 +16,6 @@ export interface RectangleOptions {
  * Add the element to the board if it does.
  * If the element is moved outside the board, remove it from the board.
  */
-
 
 /**
  * Rectangle Primitive Class
@@ -35,7 +35,8 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
     center: [0, 0, 0],
     width: 1,
     breadth: 1,
-    color: 0x0000ff
+    color: 0x0000ff,
+    lineWidth: 1,
   };
   // dimensionsSet: Map<string, THREE.Object3D> = new Map<string, THREE.Object3D>();
 
@@ -78,6 +79,11 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
   get rectangleColor(): number {
     return this.propertySet.color;
   }
+  
+  set lineWidth(value: number) {
+    this.propertySet.lineWidth = value;
+    this.setOPGeometry();
+  }
 
   constructor(rectangleConfig?: RectangleOptions) {
     super({
@@ -85,7 +91,9 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
       center: new Vector3(...(rectangleConfig?.center || [0, 0, 0])),
       width: rectangleConfig?.width || 1,
       breadth: rectangleConfig?.breadth || 1,
-      color: rectangleConfig?.color || 0x0000ff
+      color: rectangleConfig?.color || 0x0000ff,
+      fatLines: true,
+      lineWidth: rectangleConfig?.lineWidth || 1,
     });
 
     this.subNodes = new Map<string, THREE.Object3D>();
@@ -113,7 +121,8 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
       center: new Vector3(...this.propertySet.center),
       width: this.propertySet.width,
       breadth: this.propertySet.breadth,
-      color: this.propertySet.color
+      color: this.propertySet.color,
+      lineWidth: this.propertySet.lineWidth
     });
   }
 

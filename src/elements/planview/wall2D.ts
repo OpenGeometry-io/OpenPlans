@@ -5,8 +5,8 @@ import { Polygon, Polyline, Vector3 } from "../../kernel";
 
 export enum WallHatchPattern {
     NONE = "NONE",
-    ANSI31 = "ANSI31",
-    ANSI32 = "ANSI32"
+    HATCH1 = "HATCH1",
+    HATCH2 = "HATCH2"
 }
 
 export interface Point {
@@ -232,8 +232,8 @@ export class Wall2D extends Polyline implements IShape {
     }
 
     private normalizeHatchPattern(pattern: WallHatchPattern | string | undefined): WallHatchPattern {
-        if (pattern === WallHatchPattern.ANSI31) return WallHatchPattern.ANSI31;
-        if (pattern === WallHatchPattern.ANSI32) return WallHatchPattern.ANSI32;
+        if (pattern === WallHatchPattern.HATCH1) return WallHatchPattern.HATCH1;
+        if (pattern === WallHatchPattern.HATCH2) return WallHatchPattern.HATCH2;
         return WallHatchPattern.NONE;
     }
 
@@ -264,12 +264,12 @@ export class Wall2D extends Polyline implements IShape {
         const pattern = this.normalizeHatchPattern(this.propertySet.wallHatchPattern);
         if (pattern === WallHatchPattern.NONE) return;
 
-        const ansi31Segments = this.buildHatchSegments(polygon2D, 45, Wall2D.HATCH_SPACING);
-        this.createHatchLineSegments("wallHatchAnsi31", ansi31Segments);
+        const hatch1Segments = this.buildHatchSegments(polygon2D, 45, Wall2D.HATCH_SPACING);
+        this.createHatchLineSegments("wallHatchHatch1", hatch1Segments);
 
-        if (pattern === WallHatchPattern.ANSI32) {
-            const ansi32Segments = this.buildHatchSegments(polygon2D, -45, Wall2D.HATCH_SPACING);
-            this.createHatchLineSegments("wallHatchAnsi32", ansi32Segments);
+        if (pattern === WallHatchPattern.HATCH2) {
+            const hatch2Segments = this.buildHatchSegments(polygon2D, -45, Wall2D.HATCH_SPACING);
+            this.createHatchLineSegments("wallHatchHatch2", hatch2Segments);
         }
     }
 
