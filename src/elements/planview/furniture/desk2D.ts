@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { IShape } from "../../../shapes/base-type";
 import { ElementType } from "../../base-type";
-import { Polygon, Polyline, Vector3 } from "../../../kernel";
+import { Polygon, Polyline, Vector3 } from "opengeometry";
 import { Chair2D } from "./chair2D";
 
 export interface DeskOptions {

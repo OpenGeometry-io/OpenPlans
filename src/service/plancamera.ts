@@ -59,9 +59,10 @@ export class PlanCamera {
     this.controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
   }
 
-  async fitToElement(mesh: THREE.Mesh) {
+  async fitToElement(target: THREE.Object3D | THREE.Object3D[]) {
     const box = new THREE.Box3();
-    box.expandByObject(mesh);
+    const objects = Array.isArray(target) ? target : [target];
+    objects.forEach((object) => box.expandByObject(object));
     // box.expandByScalar(2);
     await this.controls.fitToSphere(box.getBoundingSphere(new THREE.Sphere()), true);
   }
@@ -71,4 +72,3 @@ export class PlanCamera {
     this.controls.update(delta);
   }
 }
-

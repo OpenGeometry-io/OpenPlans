@@ -5,7 +5,7 @@ import { activeTheme, ICanvasTheme } from '../base-type'
 // import { ShapeSelector } from '../selector/shape-selector.ts'
 // import { ShapeEditor } from '../selector/shape-editor.ts'
 
-import * as OpenGrid from '../helpers/OpenGridHelper.ts'
+import * as OpenGrid from '../helpers/OpenGridHelper'
 
 import CameraControls from 'camera-controls'
 
@@ -91,8 +91,7 @@ export class OpenThree {
     this.animate()
 
     // Utils like Grid, Lights and Etc
-    const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
-    // const openGrid = new OpenGrid.Grid("xzy", gridColor, 50, 25, true)
+    // const openGrid = new OpenGrid.Grid("xzy", this.hexToRgb(this.theme[this.activeTheme].gridColor), 50, 25, true)
 
     this.openGrid = new THREE.GridHelper(100, 100);
     this.scene.add(this.openGrid);

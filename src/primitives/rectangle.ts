@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Rectangle, Vector3 } from '../kernel/';
+import { Rectangle, Vector3 } from 'opengeometry';
 import { IPrimitive } from './base-type';
 
 export interface RectangleOptions {
@@ -101,7 +101,7 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
     // this.listenKeyboardEvents();
   }
 
-  setOPConfig(config: RectangleOptions): void {
+  setOPConfig(_config: RectangleOptions): void {
   }
 
   getOPConfig(): RectangleOptions {

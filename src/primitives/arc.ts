@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { Arc, Vector3 } from '../kernel/';
+import { Arc, Vector3 } from 'opengeometry';
 import { IPrimitive } from './base-type';
-import { DimensionTool } from '../dimensions';
 
 export interface ArcOptions {
   ogid?: string;
@@ -128,7 +127,7 @@ export class ArcPrimitive extends Arc implements IPrimitive {
   //   });
   // }
 
-  setOPConfig(config: ArcOptions): void {
+  setOPConfig(_config: ArcOptions): void {
 
   }
 

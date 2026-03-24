@@ -64,9 +64,13 @@ ${trackingCode}
 export default defineConfig({
   base: './',
   resolve: {
+    dedupe: ['three'],
     alias: {
       '@src': resolve(__dirname, 'src'),
     },
+  },
+  optimizeDeps: {
+    exclude: ['opengeometry'],
   },
   plugins: [mixpanelPlugin()],
   build: {

@@ -15,7 +15,7 @@ let vAxes = "xy";
 
 import * as THREE from 'three';
 
-function generateGridPoints(axes: string, size: number) {
+function generateGridPoints(_axes: string, size: number) {
   const gridPoints = [];
   gridPoints.push(1, 0, 1);
   gridPoints.push(-1, 0, 1);

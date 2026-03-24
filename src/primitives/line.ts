@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Line, Vector3 } from '../kernel/';
+import { Line, Vector3 } from 'opengeometry';
 import { IPrimitive } from './base-type';
 
 export interface LineOptions {
@@ -80,7 +80,7 @@ export class LinePrimitive extends Line implements IPrimitive {
     this.setOPGeometry();
   }
 
-  setOPConfig(config: LineOptions): void {
+  setOPConfig(_config: LineOptions): void {
 
   }
 

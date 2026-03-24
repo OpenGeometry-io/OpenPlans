@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { Cuboid, Line, Opening, Vector3 } from "../kernel/";
+import { Cuboid, Line, Opening, Vector3 } from "opengeometry";
 import { ElementType, WindowType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
@@ -44,6 +44,7 @@ export class BaseSingleWindow extends Opening implements IShape {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
   // By Default the Plan View is Mid Section View
   // If needed Plan view can be overridden to add some other geometry

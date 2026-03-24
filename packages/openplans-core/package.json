@@ -1,0 +1,6 @@
+{
+  "name": "@opengeometry/openplans-core",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ICuboidOptions, Cuboid } from '../kernel/';
+import { ICuboidOptions, Cuboid } from 'opengeometry';
 import { IShape } from './base-type';
   
 /**
@@ -10,9 +10,10 @@ import { IShape } from './base-type';
 
 export class CuboidShape extends Cuboid implements IShape {
   ogType: string = 'CuboidShape';
-  subNodes: Map<string, THREE.Object3D>;
+  subElements: Map<string, THREE.Object3D>;
   selected: boolean;
   edit: boolean;
+  locked: boolean;
 
   // TODO: Property Set can be extended based on requirements
   // TODO: But do we need a separate propertySet for each primitive? Can't we use this.options directly?
@@ -21,9 +22,10 @@ export class CuboidShape extends Cuboid implements IShape {
 
   constructor(properties?: ICuboidOptions) {
     super(properties);
-    this.subNodes = new Map<string, THREE.Object3D>();
+    this.subElements = new Map<string, THREE.Object3D>();
     this.selected = false;
     this.edit = false;
+    this.locked = false;
     
     if (properties) {
       // TODO: Deep Merge, currently shallow merge

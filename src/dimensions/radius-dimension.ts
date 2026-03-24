@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { IPrimitive } from "../primitives/base-type";
-import { Line, Vector3 as KernelVector3 } from "../kernel/";
+import { Line, Vector3 as KernelVector3 } from "opengeometry";
 import { Glyphs } from "@opengeometry/openglyph";
 
 export interface RadiusDimensionOptions {

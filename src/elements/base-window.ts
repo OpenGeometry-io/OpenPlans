@@ -1,6 +1,6 @@
 // import {
 //   Vector3
-// } from '../kernel/dist';
+// } from 'opengeometry';
 // import * as THREE from 'three';
 // import { Pencil } from '../kernel/dist/src/pencil';
 // import { PolyLineShape } from '../primitives/polyline';

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Cuboid, Vector3 } from "../kernel/";
+import { Cuboid, Vector3 } from "opengeometry";
 import { ElementType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
@@ -38,6 +38,7 @@ export class BaseSlab extends Cuboid implements IShape {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
   // By Default the Plan View is Top View
   // If needed Plan view can be overridden to add some other geometry

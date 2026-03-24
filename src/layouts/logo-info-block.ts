@@ -1,6 +1,5 @@
-import { Glyphs } from '@opengeometry/openglyph';
 import * as THREE from 'three';
-import { Polygon, Vector3 } from '../kernel/dist';
+import { Polygon, Vector3 } from 'opengeometry';
 
 export type BlockRowTypes = 'image' | 'text' | 'logo' | 'qrCode';
 
@@ -53,7 +52,7 @@ export class LogoInfoBlock extends Polygon {
   }
 
   blockConfig() {
-    const { width, height, borderColor } = this.rowOptions;
+    const { borderColor } = this.rowOptions;
     this.borderColor = borderColor || 0x000000;
   }
 
@@ -78,11 +77,6 @@ export class LogoInfoBlock extends Polygon {
           side: THREE.DoubleSide,
           color: 0xffffff,
         });
-
-        const dimensions = {
-          width: logoOptions.width,
-          height: logoOptions.height,
-        }
 
         const absoluteHeight = logoOptions.height - 0.002;
         const absoluteWidth = absoluteHeight * aspectRatio; // Correct width calculation

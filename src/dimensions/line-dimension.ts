@@ -1,4 +1,4 @@
-import { ILineOptions, Line, Vector3 } from "../kernel/";
+import { Line, Vector3 } from "opengeometry";
 import * as THREE from "three";
 import { IPrimitive } from "../primitives/base-type";
 import { Glyphs } from "@opengeometry/openglyph";
@@ -144,7 +144,7 @@ export class LineDimension extends Line implements IPrimitive {
     this.setOPGeometry();
   }
 
-  setOPConfig(config: LengthDimensionOptions): void {
+  setOPConfig(_config: LengthDimensionOptions): void {
 
   }
 

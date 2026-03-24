@@ -1,4 +1,4 @@
-import { Arc, Vector3, Line } from "../kernel/";
+import { Arc, Vector3, Line } from "opengeometry";
 import * as THREE from "three";
 import { IPrimitive } from "../primitives/base-type";
 import { Glyphs } from "@opengeometry/openglyph";
@@ -153,7 +153,7 @@ export class AngleDimension extends Arc implements IPrimitive {
         this.setOPGeometry();
     }
 
-    setOPConfig(config: AngleDimensionOptions): void {
+    setOPConfig(_config: AngleDimensionOptions): void {
         // Implementation for updating config
     }
 
@@ -162,7 +162,7 @@ export class AngleDimension extends Arc implements IPrimitive {
     }
 
     setOPGeometry(): void {
-        const { center, vector1, vector2, radius, color, lineWidth, opposite, textOffset } = this.propertySet;
+        const { center, vector1, vector2, radius, color, lineWidth, opposite } = this.propertySet;
 
         // Base geometry vectors (physical lines)
         const baseV1 = new Vector3(...vector1);

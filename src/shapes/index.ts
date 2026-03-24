@@ -1,1 +1,2 @@
-export * from "../shapes/polygon-shape";
+export * from "./cuboid";
+export * from "./cylinder";

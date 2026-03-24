@@ -1,6 +1,6 @@
 // import {
 //   Vector3
-// } from '../kernel/dist';
+// } from 'opengeometry';
 import * as THREE from 'three';
 // import { Pencil } from '../kernel/dist/src/pencil';
 // import { PolyLineShape } from '../primitives/polyline';
@@ -8,7 +8,7 @@ import * as THREE from 'three';
 // import { generateUUID } from 'three/src/math/MathUtils.js';
 // import { OpenPlans } from '..';
 
-import { Cuboid, Line, Opening, Vector3 } from "../kernel/";
+import { Cuboid, Line, Opening, Vector3 } from "opengeometry";
 import { DoorType, ElementType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
@@ -55,6 +55,7 @@ export class BaseDoor extends Opening implements IShape {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
   // By Default the Plan View is Mid Section View
   // If needed Plan view can be overridden to add some other geometry
@@ -352,7 +353,7 @@ export class BaseDoor extends Opening implements IShape {
 
   // TODO: Add pure profile setter for elements/primitives where only Line rendering is needed
   showProfileView(status: boolean): void {
-    for (const [elementKey, element] of this.subElements.entries()) {
+    for (const [, element] of this.subElements.entries()) {
       // You can use element here if needed, or leave the loop empty if not used
       if (element.children.length > 0) {
         for (const child of element.children) {

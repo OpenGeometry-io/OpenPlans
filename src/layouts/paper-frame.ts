@@ -1,4 +1,4 @@
-import { Polygon, Vector3 } from "../kernel/";
+import { Polygon, Vector3 } from "opengeometry";
 import * as THREE from 'three';
 import { IShape } from "../shapes/base-type";
 import jsPDF from "jspdf";
@@ -142,7 +142,7 @@ export class PaperFrame extends Polygon implements IShape {
     this.setOPGeometry();
   }
 
-  setOPConfig(config: Record<string, any>): void {
+  setOPConfig(_config: Record<string, any>): void {
 
   }
 

@@ -1,4 +1,4 @@
-import { Polygon, Vector3 } from "../kernel/";
+import { Polygon, Vector3 } from "opengeometry";
 import * as THREE from 'three';
 import { IShape } from "../shapes/base-type";
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';

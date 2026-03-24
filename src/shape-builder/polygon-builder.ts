@@ -1,5 +1,5 @@
 // import * as THREE from 'three';
-// import { Vector3 } from '../kernel/dist';
+// import { Vector3 } from 'opengeometry';
 // import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 // import { generateUUID } from 'three/src/math/MathUtils.js';
 // import { Pencil } from '../kernel/dist/src/pencil';

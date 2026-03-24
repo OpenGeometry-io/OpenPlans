@@ -1,7 +1,7 @@
 // import {
 //   Vector3,
 //   BasePoly,
-// } from '../kernel/dist';
+// } from 'opengeometry';
 // import * as THREE from 'three';
 // import { Pencil } from '../kernel/dist/src/pencil';
 

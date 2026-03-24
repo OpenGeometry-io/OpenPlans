@@ -8,7 +8,6 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -17,6 +16,7 @@
     "declaration": true,
     "declarationDir": "dist/types",
     "outDir": "dist",
+    "rootDir": ".",
 
     /* Linting */
     "strict": true,
@@ -26,5 +26,5 @@
 
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["src", "packages"]
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Cuboid, Vector3 } from "../kernel/";
+import { Cuboid, Vector3 } from "opengeometry";
 import { ElementType } from "./base-type";
 import { IShape } from '../shapes/base-type';
 
@@ -40,6 +40,7 @@ export class BaseStair extends THREE.Group implements IShape {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
   // By Default the Plan View is Top View
   views: Map<ElementViewType, THREE.Object3D> = new Map();

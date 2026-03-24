@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Polyline, Vector3 } from '../kernel/';
+import { Polyline, Vector3 } from 'opengeometry';
 import { IPrimitive } from './base-type';
 // import { DimensionTool } from '../dimensions';
 
@@ -63,7 +63,7 @@ export class PolylinePrimitive extends Polyline implements IPrimitive {
     this.setOPGeometry();
   }
 
-  setOPConfig(config: PolylineOptions): void {
+  setOPConfig(_config: PolylineOptions): void {
   }
 
   getOPConfig(): PolylineOptions {
