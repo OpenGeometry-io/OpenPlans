@@ -90,6 +90,15 @@ export class OpenPlans {
     // });
   }
 
+  fitToView(elements: THREE.Object3D[]) {
+    const controls = this.planCamera.controls;
+    const boundingBox = new THREE.Box3();
+    elements.forEach((element) => {
+      boundingBox.expandByObject(element);
+    });
+    controls.fitToSphere(boundingBox.getBoundingSphere(new THREE.Sphere()), true);
+  }
+
   arc(config?: ArcOptions) {
     const arc = new ArcPrimitive(config);
     this.openThree.scene.add(arc);

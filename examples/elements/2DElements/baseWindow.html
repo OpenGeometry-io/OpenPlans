@@ -243,7 +243,7 @@
       exportFolder.add(exportControls, 'exportView', EXPORT_VIEW_OPTIONS).name('View');
       exportFolder.add(exportControls, 'exportPDF').name('Export PDF');
 
-      windowFolder.add({ fit: () => openPlans.fit?.(windowElement.id) }, 'fit').name('Fit');
+      windowFolder.add({ fit: () => openPlans.fitToView([windowElement]) }, 'fit').name('Fit');
       windowFolder.add({ getConfig: () => console.log(windowElement.getOPConfig()) }, 'getConfig').name('Get Config');
     }
 
