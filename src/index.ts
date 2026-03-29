@@ -17,7 +17,7 @@ export { Door, Window, Wall };
 export type { DoorOptions, WindowOptions, WallOptions };
 
 export class OpenPlans {
-  private container: HTMLElement;
+  // private container: HTMLElement;
   private openThree: OpenThree;
   private planCamera: PlanCamera;
 
@@ -35,7 +35,7 @@ export class OpenPlans {
   }
 
   constructor(container: HTMLElement) {
-    this.container = container
+    // this.container = container
     this.openThree = new OpenThree(container, this.renderCallback)
     // OpenPlans.sOThree = this.openThree;
     this.planCamera = this.openThree.planCamera
@@ -49,7 +49,9 @@ export class OpenPlans {
   }
 
   async setupOpenGeometry(wasmURL?: string) {
-    await OpenGeometry.create({});
+    await OpenGeometry.create({
+      wasmURL: wasmURL
+    });
 
     // await Glyphs.loadFaces('Edu_NSW_ACT_Foundation_Regular');
     // Glyphs.scene = this.openThree.scene

@@ -46,7 +46,7 @@ export class PolylinePrimitive extends Polyline implements IPrimitive {
   constructor(polylineConfig?: PolylineOptions) {
     super({
       ogid: polylineConfig?.ogid,
-      points: [...(polylineConfig?.points || [[0, 0, 0], [1, 0, 0], [1, 0, 1]])].map(point => new Vector3(...point)),
+      points: [...(polylineConfig?.points || [[0, 0, 0], [1, 0, 0], [1, 0, 1]])].map(point => new Vector3(point[0], point[1], point[2])),
       color: polylineConfig?.color || 0x0000ff
     });
 
@@ -72,7 +72,7 @@ export class PolylinePrimitive extends Polyline implements IPrimitive {
 
   setOPGeometry(): void {
 
-    const pointsArray: Array<Vector3> = this.propertySet.points.map(point => new Vector3(...point));
+    const pointsArray: Array<Vector3> = this.propertySet.points.map(point => new Vector3(point[0], point[1], point[2]));
     
     this.setConfig({
       points: pointsArray,

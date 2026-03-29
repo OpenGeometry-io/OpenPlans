@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { IShape } from "../../shapes/base-type";
 import { ElementType, WindowType } from "./../base-type";
-import { Cuboid, Line, Polygon, Vector3 } from "opengeometry";
+import { Cuboid, Line, Polygon, Sweep, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
 
 type Window2DSubElementType = "frame" | "glass";
@@ -217,45 +217,28 @@ export class Window extends Line implements IShape, PlanVectorExportable {
 
     this.clearSubElementMap(this.subElements3D);
 
-    const frameGroup = new THREE.Group();
-    const fullFrameHeight = windowHeight + frameWidth * 2;
+    const frameProfile = [
+      new Vector3(-frameWidth / 2, 0, -frameThickness / 2),
+      new Vector3(-frameWidth / 2, 0, frameThickness / 2),
+      new Vector3(frameWidth / 2, 0, frameThickness / 2),
+      new Vector3(frameWidth / 2, 0, -frameThickness / 2),
+      new Vector3(-frameWidth / 2, 0, -frameThickness / 2),
+    ];
 
-    const leftFrame = new Cuboid({
-      center: new Vector3(-(halfWindowWidth + frameWidth / 2), sillHeight + windowHeight / 2, 0),
-      width: frameWidth,
-      height: fullFrameHeight,
-      depth: frameThickness,
+    const frameSweep = new Sweep({
+      path: [
+        new Vector3(-(halfWindowWidth + frameWidth / 2), sillHeight - frameWidth / 2, 0),
+        new Vector3(-(halfWindowWidth + frameWidth / 2), sillHeight + windowHeight + frameWidth / 2, 0),
+        new Vector3(halfWindowWidth + frameWidth / 2, sillHeight + windowHeight + frameWidth / 2, 0),
+        new Vector3(halfWindowWidth + frameWidth / 2, sillHeight - frameWidth / 2, 0),
+        new Vector3(-(halfWindowWidth + frameWidth / 2), sillHeight - frameWidth / 2, 0),
+      ],
+      profile: frameProfile,
       color: frameColor,
     });
 
-    const rightFrame = new Cuboid({
-      center: new Vector3(halfWindowWidth + frameWidth / 2, sillHeight + windowHeight / 2, 0),
-      width: frameWidth,
-      height: fullFrameHeight,
-      depth: frameThickness,
-      color: frameColor,
-    });
-
-    const topFrame = new Cuboid({
-      center: new Vector3(0, sillHeight + windowHeight + frameWidth / 2, 0),
-      width: windowDimensions.width,
-      height: frameWidth,
-      depth: frameThickness,
-      color: frameColor,
-    });
-
-    const bottomFrame = new Cuboid({
-      center: new Vector3(0, sillHeight - frameWidth / 2, 0),
-      width: windowDimensions.width,
-      height: frameWidth,
-      depth: frameThickness,
-      color: frameColor,
-    });
-
-    frameGroup.add(leftFrame, rightFrame, topFrame, bottomFrame);
-    this.subElements3D.set("frame", frameGroup);
-    this.add(frameGroup);
-
+    this.subElements3D.set("frame", frameSweep);
+    this.add(frameSweep);
 
     const glassPanel = new Cuboid({
       center: new Vector3(0, sillHeight + windowHeight / 2, 0),
@@ -338,13 +321,9 @@ export class Window extends Line implements IShape, PlanVectorExportable {
       glass2D.color = glassColor;
     }
 
-    const frame3D = this.subElements3D.get("frame") as THREE.Group | undefined;
+    const frame3D = this.subElements3D.get("frame") as Sweep | undefined;
     if (frame3D) {
-      frame3D.traverse((child) => {
-        if (child instanceof Cuboid) {
-          child.color = frameColor;
-        }
-      });
+      frame3D.color = frameColor;
     }
 
     const glass3D = this.subElements3D.get("glass") as Cuboid | undefined;

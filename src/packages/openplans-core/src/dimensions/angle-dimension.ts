@@ -135,7 +135,7 @@ export class AngleDimension extends Arc implements IPrimitive {
         // Initial Arc setup - placeholders, updated in setOPGeometry
         super({
             ogid: angleDimensionConfig?.ogid,
-            center: new Vector3(...(angleDimensionConfig?.center || [0, 0, 0])),
+            center: new Vector3(angleDimensionConfig?.center ? angleDimensionConfig.center[0] : 0, angleDimensionConfig?.center ? angleDimensionConfig.center[1] : 0, angleDimensionConfig?.center ? angleDimensionConfig.center[2] : 0),
             radius: angleDimensionConfig?.radius || 2,
             startAngle: 0,
             endAngle: Math.PI / 2,
@@ -165,8 +165,8 @@ export class AngleDimension extends Arc implements IPrimitive {
         const { center, vector1, vector2, radius, color, lineWidth, opposite } = this.propertySet;
 
         // Base geometry vectors (physical lines)
-        const baseV1 = new Vector3(...vector1);
-        const baseV2 = new Vector3(...vector2);
+        const baseV1 = new Vector3(vector1[0], vector1[1], vector1[2]);
+        const baseV2 = new Vector3(vector2[0], vector2[1], vector2[2]);
 
         // Calculation vectors (direction of angle measurement)
         // If opposite, valid angle is between -v1 and -v2
@@ -216,7 +216,7 @@ export class AngleDimension extends Arc implements IPrimitive {
         }
 
         this.setConfig({
-            center: new Vector3(...center),
+            center: new Vector3(center[0], center[1], center[2]),
             radius: radius,
             startAngle: startAngle,
             endAngle: endAngle,
@@ -250,7 +250,7 @@ export class AngleDimension extends Arc implements IPrimitive {
         });
 
         const { center, radius, color, lineWidth } = this.propertySet;
-        const centerVec = new Vector3(...center);
+        const centerVec = new Vector3(center[0], center[1], center[2]);
 
         // ... (rest of witness line logic is unchanged, skipping for brevity in this replace block if possible, but I need to include context or just replace the start)
         // I will replace the START of createWitnessLines to update the cleanup loop.

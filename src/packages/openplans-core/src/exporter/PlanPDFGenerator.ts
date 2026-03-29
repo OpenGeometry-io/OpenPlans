@@ -30,8 +30,21 @@ const DEFAULT_ISOMETRIC_HLR: PlanProjectionHlr = {
 };
 
 type BrepLikeObject = THREE.Object3D & {
+  getPlacement?: () => {
+    anchor?: { x: number; y: number; z: number };
+    translation?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number };
+    scale?: { x: number; y: number; z: number };
+  };
   canConvertToFreeform?: () => boolean;
   toFreeform?: (id?: string) => {
+    getPlacement?: () => {
+      anchor?: { x: number; y: number; z: number };
+      translation?: { x: number; y: number; z: number };
+      rotation?: { x: number; y: number; z: number };
+      scale?: { x: number; y: number; z: number };
+    };
+    getLocalBrepData?: () => unknown;
     getLocalBrepSerialized?: () => string;
     getBrepSerialized?: () => string;
   };
@@ -262,22 +275,29 @@ export class PlanPDFGenerator {
   }
 
   private resolveBrepSource(object: BrepLikeObject) {
-    if (typeof object.toFreeform === "function" && object.canConvertToFreeform?.()) {
-      const freeform = object.toFreeform(this.nextEntityId());
-      const placed = createFreeformGeometry(freeform, {
-        placement: this.matrixToPlacement(object.parent?.matrixWorld),
-      });
-      return placed.getBrepSerialized();
+    const directSource = this.resolveDirectBrepSource(object);
+    if (directSource) {
+      return this.applyPlacementToSerializedBrep(
+        directSource,
+        this.matrixToPlacement(object.parent?.matrixWorld),
+      );
     }
 
-    if (typeof object.getLocalBrepSerialized === "function" ||
-        typeof object.getLocalBrepData === "function") {
-      const placed = createFreeformGeometry(object, {
-        placement: this.matrixToPlacement(object.parent?.matrixWorld),
-      });
-      return placed.getBrepSerialized();
+    const localSource = this.resolveLocalBrepSource(object);
+    if (localSource) {
+      return this.applyPlacementToSerializedBrep(
+        localSource.serialized,
+        this.combinePlacements(
+          this.matrixToPlacement(object.parent?.matrixWorld),
+          localSource.placement,
+        ),
+      );
     }
 
+    return null;
+  }
+
+  private resolveDirectBrepSource(object: BrepLikeObject) {
     if (typeof object.getBrepSerialized === "function") {
       return object.getBrepSerialized();
     }
@@ -293,6 +313,57 @@ export class PlanPDFGenerator {
     }
 
     return null;
+  }
+
+  private resolveLocalBrepSource(object: BrepLikeObject) {
+    if (typeof object.toFreeform === "function" && object.canConvertToFreeform?.()) {
+      const freeform = object.toFreeform(this.nextEntityId());
+      const serialized = this.resolveLocalSerializedSource(freeform);
+      if (serialized) {
+        return {
+          serialized,
+          placement: freeform.getPlacement?.(),
+        };
+      }
+    }
+
+    const serialized = this.resolveLocalSerializedSource(object);
+    if (serialized) {
+      return {
+        serialized,
+        placement: object.getPlacement?.(),
+      };
+    }
+
+    return null;
+  }
+
+  private resolveLocalSerializedSource(source: {
+    getLocalBrepData?: () => unknown;
+    getLocalBrepSerialized?: () => string;
+  }) {
+    if (typeof source.getLocalBrepSerialized === "function") {
+      return source.getLocalBrepSerialized();
+    }
+
+    if (typeof source.getLocalBrepData === "function") {
+      const data = source.getLocalBrepData();
+      return data ? JSON.stringify(data) : null;
+    }
+
+    return null;
+  }
+
+  private applyPlacementToSerializedBrep(
+    source: string,
+    placement: ReturnType<PlanPDFGenerator["combinePlacements"]>,
+  ) {
+    if (this.isIdentityPlacement(placement)) {
+      return source;
+    }
+
+    const placed = createFreeformGeometry(source, { placement });
+    return placed.getBrepSerialized();
   }
 
   private pushSegmentPairs(
@@ -393,6 +464,22 @@ export class PlanPDFGenerator {
     };
   }
 
+  private combinePlacements(
+    parentPlacement?: ReturnType<PlanPDFGenerator["matrixToPlacement"]>,
+    childPlacement?: ReturnType<NonNullable<BrepLikeObject["getPlacement"]>>,
+  ) {
+    if (!parentPlacement && !childPlacement) {
+      return undefined;
+    }
+
+    const combinedMatrix = this.placementToMatrix(parentPlacement);
+    if (childPlacement) {
+      combinedMatrix.multiply(this.placementToMatrix(childPlacement));
+    }
+
+    return this.matrixToPlacement(combinedMatrix);
+  }
+
   private matrixToPlacement(matrix?: THREE.Matrix4) {
     const resolvedMatrix = matrix ?? new THREE.Matrix4();
     const translation = new THREE.Vector3();
@@ -409,6 +496,58 @@ export class PlanPDFGenerator {
       rotation: new Vector3(euler.x, euler.y, euler.z),
       scale: new Vector3(scale.x, scale.y, scale.z),
     };
+  }
+
+  private placementToMatrix(
+    placement?:
+      | ReturnType<PlanPDFGenerator["matrixToPlacement"]>
+      | ReturnType<NonNullable<BrepLikeObject["getPlacement"]>>,
+  ) {
+    const translation = this.toThreeVector(placement?.translation, 0);
+    const rotation = this.toThreeVector(placement?.rotation, 0);
+    const scale = this.toThreeVector(placement?.scale, 1);
+    const anchor = this.toThreeVector(placement?.anchor, 0);
+    const composed = new THREE.Matrix4().compose(
+      translation,
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rotation.x, rotation.y, rotation.z, "XYZ")),
+      scale,
+    );
+
+    if (anchor.lengthSq() === 0) {
+      return composed;
+    }
+
+    return new THREE.Matrix4()
+      .makeTranslation(anchor.x, anchor.y, anchor.z)
+      .multiply(composed)
+      .multiply(new THREE.Matrix4().makeTranslation(-anchor.x, -anchor.y, -anchor.z));
+  }
+
+  private toThreeVector(
+    value: { x: number; y: number; z: number } | undefined,
+    fallback: number,
+  ) {
+    return new THREE.Vector3(
+      value?.x ?? fallback,
+      value?.y ?? fallback,
+      value?.z ?? fallback,
+    );
+  }
+
+  private isIdentityPlacement(placement?: ReturnType<PlanPDFGenerator["matrixToPlacement"]>) {
+    if (!placement) {
+      return true;
+    }
+
+    return placement.translation.x === 0 &&
+      placement.translation.y === 0 &&
+      placement.translation.z === 0 &&
+      placement.rotation.x === 0 &&
+      placement.rotation.y === 0 &&
+      placement.rotation.z === 0 &&
+      placement.scale.x === 1 &&
+      placement.scale.y === 1 &&
+      placement.scale.z === 1;
   }
 
   private nextEntityId() {

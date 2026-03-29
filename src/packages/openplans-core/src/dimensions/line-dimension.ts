@@ -129,8 +129,8 @@ export class LineDimension extends Line implements IPrimitive {
     // The below is skeleton line
     super({
       ogid: lineDimensionConfig?.ogid,
-      start: new Vector3(...(lineDimensionConfig?.startPoint || [0, 0, 0])),
-      end: new Vector3(...(lineDimensionConfig?.endPoint || [1, 0, 0])),
+      start: new Vector3(lineDimensionConfig?.startPoint ? lineDimensionConfig.startPoint[0] : 0, lineDimensionConfig?.startPoint ? lineDimensionConfig.startPoint[1] : 0, lineDimensionConfig?.startPoint ? lineDimensionConfig.startPoint[2] : 0),
+      end: new Vector3(lineDimensionConfig?.endPoint ? lineDimensionConfig.endPoint[0] : 1, lineDimensionConfig?.endPoint ? lineDimensionConfig.endPoint[1] : 0, lineDimensionConfig?.endPoint ? lineDimensionConfig.endPoint[2] : 0),
       color: 0xa6a6a6,
     });
 
@@ -154,8 +154,8 @@ export class LineDimension extends Line implements IPrimitive {
 
   setOPGeometry(): void {
     this.setConfig({
-      start: new Vector3(...this.propertySet.startPoint),
-      end: new Vector3(...this.propertySet.endPoint),
+      start: new Vector3(this.propertySet.startPoint[0], this.propertySet.startPoint[1], this.propertySet.startPoint[2]),
+      end: new Vector3(this.propertySet.endPoint[0], this.propertySet.endPoint[1], this.propertySet.endPoint[2]),
       color: 0xa6a6a6,
     });
 
@@ -195,7 +195,11 @@ export class LineDimension extends Line implements IPrimitive {
 
     const { startPoint, endPoint, spacing } = this.propertySet;
 
-    const direction = new Vector3(...endPoint).subtract(new Vector3(...startPoint)).normalize();
+    const direction = new Vector3(
+      endPoint[0] - startPoint[0],
+      endPoint[1] - startPoint[1],
+      endPoint[2] - startPoint[2]
+    ).normalize();
     const perpendicular = new Vector3(
       direction.z,
       0,
@@ -207,8 +211,8 @@ export class LineDimension extends Line implements IPrimitive {
 
     // Based on Spacing and the Perpendicular direction, calculate the offset for the witness lines
     const offset = perpendicular.multiply_scalar(spacing);
-    const witnessLineRightEnd = new Vector3(...endPoint).add(offset);
-    const witnessLineRightStart = new Vector3(...endPoint);
+    const witnessLineRightEnd = new Vector3(endPoint[0], endPoint[1], endPoint[2]).add(offset);
+    const witnessLineRightStart = new Vector3(endPoint[0], endPoint[1], endPoint[2]);
 
     const witnessLineRight = new Line({
       start: witnessLineRightStart,
@@ -222,8 +226,8 @@ export class LineDimension extends Line implements IPrimitive {
     this.subNodes.set("witnessLineRight", witnessLineRight);
 
     // Create witness line for Start Point
-    const witnessLineLeftEnd = new Vector3(...startPoint).add(offset);
-    const witnessLineLeftStart = new Vector3(...startPoint);
+    const witnessLineLeftEnd = new Vector3(startPoint[0], startPoint[1], startPoint[2]).add(offset);
+    const witnessLineLeftStart = new Vector3(startPoint[0], startPoint[1], startPoint[2]);
 
     const witnessLineLeft = new Line({
       start: witnessLineLeftStart,

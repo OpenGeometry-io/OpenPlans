@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ICylinderOptions, Cylinder, Vector3 } from 'opengeometry';
+import { Cylinder, Vector3 } from 'opengeometry';
 import { IShape } from './base-type';
 import { Placement } from '../types';  
 

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { OpenGeometry } from "opengeometry";
+import { Cuboid, OpenGeometry, Vector3 } from "opengeometry";
 
 import {
   DEFAULT_ISOMETRIC_CAMERA,
@@ -34,6 +34,17 @@ function createWallForExport() {
       scale: [1, 1, 1],
     },
   });
+}
+
+function createWindowFrontCamera(windowElement) {
+  const targetY = windowElement.sillHeight + windowElement.windowHeight / 2;
+  return {
+    position: { x: 0, y: targetY, z: 6 },
+    target: { x: 0, y: targetY, z: 0 },
+    up: { x: 0, y: 1, z: 0 },
+    near: 0.1,
+    projection_mode: "Orthographic",
+  };
 }
 
 test.before(async () => {
@@ -220,6 +231,36 @@ test("PlanPDFGenerator exports isometric projected outlines with default camera 
   assert.ok(payload.bounds.height > 1);
 });
 
+test("PlanPDFGenerator preserves direct-BRep object placement in front-view projection", () => {
+  const generator = new PlanPDFGenerator();
+  const leftFrameBar = new Cuboid({
+    center: new Vector3(-0.85, 1.5, 0),
+    width: 0.2,
+    height: 1.6,
+    depth: 0.2,
+    color: 0xff0000,
+  });
+
+  const payload = generator.generate({
+    elements: [{
+      getExportRoots() {
+        return [leftFrameBar];
+      },
+    }],
+    view: "isometric",
+    camera: {
+      position: { x: 0, y: 1.5, z: 6 },
+      target: { x: 0, y: 1.5, z: 0 },
+      up: { x: 0, y: 1, z: 0 },
+      near: 0.1,
+      projection_mode: "Orthographic",
+    },
+  });
+
+  assert.ok(Math.abs(payload.bounds.min.x - (-0.95)) < 1e-6);
+  assert.ok(Math.abs(payload.bounds.max.x - (-0.75)) < 1e-6);
+});
+
 test("PlanPDFGenerator respects grouped and parent transforms in top view", () => {
   const generator = new PlanPDFGenerator();
   const originDoor = new Door();
@@ -240,6 +281,29 @@ test("PlanPDFGenerator respects grouped and parent transforms in top view", () =
 
   assert.ok(Math.abs((movedPayload.bounds.min.x - originPayload.bounds.min.x) - 5) < 1e-6);
   assert.ok(Math.abs((movedPayload.bounds.min.y - originPayload.bounds.min.y) + 2) < 1e-6);
+});
+
+test("PlanPDFGenerator respects parent transforms in front-view projection", () => {
+  const generator = new PlanPDFGenerator();
+  const originWindow = new Window();
+  const movedWindow = new Window();
+
+  const originPayload = generator.generate({
+    elements: [originWindow],
+    view: "isometric",
+    camera: createWindowFrontCamera(originWindow),
+  });
+
+  movedWindow.position.set(5, 0, 0);
+  movedWindow.updateWorldMatrix(true, true);
+
+  const movedPayload = generator.generate({
+    elements: [movedWindow],
+    view: "isometric",
+    camera: createWindowFrontCamera(movedWindow),
+  });
+
+  assert.ok(Math.abs((movedPayload.bounds.min.x - originPayload.bounds.min.x) - 5) < 1e-6);
 });
 
 test("PlanPDFGenerator exports mixed wall, door, and window arrays for both views", () => {
