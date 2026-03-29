@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Rectangle, Vector3 } from 'opengeometry';
 import { IPrimitive } from './base-type';
+import { Placement } from '../types';
 
 export interface RectangleOptions {
   ogid?: string;
@@ -8,6 +9,7 @@ export interface RectangleOptions {
   width: number;
   breadth: number;
   color: number;
+  placement: Placement;
 }
 
 /**
@@ -15,7 +17,6 @@ export interface RectangleOptions {
  * Add the element to the board if it does.
  * If the element is moved outside the board, remove it from the board.
  */
-
 
 /**
  * Rectangle Primitive Class
@@ -28,16 +29,19 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
 
   selected: boolean = false;
   edit: boolean = false;
+  locked: boolean = false;
 
-  // TODO: Property Set can be extended based on requirements
-  // TODO: But do we need a separate propertySet for each primitive? Can't we use this.options directly?
   propertySet: RectangleOptions = {
     center: [0, 0, 0],
     width: 1,
     breadth: 1,
-    color: 0x0000ff
+    color: 0x0000ff,
+    placement: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1]
+    }
   };
-  // dimensionsSet: Map<string, THREE.Object3D> = new Map<string, THREE.Object3D>();
 
   set center(value: Array<number>) {
     this.propertySet.center = value;
@@ -79,10 +83,11 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
     return this.propertySet.color;
   }
 
+  // All tge params in Config are optional because we can update any one of them and the rest will be taken from the existing propertySet
   constructor(rectangleConfig?: RectangleOptions) {
     super({
       ogid: rectangleConfig?.ogid,
-      center: new Vector3(...(rectangleConfig?.center || [0, 0, 0])),
+      center: new Vector3(rectangleConfig?.center[0] || 0, rectangleConfig?.center[1] || 0, rectangleConfig?.center[2] || 0),
       width: rectangleConfig?.width || 1,
       breadth: rectangleConfig?.breadth || 1,
       color: rectangleConfig?.color || 0x0000ff
@@ -96,12 +101,11 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
 
     this.propertySet.ogid = this.ogid;
     this.setOPGeometry();
-
-    // this.setDimensions();
-    // this.listenKeyboardEvents();
   }
 
-  setOPConfig(_config: RectangleOptions): void {
+  setOPConfig(config: RectangleOptions): void {
+    this.propertySet = { ...this.propertySet, ...config };
+    this.setOPGeometry();
   }
 
   getOPConfig(): RectangleOptions {
@@ -110,7 +114,7 @@ export class RectanglePrimitive extends Rectangle implements IPrimitive {
 
   setOPGeometry(): void {
     this.setConfig({
-      center: new Vector3(...this.propertySet.center),
+      center: new Vector3(this.propertySet.center[0], this.propertySet.center[1], this.propertySet.center[2]),
       width: this.propertySet.width,
       breadth: this.propertySet.breadth,
       color: this.propertySet.color

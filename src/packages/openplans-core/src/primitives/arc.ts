@@ -34,8 +34,8 @@ export class ArcPrimitive extends Arc implements IPrimitive {
     color: 0x000000,
   };
 
-  set arcCenter(value: Vector3) {
-    this.propertySet.center = [value.x, value.y, value.z];
+  set arcCenter(value: Array<number>) {
+    this.propertySet.center = value;
 
     this.setOPGeometry();
   }
@@ -69,7 +69,7 @@ export class ArcPrimitive extends Arc implements IPrimitive {
   constructor(arcConfig?: ArcOptions) {
     super({
       ogid: arcConfig?.ogid,
-      center: new Vector3(...(arcConfig?.center || [0, 0, 0])),
+      center: new Vector3(arcConfig?.center ? arcConfig.center[0] : 0, arcConfig?.center ? arcConfig.center[1] : 0, arcConfig?.center ? arcConfig.center[2] : 0),
       radius: arcConfig?.radius || 1,
       startAngle: arcConfig?.startAngle || 0,
       endAngle: arcConfig?.endAngle || Math.PI,
@@ -137,7 +137,7 @@ export class ArcPrimitive extends Arc implements IPrimitive {
 
   setOPGeometry(): void {
     this.setConfig({
-      center: new Vector3(...this.propertySet.center),
+      center: new Vector3(this.propertySet.center[0], this.propertySet.center[1], this.propertySet.center[2]),
       radius: this.propertySet.radius,
       startAngle: this.propertySet.startAngle,
       endAngle: this.propertySet.endAngle,

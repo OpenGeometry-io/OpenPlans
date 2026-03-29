@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>OpenPlans Wall2D</title>
+    <title>OpenPlans Wall</title>
     <!-- MIXPANEL_TRACKING -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,35 +39,170 @@
 </head>
 
 <body>
-    <div class="example-title">Wall 2D</div>
+    <div class="example-title">Wall</div>
     <div id="app" style="width: 100%; height: 100vh;">
     </div>
 
     <script type="module">
-        import { OpenPlans, CameraMode, Vector3 } from './../../../src/index.ts';
+        import { jsPDF } from 'jspdf';
+        import { OpenPlans, CameraMode, PlanPDFGenerator } from './../../../src/index.ts';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         let openPlans;
         let wall;
+        const pdfGenerator = new PlanPDFGenerator();
+
+        const EXPORT_VIEW_OPTIONS = {
+            Top: 'top',
+            Front: 'front',
+            Side: 'side',
+            Isometric: 'isometric',
+        };
 
         async function init() {
             const container = document.getElementById('app');
             openPlans = new OpenPlans(container);
             await openPlans.setupOpenGeometry();
 
-            openPlans.CameraMode = CameraMode.Plan;
+            openPlans.CameraMode = CameraMode.Model;
 
-            wall = openPlans.wall2D({
+            wall = openPlans.wall({
                 points: [
-                    new Vector3(-5, 0, -2),
-                    new Vector3(5, 0, -2),
-                    new Vector3(5, 0, 5),
-                    new Vector3(-2, 0, 5)
+                    { x: -5, y: 0, z: -2 },
+                    { x: 5, y: 0, z: -2 },
+                    { x: 5, y: 0, z: 5 },
+                    { x: -2, y: 0, z: 5 }
                 ],
                 wallThickness: 0.3,
                 wallHeight: 3.0,
                 wallColor: 0xcccccc
             });
+        }
+
+        function getWallCenter() {
+            const points = wall.propertySet.points;
+            if (!points || points.length === 0) {
+                return { x: 0, y: wall.wallHeight / 2, z: 0 };
+            }
+
+            const xs = points.map((point) => point.x);
+            const zs = points.map((point) => point.z);
+
+            return {
+                x: (Math.min(...xs) + Math.max(...xs)) / 2,
+                y: wall.wallHeight / 2,
+                z: (Math.min(...zs) + Math.max(...zs)) / 2,
+            };
+        }
+
+        function getWallSpan() {
+            const points = wall.propertySet.points;
+            if (!points || points.length === 0) {
+                return { x: 1, z: 1 };
+            }
+
+            const xs = points.map((point) => point.x);
+            const zs = points.map((point) => point.z);
+
+            return {
+                x: Math.max(Math.max(...xs) - Math.min(...xs), wall.wallThickness, 1),
+                z: Math.max(Math.max(...zs) - Math.min(...zs), wall.wallThickness, 1),
+            };
+        }
+
+        function buildProjectionCamera(selectedView) {
+            const center = getWallCenter();
+            const span = getWallSpan();
+            const distance = Math.max(span.x, span.z, wall.wallHeight) * 2.5;
+
+            if (selectedView === 'front') {
+                return {
+                    position: { x: center.x, y: center.y, z: center.z + distance },
+                    target: { x: center.x, y: center.y, z: center.z },
+                    up: { x: 0, y: 1, z: 0 },
+                    near: 0.1,
+                    projection_mode: 'Orthographic',
+                };
+            }
+
+            if (selectedView === 'side') {
+                return {
+                    position: { x: center.x + distance, y: center.y, z: center.z },
+                    target: { x: center.x, y: center.y, z: center.z },
+                    up: { x: 0, y: 1, z: 0 },
+                    near: 0.1,
+                    projection_mode: 'Orthographic',
+                };
+            }
+
+            return {
+                position: { x: center.x + distance, y: center.y + distance * 0.75, z: center.z + distance },
+                target: { x: center.x, y: center.y, z: center.z },
+                up: { x: 0, y: 1, z: 0 },
+                near: 0.1,
+                projection_mode: 'Orthographic',
+            };
+        }
+
+        function buildExportPayload(selectedView) {
+            if (selectedView === 'top') {
+                return pdfGenerator.generate({
+                    elements: [wall],
+                    view: 'top',
+                });
+            }
+
+            return pdfGenerator.generate({
+                elements: [wall],
+                view: 'isometric',
+                camera: buildProjectionCamera(selectedView),
+            });
+        }
+
+        function exportPayloadToPdf(payload, selectedView) {
+            const width = Math.max(payload.bounds.width, 0.001);
+            const height = Math.max(payload.bounds.height, 0.001);
+            const orientation = width >= height ? 'landscape' : 'portrait';
+            const pdf = new jsPDF({
+                orientation,
+                unit: 'mm',
+                format: 'a4',
+                compress: true,
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 12;
+            const headerHeight = 12;
+            const drawableWidth = pageWidth - margin * 2;
+            const drawableHeight = pageHeight - margin * 2 - headerHeight;
+            const scale = Math.min(drawableWidth / width, drawableHeight / height);
+            const offsetX = (pageWidth - width * scale) / 2;
+            const offsetY = margin + headerHeight + (drawableHeight - height * scale) / 2;
+
+            pdf.setFont('courier', 'bold');
+            pdf.setFontSize(11);
+            pdf.text(`${wall.labelName} - ${selectedView.toUpperCase()} VIEW`, margin, margin);
+
+            for (const line of payload.lines) {
+                const strokeColor = line.stroke_color
+                    ? line.stroke_color.map((channel) => Math.round(channel * 255))
+                    : [24, 24, 24];
+                const strokeWidth = line.stroke_width !== undefined
+                    ? Math.max(0.15, Math.min(1.2, line.stroke_width * scale * 0.05))
+                    : 0.25;
+
+                const x1 = offsetX + (line.start.x - payload.bounds.min.x) * scale;
+                const y1 = offsetY + (payload.bounds.max.y - line.start.y) * scale;
+                const x2 = offsetX + (line.end.x - payload.bounds.min.x) * scale;
+                const y2 = offsetY + (payload.bounds.max.y - line.end.y) * scale;
+
+                pdf.setDrawColor(strokeColor[0], strokeColor[1], strokeColor[2]);
+                pdf.setLineWidth(strokeWidth);
+                pdf.line(x1, y1, x2, y2);
+            }
+
+            pdf.save(`wall-${selectedView}-view.pdf`);
         }
 
         function setUI() {
@@ -79,18 +214,32 @@
                 wallThickness: wall.wallThickness,
                 wallHeight: wall.wallHeight,
                 wallColor: wall.propertySet.wallColor,
+                profileView: wall.profileView,
+                modelView: wall.modelView,
                 addPoint: function () {
                     // Add a random point to the wall
                     const lastIndex = wall.propertySet.points.length - 1;
                     const last = wall.propertySet.points[lastIndex];
                     const dx = (Math.random() - 0.5) * 4;
                     const dz = (Math.random() - 0.5) * 4;
-                    wall.addPoint(new Vector3(last.x + dx, 0, last.z + dz));
+                    wall.addPoint({ x: last.x + dx, y: 0, z: last.z + dz });
                 },
                 removeLastPoint: function () {
                     if (wall.propertySet.points.length > 2) {
                         wall.propertySet.points.pop();
                         wall.updatePoints([...wall.propertySet.points]);
+                    }
+                }
+            };
+            const exportControls = {
+                exportView: 'top',
+                async exportPDF() {
+                    try {
+                        const payload = buildExportPayload(exportControls.exportView);
+                        exportPayloadToPdf(payload, exportControls.exportView);
+                    } catch (error) {
+                        console.error('PDF export failed:', error);
+                        alert(`PDF export failed for ${exportControls.exportView} view.`);
                     }
                 }
             };
@@ -103,9 +252,16 @@
                 wall.setOPGeometry();
             });
 
+            wallFolder.add(controls, 'profileView').name('Profile View').onChange(v => wall.profileView = v);
+            wallFolder.add(controls, 'modelView').name('Model View').onChange(v => wall.modelView = v);
+            
             wallFolder.add(controls, 'addPoint').name('Add Random Point');
             wallFolder.add(controls, 'removeLastPoint').name('Remove Last Point');
-            wallFolder.add({ fit: () => openPlans.fit(wall.id) }, 'fit').name('Fit to View');
+            const exportFolder = gui.addFolder('PDF Export');
+            exportFolder.add(exportControls, 'exportView', EXPORT_VIEW_OPTIONS).name('View');
+            exportFolder.add(exportControls, 'exportPDF').name('Export PDF');
+
+            wallFolder.add({ fit: () => openPlans.fit?.(wall.id) }, 'fit').name('Fit to View');
             wallFolder.add({ getConfig: () => console.log(wall.getOPConfig()) }, 'getConfig').name('Get Config');
         }
 

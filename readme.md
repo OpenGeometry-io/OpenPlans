@@ -4,12 +4,12 @@ OpenPlans is the BIM and floor-planning application layer built on top of `openg
 
 ## Architecture
 
-`@opengeometry/openplans` remains the only public package, but the repo is now split internally into two workspace packages:
+`@opengeometry/openplans` remains the only public package, but the repo is split internally into two workspace packages:
 
 - `@opengeometry/openplans-core`
-  - semantic BIM document
-  - wall / door / window specs
-  - geometry generation
+  - Semantic BIM document
+  - Wall / Door / Window and other specs
+  - Geometry generation
   - IFC mapping and export orchestration
 - `@opengeometry/openplans-three`
   - Three.js runtime
@@ -56,10 +56,10 @@ Use the semantic IFC example in:
 
 It shows:
 
-- wall / door / window creation
-- live color and size edits
-- semantic document inspection
-- direct IFC export through `opengeometry`
+- Wall / door / window creation
+- Live color and size edits
+- Semantic document inspection
+- Direct IFC export through `opengeometry`
 
 ## Local Development
 
@@ -75,7 +75,7 @@ npm run build
 This produces:
 
 - `dist/package.json`
-- `dist/opengeometry-2.1.0.tgz`
+- `dist/opengeometry-2.0.1.tgz`
 
 Then install dependencies in OpenPlans:
 
@@ -91,9 +91,3 @@ npm run dev
 ```
 
 During local development, npm installs `opengeometry` from the generated versioned tarball package, not from a directory link.
-
-## Notes
-
-- Existing visual factories such as `wall2D`, `door2D`, and `singleWindow2D` still work.
-- The semantic export flow currently focuses on wall, door, and window.
-- `OpenBoard` should follow the same architecture later, but it is not part of this repo refactor.

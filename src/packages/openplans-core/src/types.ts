@@ -1,7 +1,16 @@
+import type * as THREE from "three";
+
 export interface Point3D {
   x: number;
   y: number;
   z: number;
+}
+
+// TODO: Maybe we can change this to use Point3D
+export interface Placement {
+  position: Array<number>; // Assuming [x, y, z] format for position
+  rotation: Array<number>; // Assuming rotation in degrees for [x, y, z] axes
+  scale: Array<number>; // Assuming scale factors for [x, y, z] axes
 }
 
 export interface PlanAppearance {
@@ -104,4 +113,52 @@ export interface SemanticIfcExportOptions extends Partial<PlanStructure> {
   errorPolicy?: "Strict" | "BestEffort";
   validateTopology?: boolean;
   requireClosedShell?: boolean;
+}
+
+export type PlanExportView = "top" | "isometric";
+
+export interface PlanVectorPoint {
+  x: number;
+  y: number;
+}
+
+export type PlanVectorColor = [number, number, number];
+
+export interface PlanVectorLine {
+  start: PlanVectorPoint;
+  end: PlanVectorPoint;
+  stroke_width?: number;
+  stroke_color?: PlanVectorColor;
+}
+
+export interface PlanVectorBounds {
+  min: PlanVectorPoint;
+  max: PlanVectorPoint;
+  width: number;
+  height: number;
+}
+
+export interface PlanProjectionCamera {
+  position: Point3D;
+  target: Point3D;
+  up: Point3D;
+  near: number;
+  projection_mode: "Orthographic" | "Perspective";
+}
+
+export interface PlanProjectionHlr {
+  hide_hidden_edges: boolean;
+}
+
+export interface PlanVectorPayload {
+  view: PlanExportView;
+  units: "meters";
+  bounds: PlanVectorBounds;
+  lines: PlanVectorLine[];
+  camera?: PlanProjectionCamera;
+  hlr?: PlanProjectionHlr;
+}
+
+export interface PlanVectorExportable {
+  getExportRoots(view: PlanExportView): THREE.Object3D[];
 }

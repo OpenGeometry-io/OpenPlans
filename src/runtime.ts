@@ -96,7 +96,7 @@ import {
   type SemanticIfcExportOptions,
   type WallElement,
   type WindowElement,
-} from '../packages/openplans-core/src/index';
+} from './packages/openplans-core/src/index';
 
 // Camera Modes
 export { CameraMode } from './service/plancamera';

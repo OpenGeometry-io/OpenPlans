@@ -31,7 +31,6 @@ export class LinePrimitive extends Line implements IPrimitive {
     width: 4,
   };
 
-
   set startPoint(value: Array<number>) {
     this.propertySet.startPoint = value;
 
@@ -65,8 +64,8 @@ export class LinePrimitive extends Line implements IPrimitive {
   constructor(lineConfig?: LineOptions) {
     super({
       ogid: lineConfig?.ogid,
-      start: new Vector3(...(lineConfig?.startPoint || [0, 0, 0])),
-      end: new Vector3(...(lineConfig?.endPoint || [1, 0, 0])),
+      start: new Vector3(lineConfig?.startPoint ? lineConfig.startPoint[0] : 0, lineConfig?.startPoint ? lineConfig.startPoint[1] : 0, lineConfig?.startPoint ? lineConfig.startPoint[2] : 0),
+      end: new Vector3(lineConfig?.endPoint ? lineConfig.endPoint[0] : 1, lineConfig?.endPoint ? lineConfig.endPoint[1] : 0, lineConfig?.endPoint ? lineConfig.endPoint[2] : 0),
       color: lineConfig?.color || 0x000000,
     });
 
@@ -90,8 +89,8 @@ export class LinePrimitive extends Line implements IPrimitive {
 
   setOPGeometry(): void {
     this.setConfig({
-      start: new Vector3(...this.propertySet.startPoint),
-      end: new Vector3(...this.propertySet.endPoint),
+      start: new Vector3(this.propertySet.startPoint[0], this.propertySet.startPoint[1], this.propertySet.startPoint[2]),
+      end: new Vector3(this.propertySet.endPoint[0], this.propertySet.endPoint[1], this.propertySet.endPoint[2]),
       color: this.propertySet.color,
     });
   }

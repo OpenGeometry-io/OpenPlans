@@ -1,12 +1,48 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { OpenGeometry } from "opengeometry";
 
 import {
+  DEFAULT_ISOMETRIC_CAMERA,
+  DEFAULT_ISOMETRIC_HLR,
+  Door,
   OpenPlans,
   PlanDocument,
+  PlanPDFGenerator,
+  Wall,
+  Window,
   buildAppearanceMetadata,
   buildIfcConfig,
 } from "../dist/index.js";
+
+function createWallForExport() {
+  return new Wall({
+    labelName: "Wall Export",
+    type: "WALL",
+    points: [
+      { x: 0, y: 0, z: 0 },
+      { x: 6, y: 0, z: 0 },
+    ],
+    wallColor: 0xcccccc,
+    wallThickness: 0.2,
+    wallHeight: 3,
+    wallMaterial: "CONCRETE",
+    placement: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+    },
+  });
+}
+
+test.before(async () => {
+  const wasm = fs.readFileSync(
+    new URL("../node_modules/opengeometry/opengeometry_bg.wasm", import.meta.url),
+  );
+
+  await OpenGeometry.create({ wasmURL: wasm });
+});
 
 test("PlanDocument stores wall, door, and window semantic elements", () => {
   const document = new PlanDocument({
@@ -110,4 +146,130 @@ test("buildIfcConfig uses structure defaults and explicit overrides", () => {
 test("public facade re-exports runtime and semantic APIs", () => {
   assert.equal(typeof OpenPlans, "function");
   assert.equal(typeof PlanDocument, "function");
+  assert.equal(typeof PlanPDFGenerator, "function");
+  assert.equal(typeof Door, "function");
+  assert.equal(typeof Wall, "function");
+  assert.equal(typeof Window, "function");
+});
+
+test("Door export roots split top-view symbols from isometric geometry", () => {
+  const door = new Door();
+
+  const topRoots = door.getExportRoots("top");
+  const isometricRoots = door.getExportRoots("isometric");
+
+  assert.ok(topRoots.some((root) => root.constructor.name === "Arc"));
+  assert.ok(isometricRoots.every((root) => root.constructor.name !== "Arc"));
+});
+
+test("PlanPDFGenerator exports wall, door, and window individually for both views", () => {
+  const generator = new PlanPDFGenerator();
+  const samples = [
+    { label: "wall", element: createWallForExport() },
+    { label: "door", element: new Door() },
+    { label: "window", element: new Window() },
+  ];
+
+  for (const { label, element } of samples) {
+    const topPayload = generator.generate({
+      elements: [element],
+      view: "top",
+    });
+    const isometricPayload = generator.generate({
+      elements: [element],
+      view: "isometric",
+    });
+
+    assert.equal(topPayload.view, "top", `${label} top export should use top view`);
+    assert.equal(isometricPayload.view, "isometric", `${label} iso export should use isometric view`);
+    assert.ok(topPayload.lines.length > 0, `${label} top export should include linework`);
+    assert.ok(isometricPayload.lines.length > 0, `${label} iso export should include linework`);
+  }
+});
+
+test("PlanPDFGenerator exports top-view plan symbols without leaking 3D height", () => {
+  const door = new Door();
+  const generator = new PlanPDFGenerator();
+
+  const payload = generator.generate({
+    elements: [door],
+    view: "top",
+  });
+
+  assert.equal(payload.view, "top");
+  assert.equal(payload.units, "meters");
+  assert.equal(payload.camera, undefined);
+  assert.equal(payload.hlr, undefined);
+  assert.ok(payload.lines.length > 0);
+  assert.ok(payload.bounds.height < door.doorHeight);
+});
+
+test("PlanPDFGenerator exports isometric projected outlines with default camera and HLR", () => {
+  const door = new Door();
+  const generator = new PlanPDFGenerator();
+
+  const payload = generator.generate({
+    elements: [door],
+    view: "isometric",
+  });
+
+  assert.equal(payload.view, "isometric");
+  assert.deepEqual(payload.camera, DEFAULT_ISOMETRIC_CAMERA);
+  assert.deepEqual(payload.hlr, DEFAULT_ISOMETRIC_HLR);
+  assert.ok(payload.lines.length > 0);
+  assert.ok(payload.bounds.height > 1);
+});
+
+test("PlanPDFGenerator respects grouped and parent transforms in top view", () => {
+  const generator = new PlanPDFGenerator();
+  const originDoor = new Door();
+  const movedDoor = new Door();
+
+  const originPayload = generator.generate({
+    elements: [originDoor],
+    view: "top",
+  });
+
+  movedDoor.position.set(5, 0, 2);
+  movedDoor.updateWorldMatrix(true, true);
+
+  const movedPayload = generator.generate({
+    elements: [movedDoor],
+    view: "top",
+  });
+
+  assert.ok(Math.abs((movedPayload.bounds.min.x - originPayload.bounds.min.x) - 5) < 1e-6);
+  assert.ok(Math.abs((movedPayload.bounds.min.y - originPayload.bounds.min.y) + 2) < 1e-6);
+});
+
+test("PlanPDFGenerator exports mixed wall, door, and window arrays for both views", () => {
+  const wall = createWallForExport();
+  const door = new Door();
+  const windowElement = new Window();
+  const generator = new PlanPDFGenerator();
+
+  door.position.set(1.5, 0, 0);
+  windowElement.position.set(4, 0, 0);
+
+  const topPayload = generator.generate({
+    elements: [wall, door, windowElement],
+    view: "top",
+  });
+  const isometricPayload = generator.generate({
+    elements: [wall, door, windowElement],
+    view: "isometric",
+  });
+
+  assert.ok(topPayload.lines.length > 0);
+  assert.ok(isometricPayload.lines.length > 0);
+  assert.ok(isometricPayload.bounds.height > topPayload.bounds.height);
+});
+
+test("PlanPDFGenerator rejects empty export arrays", () => {
+  const generator = new PlanPDFGenerator();
+
+  assert.throws(
+    () => generator.generate({ elements: [] }),
+    /requires at least one exportable element/,
+  );
 });

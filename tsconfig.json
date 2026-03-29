@@ -26,5 +26,5 @@
 
     "types": ["vite/client"]
   },
-  "include": ["src", "packages"]
+  "include": ["src", "src/packages"]
 }
