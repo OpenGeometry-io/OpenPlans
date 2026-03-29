@@ -44,14 +44,24 @@ export class PlanCamera {
     this.CameraMode = CameraMode.Plan;
   }
 
+  private setView(position: [number, number, number], target: [number, number, number], up: [number, number, number]) {
+    this.controls.stop();
+    this.camera.up.set(...up);
+    this.controls.updateCameraUp();
+    void this.controls.setLookAt(...position, ...target, false);
+    this.controls.update(0);
+  }
+
   private planMode() {
     this.controls.enabled = true;
-    this.controls.mouseButtons.left = CameraControls.ACTION.SCREEN_PAN;
+    this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+    this.setView([0, 20, 0.001], [0, 0, 0], [0, 0, -1]);
   }
 
   private modelMode() {
     this.controls.enabled = true;
     this.controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+    this.setView([20, 20, 20], [0, 0, 0], [0, 1, 0]);
   }
 
   async fitToElement(target: THREE.Object3D | THREE.Object3D[]) {

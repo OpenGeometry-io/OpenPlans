@@ -9,14 +9,23 @@ import { PlanCamera } from './plancamera'
 
 import CameraControls from 'camera-controls'
 
+export type activeTheme = 'light' | 'dark' | 'darkBlue';
+export interface ICanvasTheme {
+  [key: string]: {
+    background: string;
+    color: string;
+    gridColor: number;
+  }
+}
+
 export class OpenThree {
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
   planCamera: PlanCamera
   threeCamera: THREE.PerspectiveCamera
   container: HTMLElement
-  // theme!: ICanvasTheme
-  // activeTheme: activeTheme = 'light'
+  theme!: ICanvasTheme
+  activeTheme: activeTheme = 'light'
   // planGrid: PlanGrid
   openGrid: THREE.GridHelper | undefined
 
@@ -36,38 +45,36 @@ export class OpenThree {
     this.setup()
   }
 
-  // accept a theme with type
-  // generateTheme() {
-  //   this.theme = {
-  //     darkBlue: {
-  //       background: '#5b6676',
-  //       color: '#fff',
-  //       gridColor: 0xffffff
-  //     },
-  //     light: {
-  //       background: '#ebdbcc',
-  //       color: '#003ca0',
-  //       gridColor: 0x003ca0
-  //     },
-  //     dark: {
-  //       background: '#242b2f',
-  //       color: '#fff',
-  //       gridColor: 0xffffff
-  //     }
-  //   }
-  // }
+  generateTheme() {
+    this.theme = {
+      darkBlue: {
+        background: '#5b6676',
+        color: '#fff',
+        gridColor: 0xffffff
+      },
+      light: {
+        background: '#ebdbcc',
+        color: '#003ca0',
+        gridColor: 0x003ca0
+      },
+      dark: {
+        background: '#242b2f',
+        color: '#fff',
+        gridColor: 0xffffff
+      }
+    }
+  }
 
-  // TODO:
-  // toggleTheme(name: activeTheme) {
-  //   if (!this.theme[name]) {
-  //     return
-  //   }
-  //   this.activeTheme = name
-  //   this.scene.background = new THREE.Color(this.theme[this.activeTheme].background)
+  toggleTheme(name: activeTheme) {
+    if (!this.theme[name]) {
+      return
+    }
+    this.activeTheme = name
+    this.scene.background = new THREE.Color(this.theme[this.activeTheme].background)
     // this.planGrid.applyTheme(this.activeTheme)
     // const gridColor = this.hexToRgb(this.theme[this.activeTheme].gridColor)
     // OpenGrid.Shader.uniforms.lineColor.value = gridColor
-  // }
+  }
 
   async setup() {
     this.scene.background = new THREE.Color(0xf0f0f0)

@@ -61,15 +61,46 @@
       Side: 'side',
       Isometric: 'isometric',
     };
+    const VIEW_MODE_OPTIONS = {
+      'Plan View': 'plan',
+      'Model View': 'model',
+      Custom: 'custom',
+    };
 
     async function init() {
       const container = document.getElementById('app');
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
-      openPlans.CameraMode = CameraMode.Model;
-
       door = openPlans.door();
+      applyDoorViewMode('model');
+    }
+
+    function getDoorViewMode() {
+      if (door.profileView && !door.modelView) {
+        return 'plan';
+      }
+
+      if (!door.profileView && door.modelView) {
+        return 'model';
+      }
+
+      return 'custom';
+    }
+
+    function applyDoorViewMode(selectedViewMode) {
+      if (selectedViewMode === 'plan') {
+        openPlans.CameraMode = CameraMode.Plan;
+        door.profileView = true;
+        door.modelView = false;
+        return;
+      }
+
+      if (selectedViewMode === 'model') {
+        openPlans.CameraMode = CameraMode.Model;
+        door.profileView = false;
+        door.modelView = true;
+      }
     }
 
     function buildProjectionCamera(selectedView) {
@@ -173,6 +204,7 @@
       const doorFolder = gui.addFolder('Door');
       const doorControls = {
         'labelName': door.labelName,
+        'viewMode': getDoorViewMode(),
         'panelWidth': door.panelWidth,
         'panelThickness': door.panelThickness,
         'doorHeight': door.doorHeight,
@@ -199,6 +231,10 @@
       doorFolder.add(doorControls, 'labelName').name('Label Name').onChange((value) => {
         door.labelName = value;
       });
+      const viewModeController = doorFolder.add(doorControls, 'viewMode', VIEW_MODE_OPTIONS).name('View Mode').onChange((value) => {
+        applyDoorViewMode(value);
+        syncViewControllers();
+      });
       doorFolder.add(doorControls, 'panelWidth', 0.5, 5).name('Width').onChange((value) => {
         door.panelWidth = value;
       });
@@ -220,12 +256,23 @@
       doorFolder.addColor(doorControls, 'frameColor').name('Frame Color').onChange((value) => {
         door.frameColor = value;
       });
-      doorFolder.add(doorControls, 'profileView').name('Show 2D View').onChange((value) => {
+      const profileViewController = doorFolder.add(doorControls, 'profileView').name('Show 2D View').onChange((value) => {
         door.profileView = value;
+        syncViewControllers();
       });
-      doorFolder.add(doorControls, 'modelView').name('Show 3D View').onChange((value) => {
+      const modelViewController = doorFolder.add(doorControls, 'modelView').name('Show 3D View').onChange((value) => {
         door.modelView = value;
+        syncViewControllers();
       });
+
+      const syncViewControllers = () => {
+        doorControls.profileView = door.profileView;
+        doorControls.modelView = door.modelView;
+        doorControls.viewMode = getDoorViewMode();
+        viewModeController.updateDisplay();
+        profileViewController.updateDisplay();
+        modelViewController.updateDisplay();
+      };
 
       const exportFolder = gui.addFolder('PDF Export');
       exportFolder.add(exportControls, 'exportView', EXPORT_VIEW_OPTIONS).name('View');
@@ -233,6 +280,7 @@
 
       doorFolder.add({ fit: () => openPlans.fit?.(door.id) }, 'fit').name('Fit');
       doorFolder.add({ getConfig: () => console.log(door.getOPConfig()) }, 'getConfig').name('Get Config');
+      syncViewControllers();
 
     }
 

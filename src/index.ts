@@ -16,6 +16,8 @@ export * from './packages/openplans-core/src';
 export { Door, Window, Wall };
 export type { DoorOptions, WindowOptions, WallOptions };
 
+export type Theme = 'light' | 'dark' | 'darkBlue';
+
 export class OpenPlans {
   // private container: HTMLElement;
   private openThree: OpenThree;
@@ -89,6 +91,14 @@ export class OpenPlans {
     //   viewportBlock.render(this.openThree.renderer, this.openThree.scene);
     // });
   }
+
+  // /**
+  //  * 
+  //  * @param theme 
+  //  */
+  // theme(theme: Theme) {
+  //   this.openThree.applyTheme(theme);
+  // }
 
   fitToView(elements: THREE.Object3D[]) {
     const controls = this.planCamera.controls;
