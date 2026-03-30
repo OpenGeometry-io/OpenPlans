@@ -1,4 +1,5 @@
 export * from "./exporter/PlanPDFGenerator";
+export * from "./exporter/IFCExporter";
 export * from "./types";
 export * from "./utils";
 export * from "./elements";

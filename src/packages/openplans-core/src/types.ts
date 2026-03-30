@@ -115,6 +115,11 @@ export interface SemanticIfcExportOptions extends Partial<PlanStructure> {
   requireClosedShell?: boolean;
 }
 
+export interface PlanIfcExportResult {
+  text: string;
+  reportJson: string;
+}
+
 export type PlanExportView = "top" | "isometric";
 
 export interface PlanVectorPoint {
@@ -161,4 +166,10 @@ export interface PlanVectorPayload {
 
 export interface PlanVectorExportable {
   getExportRoots(view: PlanExportView): THREE.Object3D[];
+}
+
+export interface PlanIfcExportable extends PlanVectorExportable {
+  ogType: string;
+  labelName: string;
+  ogid?: string;
 }

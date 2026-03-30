@@ -1,12 +1,12 @@
 {
   "name": "@opengeometry/openplans",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "author": "Vishwajeet Mane",
   "description": "Create 2D Drawings with OpenPlans",
   "opengeometryDependencyVersion": "^2.1.0",
   "main": "./index.js",
   "type": "module",
-  "types": "./dist/types/src/index.d.ts",
+  "types": "./types/src/index.d.ts",
   "workspaces": [
     "packages/*"
   ],

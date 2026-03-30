@@ -45,12 +45,13 @@
 
     <script type="module">
         import { jsPDF } from 'jspdf';
-        import { OpenPlans, CameraMode, PlanPDFGenerator } from './../../../src/index.ts';
+        import { OpenPlans, CameraMode, IFCExporter, PlanPDFGenerator } from './../../../src/index.ts';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         let openPlans;
         let wall;
         const pdfGenerator = new PlanPDFGenerator();
+        const ifcExporter = new IFCExporter();
 
         const EXPORT_VIEW_OPTIONS = {
             Top: 'top',
@@ -205,6 +206,16 @@
             pdf.save(`wall-${selectedView}-view.pdf`);
         }
 
+        function downloadIfc(text, fileName) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        }
+
         function setUI() {
             const gui = new GUI();
             const wallFolder = gui.addFolder('Wall 2D');
@@ -243,6 +254,19 @@
                     }
                 }
             };
+            const ifcControls = {
+                exportIFC() {
+                    try {
+                        const result = ifcExporter.generate({
+                            elements: [wall],
+                        });
+                        downloadIfc(result.text, `wall-${wall.labelName || 'export'}.ifc`);
+                    } catch (error) {
+                        console.error('IFC export failed:', error);
+                        alert('IFC export failed.');
+                    }
+                }
+            };
 
             wallFolder.add(controls, 'labelName').name('Label Name').onChange(v => wall.labelName = v);
             wallFolder.add(controls, 'wallThickness', 0.1, 2.0).name('Thickness').onChange(v => wall.wallThickness = v);
@@ -260,6 +284,8 @@
             const exportFolder = gui.addFolder('PDF Export');
             exportFolder.add(exportControls, 'exportView', EXPORT_VIEW_OPTIONS).name('View');
             exportFolder.add(exportControls, 'exportPDF').name('Export PDF');
+            const ifcFolder = gui.addFolder('IFC Export');
+            ifcFolder.add(ifcControls, 'exportIFC').name('Export IFC');
 
             wallFolder.add({ fit: () => openPlans.fit?.(wall.id) }, 'fit').name('Fit to View');
             wallFolder.add({ getConfig: () => console.log(wall.getOPConfig()) }, 'getConfig').name('Get Config');
