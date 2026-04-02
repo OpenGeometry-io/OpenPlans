@@ -5,16 +5,49 @@ import { CameraMode, PlanCamera } from './packages/openplans-three/src/plancamer
 
 import { RectanglePrimitive, RectangleOptions, ArcPrimitive, ArcOptions, PolylinePrimitive, PolylineOptions, LineOptions, LinePrimitive  } from './packages/openplans-core/src/primitives';
 import { CuboidOptions, CuboidShape, CylinderOptions, CylinderShape } from './packages/openplans-core/src/shapes';
-import { Wall, WallOptions } from './packages/openplans-core/src/elements/solids/wall';
+import {
+  Bathtub,
+  Bed,
+  Bench,
+  Bidet,
+  Board,
+  Cabinet,
+  Chair,
+  Counter,
+  Desk,
+  DiningTable,
+  Dishwasher,
+  Door,
+  DoubleDoor,
+  DoubleWindow,
+  Fountain,
+  Island,
+  KitchenSink,
+  Planter,
+  Refrigerator,
+  Sink,
+  Shower,
+  Slab,
+  Sofa,
+  Space,
+  Stair,
+  Stove,
+  Shrub,
+  Toilet,
+  Tree,
+  Urinal,
+  Wall,
+  Washer,
+  Window,
+  Wardrobe,
+} from './packages/openplans-core/src/elements';
 
 import { Event } from './utils/event';
-import { Door, DoorOptions, Window, WindowOptions } from './packages/openplans-core/src/elements/openings';
 
 // Camera Modes
 export { CameraMode } from './packages/openplans-three/src/plancamera';
 export * from './packages/openplans-core/src';
 export { Door, Window, Wall };
-export type { DoorOptions, WindowOptions, WallOptions };
 
 export type Theme = 'light' | 'dark' | 'darkBlue';
 
@@ -109,68 +142,181 @@ export class OpenPlans {
     controls.fitToSphere(boundingBox.getBoundingSphere(new THREE.Sphere()), true);
   }
 
+  toggleGrid(show: boolean) {
+    this.openThree.toggleGrid(show);
+  }
+
+  private addElement<T extends THREE.Object3D>(element: T) {
+    this.openThree.scene.add(element);
+    this.elements.push(element);
+    return element;
+  }
+
   arc(config?: ArcOptions) {
     const arc = new ArcPrimitive(config);
-    this.openThree.scene.add(arc);
-    this.elements.push(arc);
-    return arc;
+    return this.addElement(arc);
   }
 
   rectangle(config?: RectangleOptions) {
     const rectangle = new RectanglePrimitive(config);
-    this.openThree.scene.add(rectangle);
-    this.elements.push(rectangle);
-    return rectangle;
+    return this.addElement(rectangle);
   }
 
   polyline(config?: PolylineOptions) {
     const polyline = new PolylinePrimitive(config);
-    this.openThree.scene.add(polyline);
-    this.elements.push(polyline);
-    return polyline;
+    return this.addElement(polyline);
   }
 
   line(config?: LineOptions) {
     const line = new LinePrimitive(config);
-    this.openThree.scene.add(line);
-    this.elements.push(line);
-    return line;
+    return this.addElement(line);
   }
 
   // Shapes
   cuboid(config?: CuboidOptions) {
     const cuboid = new CuboidShape(config);
-    this.openThree.scene.add(cuboid);
-    this.elements.push(cuboid);
-    return cuboid;
+    return this.addElement(cuboid);
   }
 
   cylinder(config?: CylinderOptions) {
     const cylinder = new CylinderShape(config);
-    this.openThree.scene.add(cylinder);
-    this.elements.push(cylinder);
-    return cylinder;
+    return this.addElement(cylinder);
   }
 
   // Elements
-  wall(config?: WallOptions) {
-    const wall = new Wall(config);
-    this.openThree.scene.add(wall);
-    this.elements.push(wall);
-    return wall;
+  wall(config?: ConstructorParameters<typeof Wall>[0]) {
+    return this.addElement(new Wall(config));
   }
 
-  door(config?: DoorOptions) {
-    const door = new Door(config);
-    this.openThree.scene.add(door);
-    this.elements.push(door);
-    return door;
+  door(config?: ConstructorParameters<typeof Door>[0]) {
+    return this.addElement(new Door(config));
   }
 
-  window(config?: WindowOptions) {
-    const window = new Window(config);
-    this.openThree.scene.add(window);
-    this.elements.push(window);
-    return window;
+  window(config?: ConstructorParameters<typeof Window>[0]) {
+    return this.addElement(new Window(config));
+  }
+
+  doubleDoor(config?: ConstructorParameters<typeof DoubleDoor>[0]) {
+    return this.addElement(new DoubleDoor(config));
+  }
+
+  doubleWindow(config?: ConstructorParameters<typeof DoubleWindow>[0]) {
+    return this.addElement(new DoubleWindow(config));
+  }
+
+  slab(config?: ConstructorParameters<typeof Slab>[0]) {
+    return this.addElement(new Slab(config));
+  }
+
+  stair(config?: ConstructorParameters<typeof Stair>[0]) {
+    return this.addElement(new Stair(config));
+  }
+
+  board(config?: ConstructorParameters<typeof Board>[0]) {
+    return this.addElement(new Board(config));
+  }
+
+  space(config?: ConstructorParameters<typeof Space>[0]) {
+    return this.addElement(new Space(config));
+  }
+
+  chair(config?: ConstructorParameters<typeof Chair>[0]) {
+    return this.addElement(new Chair(config));
+  }
+
+  sofa(config?: ConstructorParameters<typeof Sofa>[0]) {
+    return this.addElement(new Sofa(config));
+  }
+
+  bed(config?: ConstructorParameters<typeof Bed>[0]) {
+    return this.addElement(new Bed(config));
+  }
+
+  wardrobe(config?: ConstructorParameters<typeof Wardrobe>[0]) {
+    return this.addElement(new Wardrobe(config));
+  }
+
+  desk(config?: ConstructorParameters<typeof Desk>[0]) {
+    return this.addElement(new Desk(config));
+  }
+
+  diningTable(config?: ConstructorParameters<typeof DiningTable>[0]) {
+    return this.addElement(new DiningTable(config));
+  }
+
+  toilet(config?: ConstructorParameters<typeof Toilet>[0]) {
+    return this.addElement(new Toilet(config));
+  }
+
+  sink(config?: ConstructorParameters<typeof Sink>[0]) {
+    return this.addElement(new Sink(config));
+  }
+
+  shower(config?: ConstructorParameters<typeof Shower>[0]) {
+    return this.addElement(new Shower(config));
+  }
+
+  bathtub(config?: ConstructorParameters<typeof Bathtub>[0]) {
+    return this.addElement(new Bathtub(config));
+  }
+
+  bidet(config?: ConstructorParameters<typeof Bidet>[0]) {
+    return this.addElement(new Bidet(config));
+  }
+
+  urinal(config?: ConstructorParameters<typeof Urinal>[0]) {
+    return this.addElement(new Urinal(config));
+  }
+
+  refrigerator(config?: ConstructorParameters<typeof Refrigerator>[0]) {
+    return this.addElement(new Refrigerator(config));
+  }
+
+  stove(config?: ConstructorParameters<typeof Stove>[0]) {
+    return this.addElement(new Stove(config));
+  }
+
+  washer(config?: ConstructorParameters<typeof Washer>[0]) {
+    return this.addElement(new Washer(config));
+  }
+
+  dishwasher(config?: ConstructorParameters<typeof Dishwasher>[0]) {
+    return this.addElement(new Dishwasher(config));
+  }
+
+  kitchenSink(config?: ConstructorParameters<typeof KitchenSink>[0]) {
+    return this.addElement(new KitchenSink(config));
+  }
+
+  counter(config?: ConstructorParameters<typeof Counter>[0]) {
+    return this.addElement(new Counter(config));
+  }
+
+  cabinet(config?: ConstructorParameters<typeof Cabinet>[0]) {
+    return this.addElement(new Cabinet(config));
+  }
+
+  island(config?: ConstructorParameters<typeof Island>[0]) {
+    return this.addElement(new Island(config));
+  }
+
+  tree(config?: ConstructorParameters<typeof Tree>[0]) {
+    return this.addElement(new Tree(config));
+  }
+
+  shrub(config?: ConstructorParameters<typeof Shrub>[0]) {
+    return this.addElement(new Shrub(config));
+  }
+
+  planter(config?: ConstructorParameters<typeof Planter>[0]) {
+    return this.addElement(new Planter(config));
+  }
+
+  fountain(config?: ConstructorParameters<typeof Fountain>[0]) {
+    return this.addElement(new Fountain(config));
+  }
+
+  bench(config?: ConstructorParameters<typeof Bench>[0]) {
+    return this.addElement(new Bench(config));
   }
 }

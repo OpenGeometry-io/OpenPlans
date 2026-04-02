@@ -21,93 +21,120 @@
 <body>
     <div id="app"></div>
     <script type="module">
-        import { OpenPlans } from '../src/index.ts';
-        import * as THREE from 'three';
+        import { CameraMode, OpenPlans } from '../src/index.ts';
+        import { resolveElementExample } from '../examples/shared/element-demo-config.js';
 
-        // Parse query parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const elementKey = urlParams.get('element'); // e.g., 'chair2D'
+        const elementKey = urlParams.get('element');
 
         if (!elementKey) {
             console.error("No 'element' parameter provided.");
+        }
+
+        const PLAN_THUMBNAILS = new Set([
+            'door2D',
+            'baseWindow',
+            'doubleDoor',
+            'doubleDoor2D',
+            'doubleWindow',
+            'doubleWindow2D',
+            'wall2D',
+            'stair2D',
+            'baseSlab',
+            'board',
+            'spaceContainer',
+            'chair2D',
+            'sofa2D',
+            'diningTable2D',
+            'desk2D',
+            'bed2D',
+            'wardrobe2D',
+            'toilet2D',
+            'sink2D',
+            'shower2D',
+            'bathtub2D',
+            'bidet2D',
+            'urinal2D',
+            'refrigerator2D',
+            'stove2D',
+            'washer2D',
+            'dishwasher2D',
+            'kitchenSink2D',
+            'counter2D',
+            'cabinet2D',
+            'island2D',
+            'tree2D',
+            'shrub2D',
+            'planter2D',
+            'fountain2D',
+            'bench2D',
+        ]);
+
+        async function fitCamera(openPlans, element) {
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            openPlans.fitToView([element]);
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            document.body.setAttribute('data-ready', 'true');
         }
 
         async function init() {
             const container = document.getElementById('app');
             const openPlans = new OpenPlans(container);
             await openPlans.setupOpenGeometry();
+            openPlans.toggleGrid(false);
 
-            // Clear default scene if needed
-            if (openPlans.openThree && openPlans.openThree.openGrid) {
-                openPlans.openThree.openGrid.visible = false;
-            }
-
-            // Set background to transparent
             if (openPlans.openThree && openPlans.openThree.renderer) {
                 openPlans.openThree.renderer.setClearColor(0xffffff, 0);
                 openPlans.openThree.scene.background = null;
             }
 
-            // Create the element dynamically
-            if (openPlans[elementKey]) {
-                const config = {};
-                // Element-specific thumbnail defaults
-                if (elementKey === 'wall2D') {
-                    config.labelName = "";
-                    config.points = [
-                        { x: -5, y: 0, z: -2 },
-                        { x: 5, y: 0, z: -2 },
-                        { x: 5, y: 0, z: 5 },
-                        { x: -2, y: 0, z: 5 }
-                    ];
-                    config.wallThickness = 0.3;
-                    config.wallHeight = 3.0;
-                    config.wallColor = 0xcccccc;
-                } else if (elementKey.endsWith('2D')) {
-                    // Most 2D elements only need a label override.
-                    config.labelName = "";
-                } else if (elementKey === 'board') {
-                    config.width = 30;
-                    config.height = 20;
-                    config.boardColor = 0xdddddd;
-                } else if (elementKey === 'paperFrame') {
-                    config.format = 'A3';
-                    config.format = 'A3';
-                    config.orientation = 'landscape';
-                } else if (elementKey === 'lineDimension') {
-                    config.startPoint = [1.5, 0, 1];
-                    config.endPoint = [-3.5, 0, 0];
-                    config.offset = 3.5; // 'spacing' in example
-                } else if (elementKey === 'angleDimension') {
-                    config.center = [0, 0, 0];
-                    config.radius = 2;
-                    config.vector1 = [3, 0, 0];
-                    config.vector2 = [0, 0, 3];
-                } else if (elementKey === 'radiusDimension') {
-                    config.center = [0, 0, 0];
-                    config.radius = 5;
-                    config.angle = Math.PI / 4; // 45 degrees
-                    config.textOffset = 0.2;
+            const example = resolveElementExample(elementKey);
+            if (example && typeof openPlans[example.factory] === 'function') {
+                const element = openPlans[example.factory](example.defaultConfig ? structuredClone(example.defaultConfig) : {});
+                const isPlanThumbnail = PLAN_THUMBNAILS.has(elementKey);
+                openPlans.CameraMode = isPlanThumbnail ? CameraMode.Plan : CameraMode.Model;
+                if ('profileView' in element) {
+                    element.profileView = isPlanThumbnail;
                 }
-
-                const element = openPlans[elementKey](config);
-
-                // Enable outline for shape elements
-                if (elementKey === 'cuboid' || elementKey === 'cylinder') {
-                    element.outline = true;
+                if ('modelView' in element) {
+                    element.modelView = !isPlanThumbnail;
                 }
-
-                // Wait for a frame
                 await fitCamera(openPlans, element);
-            } else {
-                console.error(`Element '${elementKey}' not found in OpenPlans.`);
+                return;
             }
-        }
 
-        async function fitCamera(openPlans, element) {
-            await openPlans.fit(element.id);
-            // Signal ready for Puppeteer
-            document.body.setAttribute('data-ready', 'true');
+            if (typeof openPlans[elementKey] !== 'function') {
+                console.error(`Element '${elementKey}' not found in OpenPlans.`);
+                return;
+            }
+
+            const config = {};
+            if (elementKey === 'paperFrame') {
+                config.format = 'A3';
+                config.orientation = 'landscape';
+            } else if (elementKey === 'lineDimension') {
+                config.startPoint = [1.5, 0, 1];
+                config.endPoint = [-3.5, 0, 0];
+                config.offset = 3.5;
+            } else if (elementKey === 'angleDimension') {
+                config.center = [0, 0, 0];
+                config.radius = 2;
+                config.vector1 = [3, 0, 0];
+                config.vector2 = [0, 0, 3];
+            } else if (elementKey === 'radiusDimension') {
+                config.center = [0, 0, 0];
+                config.radius = 5;
+                config.angle = Math.PI / 4;
+                config.textOffset = 0.2;
+            }
+
+            const element = openPlans[elementKey](config);
+
+            if (elementKey === 'cuboid' || elementKey === 'cylinder') {
+                element.outline = true;
+            }
+
+            await fitCamera(openPlans, element);
         }
 
         init();

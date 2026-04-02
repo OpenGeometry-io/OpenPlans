@@ -7,7 +7,7 @@ import fs from 'fs';
 // Dynamically find all HTML files in the examples folder
 function getExampleInputs() {
   const inputs = {
-    main: 'index.html',
+    main: resolve(__dirname, 'examples/index.html'),
   };
 
   // Find all HTML files in examples folder recursively

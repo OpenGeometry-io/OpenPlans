@@ -1,82 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <title>OpenPlans Tree 2D</title>
-    <!-- MIXPANEL_TRACKING -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-
-        #app {
-            width: 100%;
-            height: 100vh;
-        }
-
-        .example-title {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Space Mono', monospace;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #fff;
-            background: rgba(26, 26, 26, 0.8);
-            padding: 12px 24px;
-            z-index: 1000;
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0; url=../../demo.html?element=tree2D&view=plan">
+  <script>location.replace("../../demo.html?element=tree2D&view=plan");</script>
 </head>
-
-<body>
-    <div class="example-title">Tree 2D</div>
-    <div id="app"></div>
-    <script type="module">
-        import { OpenPlans, CameraMode } from './../../../../src/index.ts';
-        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-        let openPlans;
-        let tree;
-
-        async function init() {
-            const container = document.getElementById('app');
-            openPlans = new OpenPlans(container);
-            await openPlans.setupOpenGeometry();
-
-            openPlans.CameraMode = CameraMode.Plan;
-
-            tree = openPlans.tree2D({
-                labelName: 'Oak Tree',
-                canopyRadius: 1.5,
-                trunkRadius: 0.15
-            });
-        }
-
-        function setUI() {
-            const gui = new GUI();
-            const folder = gui.addFolder('Tree 2D');
-            folder.add({ labelName: tree.labelName }, 'labelName').name('Label').onChange(v => tree.labelName = v);
-            folder.add({ canopyRadius: tree.canopyRadius }, 'canopyRadius', 0.5, 3.0, 0.1).name('Canopy Radius').onChange(v => tree.canopyRadius = v);
-            folder.add({ trunkRadius: tree.trunkRadius }, 'trunkRadius', 0.05, 0.4, 0.01).name('Trunk Radius').onChange(v => tree.trunkRadius = v);
-            folder.addColor({ canopyColor: tree.canopyColor }, 'canopyColor').name('Canopy Color').onChange(v => tree.canopyColor = v);
-            folder.addColor({ trunkColor: tree.trunkColor }, 'trunkColor').name('Trunk Color').onChange(v => tree.trunkColor = v);
-            folder.add({ fit: () => openPlans.fit(tree.id) }, 'fit').name('Fit');
-            folder.add({ getConfig: () => console.log(tree.getOPConfig()) }, 'getConfig').name('Get Config');
-        }
-
-        (async function () {
-            await init();
-            setUI();
-        })();
-    </script>
-</body>
-
+<body></body>
 </html>

@@ -3,6 +3,15 @@ import { IShape } from "../../shapes/base-type";
 import { ElementType, DoorType } from "./../base-type";
 import { Arc, Cuboid, Line, Polygon, Sweep, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
+import {
+  applyPlacement,
+  clearObjectMap,
+  normalizePlacement,
+  orderedRoots,
+  setMapVisibility,
+  syncCombinedSubElements,
+  toColorNumber,
+} from "../shared/dual-view";
 
 
 export type ElementViewType = 'plan' | '3d';
@@ -140,7 +149,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
   }
 
   set doorColor(value: number) {
-    this.propertySet.doorColor = value;
+    this.propertySet.doorColor = toColorNumber(value, this.propertySet.doorColor);
     this.setOPMaterial();
   }
 
@@ -149,7 +158,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
   }
 
   set frameColor(value: number) {
-    this.propertySet.frameColor = value;
+    this.propertySet.frameColor = toColorNumber(value, this.propertySet.frameColor);
     this.setOPMaterial();
   }
 
@@ -159,9 +168,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
 
   set profileView(value: boolean) {
     this.isProfileView = value;
-    for (const subElement of this.subElements2D.values()) {
-      subElement.visible = value;
-    }
+    setMapVisibility(this.subElements2D, value);
   }
 
   get profileView() {
@@ -170,9 +177,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
 
   set modelView(value: boolean) {
     this.isModelView = value;
-    for (const subElement of this.subElements3D.values()) {
-      subElement.visible = value;
-    }
+    setMapVisibility(this.subElements3D, value);
   }
 
   get modelView() {
@@ -180,18 +185,13 @@ export class Door extends Line implements IShape, PlanVectorExportable {
   }
 
   getExportRoots(view: PlanExportView): THREE.Object3D[] {
-    if (view === "top") {
-      return [
-        this.subElements2D.get("frame"),
-        this.subElements2D.get("swingArc"),
-        this.subElements2D.get("panel"),
-      ].filter((root): root is THREE.Object3D => Boolean(root));
-    }
-
-    return [
-      this.subElements3D.get("frame"),
-      this.subElements3D.get("panel"),
-    ].filter((root): root is THREE.Object3D => Boolean(root));
+    return orderedRoots(
+      view,
+      this.subElements2D,
+      this.subElements3D,
+      ["frame", "swingArc", "panel"],
+      ["frame", "panel"],
+    );
   }
 
   constructor(baseDoorConfig?: DoorOptions) {
@@ -206,7 +206,11 @@ export class Door extends Line implements IShape, PlanVectorExportable {
     this.subElements3D = new Map<Door3DSubElementType, THREE.Object3D>();
     
     if (baseDoorConfig) {
-      this.propertySet = { ...this.propertySet, ...baseDoorConfig };
+      this.propertySet = {
+        ...this.propertySet,
+        ...baseDoorConfig,
+        placement: normalizePlacement(baseDoorConfig, this.propertySet.placement),
+      };
     }
 
     this.propertySet.ogid = this.ogid;
@@ -214,12 +218,24 @@ export class Door extends Line implements IShape, PlanVectorExportable {
   }
 
   setOPConfig(config: DoorOptions): void {
-    this.propertySet = { ...this.propertySet, ...config };
+    this.propertySet = {
+      ...this.propertySet,
+      ...config,
+      placement: normalizePlacement(config, this.propertySet.placement),
+    };
     this.setOPGeometry();
   }
 
   getOPConfig(): DoorOptions {
     return this.propertySet;
+  }
+
+  dispose() {
+    clearObjectMap(this.subElements2D);
+    clearObjectMap(this.subElements3D);
+    this.subElements.clear();
+    this.discardGeometry();
+    this.removeFromParent();
   }
 
   setOPGeometry(): void {
@@ -233,6 +249,10 @@ export class Door extends Line implements IShape, PlanVectorExportable {
 
     this.create2D();
     this.create3D();
+    applyPlacement(this, this.propertySet.placement);
+    setMapVisibility(this.subElements2D, this.isProfileView);
+    setMapVisibility(this.subElements3D, this.isModelView);
+    syncCombinedSubElements(this.subElements, this.subElements2D, this.subElements3D);
   }
 
   private create3D(): void {
@@ -241,7 +261,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
     const frameWidth = frameDimensions.width;
     const frameThickness = frameDimensions.thickness;
 
-    this.clearSubElementMap(this.subElements3D);
+    clearObjectMap(this.subElements3D);
 
     const frameProfile = [
       new Vector3(-frameWidth / 2, 0, -frameThickness / 2),
@@ -282,7 +302,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
 
     const halfPanelWidth = panelDimensions.width / 2;
     const frameWidth = frameDimensions.width;
-    this.clearSubElementMap(this.subElements2D);
+    clearObjectMap(this.subElements2D);
 
     // Create 2D Frame using Polygon
     const frameLeftPolyline = new Polygon({
@@ -372,33 +392,4 @@ export class Door extends Line implements IShape, PlanVectorExportable {
     }
   }
 
-  private clearSubElementMap<T extends string>(map: Map<T, THREE.Object3D>): void {
-    map.forEach((object) => this.disposeObject(object));
-    map.clear();
-  }
-
-  private disposeObject(object: THREE.Object3D): void {
-    object.traverse((child) => {
-      const disposable = child as THREE.Object3D & {
-        discardGeometry?: () => void;
-        dispose?: () => void;
-        geometry?: { dispose?: () => void };
-        material?:
-          | { dispose?: () => void }
-          | Array<{ dispose?: () => void }>;
-      };
-
-      disposable.discardGeometry?.();
-      disposable.dispose?.();
-      disposable.geometry?.dispose?.();
-
-      if (Array.isArray(disposable.material)) {
-        disposable.material.forEach((material) => material?.dispose?.());
-      } else {
-        disposable.material?.dispose?.();
-      }
-    });
-
-    object.removeFromParent();
-  }
 }

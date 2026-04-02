@@ -37,6 +37,7 @@ const elements = [
     'shrub2D',
     'planter2D',
     'fountain2D',
+    'bench2D',
     // Primitives
     'arc',
     'line',
@@ -51,10 +52,15 @@ const elements = [
     'cylinder',
     // Base 2D Elements
     'door2D',
+    'baseWindow',
+    'doubleDoor',
     'doubleDoor2D',
+    'doubleWindow',
     'doubleWindow2D',
     'wall2D',
     'stair2D',
+    'baseSlab',
+    'spaceContainer',
     // Drafting Elements
     'paperFrame',
     'board'

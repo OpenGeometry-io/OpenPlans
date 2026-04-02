@@ -3,6 +3,15 @@ import { IShape } from "../../shapes/base-type";
 import { ElementType } from "./../base-type";
 import { ExtrudedShape, Polygon, Polyline, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
+import {
+  applyPlacement,
+  clearObjectMap,
+  normalizePlacement,
+  orderedRoots,
+  setMapVisibility,
+  syncCombinedSubElements,
+  toColorNumber,
+} from "../shared/dual-view";
 
 export interface Point {
   x: number;
@@ -78,9 +87,7 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
 
   set profileView(value: boolean) {
     this.isProfileView = value;
-    for (const subElement of this.subElements2D.values()) {
-      subElement.visible = value;
-    }
+    setMapVisibility(this.subElements2D, value);
   }
 
   get profileView() {
@@ -89,9 +96,7 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
 
   set modelView(value: boolean) {
     this.isModelView = value;
-    for (const subElement of this.subElements3D.values()) {
-      subElement.visible = value;
-    }
+    setMapVisibility(this.subElements3D, value);
   }
 
   get modelView() {
@@ -99,9 +104,13 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
   }
 
   getExportRoots(view: PlanExportView): THREE.Object3D[] {
-    const key = view === "top" ? "wallPolygon" : "wallExtrude";
-    const root = (view === "top" ? this.subElements2D : this.subElements3D).get(key);
-    return root ? [root] : [];
+    return orderedRoots(
+      view,
+      this.subElements2D,
+      this.subElements3D,
+      ["wallPolygon"],
+      ["wallExtrude"],
+    );
   }
 
   set elementOutline(value: boolean) {
@@ -129,7 +138,11 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
     });
 
     if (wallConfig) {
-      this.propertySet = { ...this.propertySet, ...wallConfig };
+      this.propertySet = {
+        ...this.propertySet,
+        ...wallConfig,
+        placement: normalizePlacement(wallConfig, this.propertySet.placement),
+      };
     }
 
     this.propertySet.ogid = this.ogid;
@@ -138,12 +151,24 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
 
   setOPConfig(config: WallOptions): void {
     this.discardGeometry();
-    this.propertySet = { ...this.propertySet, ...config };
+    this.propertySet = {
+      ...this.propertySet,
+      ...config,
+      placement: normalizePlacement(config, this.propertySet.placement),
+    };
     this.setOPGeometry();
   }
 
   getOPConfig(): WallOptions { 
     return this.propertySet; 
+  }
+
+  dispose() {
+    clearObjectMap(this.subElements2D);
+    clearObjectMap(this.subElements3D);
+    this.subElements.clear();
+    this.discardGeometry();
+    this.removeFromParent();
   }
 
   addPoint(point: Point): void {
@@ -171,6 +196,10 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
 
     this.create2D();
     this.create3D();
+    applyPlacement(this, this.propertySet.placement);
+    setMapVisibility(this.subElements2D, this.isProfileView);
+    setMapVisibility(this.subElements3D, this.isModelView);
+    syncCombinedSubElements(this.subElements, this.subElements2D, this.subElements3D);
 
     // keep outline always enabled
     this.elementOutline = true;
@@ -188,11 +217,7 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
       return;
     }
 
-    if (this.subElements3D.has("wallExtrude")) {
-      const existingExtrude = this.subElements3D.get("wallExtrude") as ExtrudedShape;
-      existingExtrude.removeFromParent();
-      this.subElements3D.delete("wallExtrude");
-    }
+    clearObjectMap(this.subElements3D);
 
     const polygonExtrude = polygon.extrude(-this.propertySet.wallHeight);
     polygonExtrude.color = this.propertySet.wallColor;
@@ -209,12 +234,7 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
     const vectorPoints = points.map(p => new Vector3(p.x, p.y, p.z));
     const polygonVertices = this.computeOffsetPolygonVertices(vectorPoints, this.propertySet.wallThickness);
 
-    if (this.subElements2D.has("wallPolygon")) {
-      const wallPolygon = this.subElements2D.get("wallPolygon") as Polygon;
-      wallPolygon.removeFromParent();
-      wallPolygon.dispose();
-      this.subElements2D.delete("wallPolygon");
-    }
+    clearObjectMap(this.subElements2D);
 
     const wallPolygon = new Polygon({
       vertices: polygonVertices,
@@ -274,5 +294,17 @@ export class Wall extends Polyline implements IShape, PlanVectorExportable {
     return polygonVertices;
   }
 
-  setOPMaterial(): void { }
+  setOPMaterial(): void {
+    this.propertySet.wallColor = toColorNumber(this.propertySet.wallColor, this.propertySet.wallColor);
+
+    const wallPolygon = this.subElements2D.get("wallPolygon") as Polygon | undefined;
+    if (wallPolygon) {
+      wallPolygon.color = this.propertySet.wallColor;
+    }
+
+    const wallExtrude = this.subElements3D.get("wallExtrude") as ExtrudedShape | undefined;
+    if (wallExtrude) {
+      wallExtrude.color = this.propertySet.wallColor;
+    }
+  }
 }

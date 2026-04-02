@@ -8,7 +8,6 @@ import {
   DEFAULT_ISOMETRIC_HLR,
   Door,
   OpenPlans,
-  PlanDocument,
   PlanPDFGenerator,
   Wall,
   Window,
@@ -55,64 +54,6 @@ test.before(async () => {
   await OpenGeometry.create({ wasmURL: wasm });
 });
 
-test("PlanDocument stores wall, door, and window semantic elements", () => {
-  const document = new PlanDocument({
-    projectName: "Semantic Test Project",
-    storeyName: "Level 01",
-  });
-
-  const wall = document.upsertWall({
-    kind: "WALL",
-    labelName: "Wall A",
-    points: [
-      { x: 0, y: 0, z: 0 },
-      { x: 4, y: 0, z: 0 },
-    ],
-    wallThickness: 0.3,
-    wallHeight: 3,
-    wallColor: 0xa7c957,
-    wallMaterial: "concrete",
-    appearance: { wallColor: 0xa7c957, materialLabel: "concrete" },
-  });
-
-  const door = document.upsertDoor({
-    kind: "DOOR",
-    labelName: "Door A",
-    hostWallId: wall.id,
-    doorPosition: { x: 1, y: 0, z: 0 },
-    doorWidth: 1,
-    doorHeight: 2.1,
-    doorThickness: 0.1,
-    frameThickness: 0.2,
-    doorColor: 0xbc6c25,
-    frameColor: 0x1b4332,
-    doorMaterial: "wood",
-    appearance: { doorColor: 0xbc6c25, frameColor: 0x1b4332, materialLabel: "wood" },
-  });
-
-  const windowElement = document.upsertWindow({
-    kind: "WINDOW",
-    labelName: "Window A",
-    hostWallId: wall.id,
-    windowPosition: { x: 3, y: 0, z: 0 },
-    windowWidth: 1.5,
-    windowHeight: 1.2,
-    windowThickness: 0.15,
-    sillHeight: 0.9,
-    frameColor: 0x14213d,
-    glassColor: 0x8ecae6,
-    windowMaterial: "glass",
-    appearance: { frameColor: 0x14213d, glassColor: 0x8ecae6, materialLabel: "glass" },
-  });
-
-  assert.equal(document.listWalls().length, 1);
-  assert.equal(document.listDoors().length, 1);
-  assert.equal(document.listWindows().length, 1);
-  assert.equal(door.hostWallId, wall.id);
-  assert.equal(windowElement.hostWallId, wall.id);
-  assert.equal(document.toJSON().structure.projectName, "Semantic Test Project");
-});
-
 test("buildAppearanceMetadata preserves exported color intent", () => {
   const metadata = buildAppearanceMetadata({
     wallColor: 0xa7c957,
@@ -156,7 +97,6 @@ test("buildIfcConfig uses structure defaults and explicit overrides", () => {
 
 test("public facade re-exports runtime and semantic APIs", () => {
   assert.equal(typeof OpenPlans, "function");
-  assert.equal(typeof PlanDocument, "function");
   assert.equal(typeof PlanPDFGenerator, "function");
   assert.equal(typeof Door, "function");
   assert.equal(typeof Wall, "function");

@@ -23,10 +23,10 @@ Whether you're building a floor-planning editor, a browser-based drawing workflo
 | Runtime | Three.js-powered scene setup, camera modes, view fitting, browser rendering |
 | Primitives | Lines, arcs, polylines, rectangles |
 | Shapes | Cuboids, cylinders |
-| Elements | Walls, doors, windows, and floor-plan oriented examples |
+| Elements | Walls, doors, windows, slabs, stairs, boards, spaces, furniture, fixtures, appliances, kitchen elements, and landscape elements with dual-view runtime support |
 | Layouts | Paper frames, viewport blocks, and drawing-oriented helpers |
 | Dimensions | Line, angle, and radius dimensions |
-| Exports | IFC-oriented workflows through OpenGeometry and vector line export through `PlanPDFGenerator` |
+| Exports | IFC for architectural core elements and vector/PDF export across the broader dual-view catalog through `PlanPDFGenerator` |
 | Integration | One package that bridges OpenGeometry kernel setup with an application-facing API |
 
 ## Examples
@@ -40,6 +40,7 @@ Start here:
 - [Door 2D with vector/PDF export](./examples/elements/2DElements/baseDoor.html)
 - [Window 2D with vector/PDF export](./examples/elements/2DElements/baseWindow.html)
 - [Wall 2D with vector/PDF export](./examples/elements/2DElements/wall2D.html)
+- [Shared element catalog demo](./examples/elements/demo.html?element=chair)
 
 ## Quick Start
 
@@ -99,7 +100,7 @@ npm run dev
 
 `npm run dev` starts the Vite example server for local browser work.
 
-The repository also includes `npm test`, but as of 2026-03-29 that suite is out of sync with the built package and still expects a `PlanDocument` export that `dist/index.js` does not currently provide.
+As of 2026-04-01, `npm run build`, `npm run build-examples`, and `npm test` all pass against the current public surface.
 
 ## Who is this for?
 
