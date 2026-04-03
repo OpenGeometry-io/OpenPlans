@@ -116,4 +116,3 @@ OpenPlans is open source under the [MIT license](./LICENSE.md). Contributions ar
 ## AI Agent Workflow
 
 - Repository-level AI agent instructions live in [AGENTS.md](./AGENTS.md).
-- Non-trivial work should be documented in the research brain under [brain/](./brain/README.md).

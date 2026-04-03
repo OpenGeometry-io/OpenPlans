@@ -37,6 +37,8 @@ import {
   Tree,
   Urinal,
   Wall,
+  WallSystem,
+  WallOpening,
   Washer,
   Window,
   Wardrobe,
@@ -47,7 +49,7 @@ import { Event } from './utils/event';
 // Camera Modes
 export { CameraMode } from './packages/openplans-three/src/plancamera';
 export * from './packages/openplans-core/src';
-export { Door, Window, Wall };
+export { Door, Window, Wall, WallOpening, WallSystem };
 
 export type Theme = 'light' | 'dark' | 'darkBlue';
 
@@ -55,6 +57,7 @@ export class OpenPlans {
   // private container: HTMLElement;
   private openThree: OpenThree;
   private planCamera: PlanCamera;
+  private wallSystem: WallSystem;
 
   private elements: Array<THREE.Object3D> = [];
   
@@ -74,6 +77,7 @@ export class OpenPlans {
     this.openThree = new OpenThree(container, this.renderCallback)
     // OpenPlans.sOThree = this.openThree;
     this.planCamera = this.openThree.planCamera
+    this.wallSystem = new WallSystem();
 
     // this.openThree.planCamera.controls.addEventListener("update", () => {
     //   Glyphs.updateManager(this.openThree.threeCamera)
@@ -146,9 +150,16 @@ export class OpenPlans {
     this.openThree.toggleGrid(show);
   }
 
+  getWallSystem() {
+    return this.wallSystem;
+  }
+
   private addElement<T extends THREE.Object3D>(element: T) {
     this.openThree.scene.add(element);
     this.elements.push(element);
+    if (element instanceof Wall) {
+      this.wallSystem.register(element);
+    }
     return element;
   }
 
@@ -186,6 +197,10 @@ export class OpenPlans {
   // Elements
   wall(config?: ConstructorParameters<typeof Wall>[0]) {
     return this.addElement(new Wall(config));
+  }
+
+  wallOpening(config?: ConstructorParameters<typeof WallOpening>[0]) {
+    return this.addElement(new WallOpening(config));
   }
 
   door(config?: ConstructorParameters<typeof Door>[0]) {

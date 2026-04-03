@@ -20,6 +20,7 @@ export interface WindowOptions {
   ogid?: string;
   labelName: string;
   type: ElementType.WINDOW;
+  hostWallId?: string;
   windowDimensions: {
     width: number;
     thickness: number;
@@ -55,6 +56,7 @@ export class Window extends Line implements IShape, PlanVectorExportable {
   propertySet: WindowOptions = {
     type: ElementType.WINDOW,
     labelName: "Simple Window",
+    hostWallId: undefined,
     windowDimensions: {
       width: 1.5,
       thickness: 0.2,
@@ -77,6 +79,9 @@ export class Window extends Line implements IShape, PlanVectorExportable {
 
   get labelName() { return this.propertySet.labelName; }
   set labelName(value: string) { this.propertySet.labelName = value; }
+
+  get hostWallId() { return this.propertySet.hostWallId; }
+  set hostWallId(value: string | undefined) { this.propertySet.hostWallId = value; }
 
   set windowWidth(value: number) {
     this.propertySet.windowDimensions.width = value;

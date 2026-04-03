@@ -31,6 +31,7 @@ export interface DoorOptions {
   ogid?: string;
   labelName: string;
   type: ElementType.DOOR;
+  hostWallId?: string;
   panelDimensions: {
     width: number;
     thickness: number;
@@ -68,6 +69,7 @@ export class Door extends Line implements IShape, PlanVectorExportable {
   propertySet: DoorOptions = {
     type: ElementType.DOOR,
     labelName: 'Simple Door',
+    hostWallId: undefined,
     panelDimensions: {
       width: 1,
       thickness: 0.2,
@@ -92,6 +94,9 @@ export class Door extends Line implements IShape, PlanVectorExportable {
 
   get labelName() { return this.propertySet.labelName; }
   set labelName(value: string) { this.propertySet.labelName = value; }
+
+  get hostWallId() { return this.propertySet.hostWallId; }
+  set hostWallId(value: string | undefined) { this.propertySet.hostWallId = value; }
 
   set doorRotation(value: number) {
     this.propertySet.doorRotation = value;

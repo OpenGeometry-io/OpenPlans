@@ -52,16 +52,19 @@ test.before(async () => {
 function createWall() {
   return new Wall({
     labelName: "Catalog Wall",
-    type: "WALL",
-    points: [
+    path: [
       { x: 0, y: 0, z: 0 },
       { x: 5, y: 0, z: 0 },
-      { x: 5, y: 0, z: 2 },
     ],
-    wallColor: 0xcccccc,
-    wallThickness: 0.2,
-    wallHeight: 3,
-    wallMaterial: "CONCRETE",
+    section: {
+      layers: [{
+        role: "core",
+        thickness: 0.2,
+        material: "CONCRETE",
+        color: 0xcccccc,
+      }],
+    },
+    height: 3,
     placement: {
       position: [0, 0, 0],
       rotation: [0, 0, 0],

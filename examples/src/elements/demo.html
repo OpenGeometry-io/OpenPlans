@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Element Demo</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #f2f2f2;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.82);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title" id="title">Element</div>
+  <div id="app"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { jsPDF } from 'jspdf';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import { CameraMode, IFCExporter, OpenPlans, PlanPDFGenerator } from './../../src/index.ts';
+    import { FIELD_SPECS, resolveElementExample } from './../shared/element-demo-config.js';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedKey = urlParams.get('element') ?? 'door';
+    const requestedView = urlParams.get('view');
+    const example = resolveElementExample(requestedKey);
+
+    if (!example) {
+      throw new Error(`Unsupported example key: ${requestedKey}`);
+    }
+
+    const container = document.getElementById('app');
+    const titleElement = document.getElementById('title');
+    const pdfGenerator = new PlanPDFGenerator();
+    const ifcExporter = new IFCExporter();
+
+    titleElement.textContent = example.title;
+    document.title = `OpenPlans ${example.title}`;
+
+    const openPlans = new OpenPlans(container);
+    await openPlans.setupOpenGeometry();
+    openPlans.toggleGrid(false);
+
+    const createConfig = example.defaultConfig ? structuredClone(example.defaultConfig) : undefined;
+    const element = openPlans[example.factory](createConfig);
+
+    function determineViewMode() {
+      if (element.profileView && !element.modelView) {
+        return 'plan';
+      }
+
+      if (!element.profileView && element.modelView) {
+        return 'model';
+      }
+
+      return 'custom';
+    }
+
+    function applyViewMode(mode) {
+      if (mode === 'plan') {
+        openPlans.CameraMode = CameraMode.Plan;
+        element.profileView = true;
+        element.modelView = false;
+        return;
+      }
+
+      if (mode === 'model') {
+        openPlans.CameraMode = CameraMode.Model;
+        element.profileView = false;
+        element.modelView = true;
+      }
+    }
+
+    function fitToElement() {
+      openPlans.fitToView([element]);
+    }
+
+    function getWorldBounds(roots) {
+      const bounds = new THREE.Box3();
+      roots.forEach((root) => {
+        root.updateWorldMatrix(true, true);
+        bounds.expandByObject(root);
+      });
+
+      if (bounds.isEmpty()) {
+        bounds.expandByObject(element);
+      }
+
+      return bounds;
+    }
+
+    function buildProjectionCamera(selectedView) {
+      const roots = element.getExportRoots('isometric');
+      const bounds = getWorldBounds(roots.length > 0 ? roots : [element]);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      const distance = Math.max(size.x, size.y, size.z, 1) * 2.6;
+
+      if (selectedView === 'front') {
+        return {
+          position: { x: center.x, y: center.y, z: center.z + distance },
+          target: { x: center.x, y: center.y, z: center.z },
+          up: { x: 0, y: 1, z: 0 },
+          near: 0.1,
+          projection_mode: 'Orthographic',
+        };
+      }
+
+      if (selectedView === 'side') {
+        return {
+          position: { x: center.x + distance, y: center.y, z: center.z },
+          target: { x: center.x, y: center.y, z: center.z },
+          up: { x: 0, y: 1, z: 0 },
+          near: 0.1,
+          projection_mode: 'Orthographic',
+        };
+      }
+
+      return {
+        position: { x: center.x + distance, y: center.y + distance * 0.75, z: center.z + distance },
+        target: { x: center.x, y: center.y, z: center.z },
+        up: { x: 0, y: 1, z: 0 },
+        near: 0.1,
+        projection_mode: 'Orthographic',
+      };
+    }
+
+    function buildExportPayload(selectedView) {
+      if (selectedView === 'top') {
+        return pdfGenerator.generate({
+          elements: [element],
+          view: 'top',
+        });
+      }
+
+      return pdfGenerator.generate({
+        elements: [element],
+        view: 'isometric',
+        camera: buildProjectionCamera(selectedView),
+      });
+    }
+
+    function exportPayloadToPdf(payload, selectedView) {
+      const width = Math.max(payload.bounds.width, 0.001);
+      const height = Math.max(payload.bounds.height, 0.001);
+      const orientation = width >= height ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({
+        orientation,
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 12;
+      const headerHeight = 12;
+      const drawableWidth = pageWidth - margin * 2;
+      const drawableHeight = pageHeight - margin * 2 - headerHeight;
+      const scale = Math.min(drawableWidth / width, drawableHeight / height);
+      const offsetX = (pageWidth - width * scale) / 2;
+      const offsetY = margin + headerHeight + (drawableHeight - height * scale) / 2;
+
+      pdf.setFont('courier', 'bold');
+      pdf.setFontSize(11);
+      pdf.text(`${example.title} - ${selectedView.toUpperCase()} VIEW`, margin, margin);
+
+      for (const line of payload.lines) {
+        const strokeColor = line.stroke_color
+          ? line.stroke_color.map((channel) => Math.round(channel * 255))
+          : [24, 24, 24];
+        const strokeWidth = line.stroke_width !== undefined
+          ? Math.max(0.15, Math.min(1.2, line.stroke_width * scale * 0.05))
+          : 0.25;
+
+        const x1 = offsetX + (line.start.x - payload.bounds.min.x) * scale;
+        const y1 = offsetY + (payload.bounds.max.y - line.start.y) * scale;
+        const x2 = offsetX + (line.end.x - payload.bounds.min.x) * scale;
+        const y2 = offsetY + (payload.bounds.max.y - line.end.y) * scale;
+
+        pdf.setDrawColor(strokeColor[0], strokeColor[1], strokeColor[2]);
+        pdf.setLineWidth(strokeWidth);
+        pdf.line(x1, y1, x2, y2);
+      }
+
+      pdf.save(`${example.canonicalKey}-${selectedView}-view.pdf`);
+    }
+
+    function downloadIfc(text, fileName) {
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function getFieldValue(path) {
+      return path.split('.').reduce((value, key) => value?.[key], element);
+    }
+
+    function getInitialFieldValue(path, spec) {
+      const value = getFieldValue(path);
+      if (value !== undefined) {
+        return value;
+      }
+
+      if (spec.type === 'color') {
+        return '#cccccc';
+      }
+
+      return value;
+    }
+
+    function setFieldValue(path, value) {
+      const segments = path.split('.');
+      if (segments.length === 1) {
+        element[segments[0]] = value;
+        return;
+      }
+
+      const [root, ...rest] = segments;
+      const nextValue = { ...element[root] };
+      let cursor = nextValue;
+      for (let index = 0; index < rest.length - 1; index += 1) {
+        const key = rest[index];
+        cursor[key] = { ...cursor[key] };
+        cursor = cursor[key];
+      }
+      cursor[rest[rest.length - 1]] = value;
+      element[root] = nextValue;
+    }
+
+    const gui = new GUI();
+    const elementFolder = gui.addFolder(example.title);
+
+    const elementState = {};
+    const elementControllers = [];
+
+    for (const path of example.controlPaths ?? []) {
+      const spec = FIELD_SPECS[path];
+      if (!spec) {
+        continue;
+      }
+
+      const stateKey = path.replace(/\./g, '__');
+      elementState[stateKey] = getInitialFieldValue(path, spec);
+
+      let controller;
+      if (spec.type === 'color') {
+        controller = elementFolder.addColor(elementState, stateKey).name(spec.label);
+      } else if (spec.type === 'options') {
+        controller = elementFolder.add(elementState, stateKey, spec.options).name(spec.label);
+      } else if (spec.type === 'number') {
+        controller = elementFolder.add(elementState, stateKey, spec.min, spec.max, spec.step).name(spec.label);
+      } else {
+        controller = elementFolder.add(elementState, stateKey).name(spec.label);
+      }
+
+      controller.onChange((value) => {
+        setFieldValue(path, value);
+      });
+      elementControllers.push({ controller, path, stateKey });
+    }
+
+    const viewState = {
+      viewMode: requestedView ?? example.defaultView ?? 'model',
+      profileView: element.profileView,
+      modelView: element.modelView,
+      fit: () => fitToElement(),
+      getConfig: () => console.log(element.getOPConfig()),
+    };
+
+    const exportState = {
+      exportView: 'top',
+      exportPDF: () => {
+        const payload = buildExportPayload(exportState.exportView);
+        exportPayloadToPdf(payload, exportState.exportView);
+      },
+      exportIFC: () => {
+        const result = ifcExporter.generate({
+          elements: [element],
+        });
+        downloadIfc(result.text, `${example.canonicalKey}-${element.labelName || 'export'}.ifc`);
+      },
+    };
+
+    function syncViewState() {
+      viewState.profileView = element.profileView;
+      viewState.modelView = element.modelView;
+      viewState.viewMode = determineViewMode();
+      viewControllers.forEach((controller) => controller.updateDisplay());
+    }
+
+    function refreshElementState() {
+      elementControllers.forEach(({ controller, path, stateKey }) => {
+        const spec = FIELD_SPECS[path];
+        elementState[stateKey] = getInitialFieldValue(path, spec);
+        controller.updateDisplay();
+      });
+    }
+
+    const viewModeOptions = {
+      'Plan View': 'plan',
+      'Model View': 'model',
+      Custom: 'custom',
+    };
+
+    const viewControllers = [];
+    viewControllers.push(elementFolder.add(viewState, 'viewMode', viewModeOptions).name('View Mode').onChange((value) => {
+      if (value !== 'custom') {
+        applyViewMode(value);
+      }
+      syncViewState();
+    }));
+    viewControllers.push(elementFolder.add(viewState, 'profileView').name('Profile View').onChange((value) => {
+      element.profileView = value;
+      syncViewState();
+    }));
+    viewControllers.push(elementFolder.add(viewState, 'modelView').name('Model View').onChange((value) => {
+      element.modelView = value;
+      syncViewState();
+    }));
+    elementFolder.add(viewState, 'fit').name('Fit To View');
+    elementFolder.add(viewState, 'getConfig').name('Get Config');
+
+    const exportFolder = gui.addFolder('Export');
+    exportFolder.add(exportState, 'exportView', {
+      Top: 'top',
+      Front: 'front',
+      Side: 'side',
+      Isometric: 'isometric',
+    }).name('View');
+    exportFolder.add(exportState, 'exportPDF').name('Export PDF');
+    if (example.ifcSupported) {
+      exportFolder.add(exportState, 'exportIFC').name('Export IFC');
+    }
+
+    applyViewMode(requestedView ?? example.defaultView ?? 'model');
+    syncViewState();
+    refreshElementState();
+    fitToElement();
+  </script>
+</body>
+
+</html>
