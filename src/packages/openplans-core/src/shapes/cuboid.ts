@@ -48,9 +48,9 @@ export class CuboidShape extends Cuboid implements IShape {
       height: properties?.height || 1,
       depth: properties?.depth || 1,
       color: properties?.color || 0x00ff00,
-      translation: new Vector3(properties?.placement.position[0] || 0, properties?.placement.position[1] || 0, properties?.placement.position[2] || 0),
-      rotation: new Vector3(properties?.placement.rotation[0] || 0, properties?.placement.rotation[1] || 0, properties?.placement.rotation[2] || 0),
-      scale: new Vector3(properties?.placement.scale[0] || 1, properties?.placement.scale[1] || 1, properties?.placement.scale[2] || 1),
+      translation: new Vector3(properties?.placement?.position[0] || 0, properties?.placement?.position[1] || 0, properties?.placement?.position[2] || 0),
+      rotation: new Vector3(properties?.placement?.rotation[0] || 0, properties?.placement?.rotation[1] || 0, properties?.placement?.rotation[2] || 0),
+      scale: new Vector3(properties?.placement?.scale[0] || 1, properties?.placement?.scale[1] || 1, properties?.placement?.scale[2] || 1),
     });
 
     this.subElements = new Map<string, THREE.Object3D>();

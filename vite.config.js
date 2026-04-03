@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { globSync } from 'glob';
-import { trackPlugin } from './scripts/trackings.js';
+import { trackPlugin } from './scripts/tracking.js';
 import path from 'path';
 
 // Dynamically find all HTML files in the examples folder
@@ -48,6 +48,6 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5555
+    port: 5555,
   }
 });
