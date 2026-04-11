@@ -6,6 +6,7 @@ export enum ElementType {
   DOOR = 'DOOR',
   WINDOW = 'WINDOW',
   WALL = 'WALL',
+  OPENING = 'OPENING',
   SLAB = 'SLAB',
   STAIR = 'STAIR',
   SPACECONTAINER = 'SPACECONTAINER',

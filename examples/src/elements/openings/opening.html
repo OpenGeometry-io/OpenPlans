@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Opening</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Opening Shape</div>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    let opening;
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.CameraMode = CameraMode.Model;
+
+      openPlans.showGrid = false;
+
+      opening = openPlans.opening();
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      const openingFolder = gui.addFolder('Opening');
+      openingFolder.open();
+
+      const params = {
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 1.5, y: 0, z: 1.5 },
+        thickness: 0.2,
+        height: 2,
+        baseHeight: 0,
+        isProfileView: true,
+        isModelView: true,
+      };
+      
+      openingFolder.add(params.start, 'x', -10, 10, 0.1).name('Start X').onChange((value) => {
+        if (opening) opening.start = [value, params.start.y, params.start.z];
+      });
+      openingFolder.add(params.start, 'y', -10, 10, 0.1).name('Start Y').onChange((value) => {
+        if (opening) opening.start = [params.start.x, value, params.start.z];
+      });
+      openingFolder.add(params.start, 'z', -10, 10, 0.1).name('Start Z').onChange((value) => {
+        if (opening) opening.start = [params.start.x, params.start.y, value];
+      });
+      openingFolder.add(params.end, 'x', -10, 10, 0.1).name('End X').onChange((value) => {
+        if (opening) opening.end = [value, params.end.y, params.end.z];
+      });
+      openingFolder.add(params.end, 'y', -10, 10, 0.1).name('End Y').onChange((value) => {
+        if (opening) opening.end = [params.end.x, value, params.end.z];
+      });
+      openingFolder.add(params.end, 'z', -10, 10, 0.1).name('End Z').onChange((value) => {
+        if (opening) opening.end = [params.end.x, params.end.y, value];
+      });
+      openingFolder.add(params, 'thickness', 0.1, 2, 0.1).name('Thickness').onChange((value) => {
+        if (opening) opening.thickness = value;
+      });
+      openingFolder.add(params, 'height', 0.1, 5, 0.1).name('Height').onChange((value) => {
+        if (opening) opening.height = value;
+      });
+      openingFolder.add(params, 'baseHeight', 0, 5, 0.1).name('Base Height').onChange((value) => {
+        if (opening) opening.baseHeight = value;
+      });
+      openingFolder.add(params, 'isProfileView').name('Profile View').onChange((value) => {
+        if (opening) opening.profileView = value;
+      });
+      openingFolder.add(params, 'isModelView').name('Model View').onChange((value) => {
+        if (opening) opening.modelView = value;
+      });
+
+      openingFolder.add({
+        preloadOpening: () => {
+          const config = {
+            ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
+            points: [
+              [3, 0, 0],
+              [5, 0, -5],
+            ],
+            color: '#ff0000',
+          };
+          const preloadConfig = openPlans.opening(config);
+          preloadConfig.outline = params.outline;
+
+          console.log('Preloaded Opening Config:', preloadConfig.getOPConfig());
+        }
+      }, 'preloadOpening');
+
+      openingFolder.add({
+        logConfig: () => {
+          if (opening) {
+            console.log('Current Opening Config:', opening.getOPConfig());
+          } else {
+            console.log('No opening created yet.');
+          }
+        }
+      }, 'logConfig');
+
+      openingFolder.add({ fit: () => { if (opening) openPlans.fit(opening.id) } }, 'fit').name('Fit');
+      openingFolder.add({ getConfig: () => console.log(opening.getOPConfig()) }, 'getConfig').name('Get Config');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

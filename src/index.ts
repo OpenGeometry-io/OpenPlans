@@ -36,8 +36,9 @@ import {
   Toilet,
   Tree,
   Urinal,
-  Wall,
-  WallSystem,
+  SingleWall,
+  PolyWall,
+  // WallSystem,
   WallOpening,
   Washer,
   Window,
@@ -45,11 +46,12 @@ import {
 } from './packages/openplans-core/src/elements';
 
 import { Event } from './utils/event';
+import { Opening } from './packages/openplans-core/src/elements/openings/opening';
 
 // Camera Modes
 export { CameraMode } from './packages/openplans-three/src/plancamera';
 export * from './packages/openplans-core/src';
-export { Door, Window, Wall, WallOpening, WallSystem };
+export { Door, Window, SingleWall, PolyWall, WallOpening, /* WallSystem */  };
 
 export type Theme = 'light' | 'dark' | 'darkBlue';
 
@@ -57,7 +59,7 @@ export class OpenPlans {
   // private container: HTMLElement;
   private openThree: OpenThree;
   private planCamera: PlanCamera;
-  private wallSystem: WallSystem;
+  // private wallSystem: WallSystem;
 
   private elements: Array<THREE.Object3D> = [];
   
@@ -77,7 +79,7 @@ export class OpenPlans {
     this.openThree = new OpenThree(container, this.renderCallback)
     // OpenPlans.sOThree = this.openThree;
     this.planCamera = this.openThree.planCamera
-    this.wallSystem = new WallSystem();
+    // this.wallSystem = new WallSystem();
 
     // this.openThree.planCamera.controls.addEventListener("update", () => {
     //   Glyphs.updateManager(this.openThree.threeCamera)
@@ -151,16 +153,24 @@ export class OpenPlans {
   }
 
   getWallSystem() {
-    return this.wallSystem;
+    // return this.wallSystem;
   }
 
   private addElement<T extends THREE.Object3D>(element: T) {
     this.openThree.scene.add(element);
     this.elements.push(element);
-    if (element instanceof Wall) {
-      this.wallSystem.register(element);
-    }
+    // if (element instanceof Wall) {
+    //   this.wallSystem.register(element);
+    // }
     return element;
+  }
+
+  getElementById(id: string) {
+    return this.elements.find(el => el.userData.ogid === id);
+  }
+
+  getElementsByType<T extends THREE.Object3D>(type: new (...args: any[]) => T): T[] {
+    return this.elements.filter(el => el instanceof type) as T[];
   }
 
   arc(config?: ArcOptions) {
@@ -195,8 +205,17 @@ export class OpenPlans {
   }
 
   // Elements
-  wall(config?: ConstructorParameters<typeof Wall>[0]) {
-    return this.addElement(new Wall(config));
+  opening(config?: ConstructorParameters<typeof Opening>[0]) {
+    return this.addElement(new Opening(config));
+  }
+
+  singleWall(config?: ConstructorParameters<typeof SingleWall>[0]) {
+    const singleWall = new SingleWall(config);
+    return this.addElement(singleWall);
+  }
+
+  polyWall(config?: ConstructorParameters<typeof PolyWall>[0]) {
+    return this.addElement(new PolyWall(config));
   }
 
   wallOpening(config?: ConstructorParameters<typeof WallOpening>[0]) {
@@ -211,127 +230,127 @@ export class OpenPlans {
     return this.addElement(new Window(config));
   }
 
-  doubleDoor(config?: ConstructorParameters<typeof DoubleDoor>[0]) {
-    return this.addElement(new DoubleDoor(config));
-  }
+  // doubleDoor(config?: ConstructorParameters<typeof DoubleDoor>[0]) {
+  //   return this.addElement(new DoubleDoor(config));
+  // }
 
-  doubleWindow(config?: ConstructorParameters<typeof DoubleWindow>[0]) {
-    return this.addElement(new DoubleWindow(config));
-  }
+  // doubleWindow(config?: ConstructorParameters<typeof DoubleWindow>[0]) {
+  //   return this.addElement(new DoubleWindow(config));
+  // }
 
-  slab(config?: ConstructorParameters<typeof Slab>[0]) {
-    return this.addElement(new Slab(config));
-  }
+  // slab(config?: ConstructorParameters<typeof Slab>[0]) {
+  //   return this.addElement(new Slab(config));
+  // }
 
-  stair(config?: ConstructorParameters<typeof Stair>[0]) {
-    return this.addElement(new Stair(config));
-  }
+  // stair(config?: ConstructorParameters<typeof Stair>[0]) {
+  //   return this.addElement(new Stair(config));
+  // }
 
-  board(config?: ConstructorParameters<typeof Board>[0]) {
-    return this.addElement(new Board(config));
-  }
+  // board(config?: ConstructorParameters<typeof Board>[0]) {
+  //   return this.addElement(new Board(config));
+  // }
 
-  space(config?: ConstructorParameters<typeof Space>[0]) {
-    return this.addElement(new Space(config));
-  }
+  // space(config?: ConstructorParameters<typeof Space>[0]) {
+  //   return this.addElement(new Space(config));
+  // }
 
-  chair(config?: ConstructorParameters<typeof Chair>[0]) {
-    return this.addElement(new Chair(config));
-  }
+  // chair(config?: ConstructorParameters<typeof Chair>[0]) {
+  //   return this.addElement(new Chair(config));
+  // }
 
-  sofa(config?: ConstructorParameters<typeof Sofa>[0]) {
-    return this.addElement(new Sofa(config));
-  }
+  // sofa(config?: ConstructorParameters<typeof Sofa>[0]) {
+  //   return this.addElement(new Sofa(config));
+  // }
 
-  bed(config?: ConstructorParameters<typeof Bed>[0]) {
-    return this.addElement(new Bed(config));
-  }
+  // bed(config?: ConstructorParameters<typeof Bed>[0]) {
+  //   return this.addElement(new Bed(config));
+  // }
 
-  wardrobe(config?: ConstructorParameters<typeof Wardrobe>[0]) {
-    return this.addElement(new Wardrobe(config));
-  }
+  // wardrobe(config?: ConstructorParameters<typeof Wardrobe>[0]) {
+  //   return this.addElement(new Wardrobe(config));
+  // }
 
-  desk(config?: ConstructorParameters<typeof Desk>[0]) {
-    return this.addElement(new Desk(config));
-  }
+  // desk(config?: ConstructorParameters<typeof Desk>[0]) {
+  //   return this.addElement(new Desk(config));
+  // }
 
-  diningTable(config?: ConstructorParameters<typeof DiningTable>[0]) {
-    return this.addElement(new DiningTable(config));
-  }
+  // diningTable(config?: ConstructorParameters<typeof DiningTable>[0]) {
+  //   return this.addElement(new DiningTable(config));
+  // }
 
-  toilet(config?: ConstructorParameters<typeof Toilet>[0]) {
-    return this.addElement(new Toilet(config));
-  }
+  // toilet(config?: ConstructorParameters<typeof Toilet>[0]) {
+  //   return this.addElement(new Toilet(config));
+  // }
 
-  sink(config?: ConstructorParameters<typeof Sink>[0]) {
-    return this.addElement(new Sink(config));
-  }
+  // sink(config?: ConstructorParameters<typeof Sink>[0]) {
+  //   return this.addElement(new Sink(config));
+  // }
 
-  shower(config?: ConstructorParameters<typeof Shower>[0]) {
-    return this.addElement(new Shower(config));
-  }
+  // shower(config?: ConstructorParameters<typeof Shower>[0]) {
+  //   return this.addElement(new Shower(config));
+  // }
 
-  bathtub(config?: ConstructorParameters<typeof Bathtub>[0]) {
-    return this.addElement(new Bathtub(config));
-  }
+  // bathtub(config?: ConstructorParameters<typeof Bathtub>[0]) {
+  //   return this.addElement(new Bathtub(config));
+  // }
 
-  bidet(config?: ConstructorParameters<typeof Bidet>[0]) {
-    return this.addElement(new Bidet(config));
-  }
+  // bidet(config?: ConstructorParameters<typeof Bidet>[0]) {
+  //   return this.addElement(new Bidet(config));
+  // }
 
-  urinal(config?: ConstructorParameters<typeof Urinal>[0]) {
-    return this.addElement(new Urinal(config));
-  }
+  // urinal(config?: ConstructorParameters<typeof Urinal>[0]) {
+  //   return this.addElement(new Urinal(config));
+  // }
 
-  refrigerator(config?: ConstructorParameters<typeof Refrigerator>[0]) {
-    return this.addElement(new Refrigerator(config));
-  }
+  // refrigerator(config?: ConstructorParameters<typeof Refrigerator>[0]) {
+  //   return this.addElement(new Refrigerator(config));
+  // }
 
-  stove(config?: ConstructorParameters<typeof Stove>[0]) {
-    return this.addElement(new Stove(config));
-  }
+  // stove(config?: ConstructorParameters<typeof Stove>[0]) {
+  //   return this.addElement(new Stove(config));
+  // }
 
-  washer(config?: ConstructorParameters<typeof Washer>[0]) {
-    return this.addElement(new Washer(config));
-  }
+  // washer(config?: ConstructorParameters<typeof Washer>[0]) {
+  //   return this.addElement(new Washer(config));
+  // }
 
-  dishwasher(config?: ConstructorParameters<typeof Dishwasher>[0]) {
-    return this.addElement(new Dishwasher(config));
-  }
+  // dishwasher(config?: ConstructorParameters<typeof Dishwasher>[0]) {
+  //   return this.addElement(new Dishwasher(config));
+  // }
 
-  kitchenSink(config?: ConstructorParameters<typeof KitchenSink>[0]) {
-    return this.addElement(new KitchenSink(config));
-  }
+  // kitchenSink(config?: ConstructorParameters<typeof KitchenSink>[0]) {
+  //   return this.addElement(new KitchenSink(config));
+  // }
 
-  counter(config?: ConstructorParameters<typeof Counter>[0]) {
-    return this.addElement(new Counter(config));
-  }
+  // counter(config?: ConstructorParameters<typeof Counter>[0]) {
+  //   return this.addElement(new Counter(config));
+  // }
 
-  cabinet(config?: ConstructorParameters<typeof Cabinet>[0]) {
-    return this.addElement(new Cabinet(config));
-  }
+  // cabinet(config?: ConstructorParameters<typeof Cabinet>[0]) {
+  //   return this.addElement(new Cabinet(config));
+  // }
 
-  island(config?: ConstructorParameters<typeof Island>[0]) {
-    return this.addElement(new Island(config));
-  }
+  // island(config?: ConstructorParameters<typeof Island>[0]) {
+  //   return this.addElement(new Island(config));
+  // }
 
-  tree(config?: ConstructorParameters<typeof Tree>[0]) {
-    return this.addElement(new Tree(config));
-  }
+  // tree(config?: ConstructorParameters<typeof Tree>[0]) {
+  //   return this.addElement(new Tree(config));
+  // }
 
-  shrub(config?: ConstructorParameters<typeof Shrub>[0]) {
-    return this.addElement(new Shrub(config));
-  }
+  // shrub(config?: ConstructorParameters<typeof Shrub>[0]) {
+  //   return this.addElement(new Shrub(config));
+  // }
 
-  planter(config?: ConstructorParameters<typeof Planter>[0]) {
-    return this.addElement(new Planter(config));
-  }
+  // planter(config?: ConstructorParameters<typeof Planter>[0]) {
+  //   return this.addElement(new Planter(config));
+  // }
 
-  fountain(config?: ConstructorParameters<typeof Fountain>[0]) {
-    return this.addElement(new Fountain(config));
-  }
+  // fountain(config?: ConstructorParameters<typeof Fountain>[0]) {
+  //   return this.addElement(new Fountain(config));
+  // }
 
-  bench(config?: ConstructorParameters<typeof Bench>[0]) {
-    return this.addElement(new Bench(config));
-  }
+  // bench(config?: ConstructorParameters<typeof Bench>[0]) {
+  //   return this.addElement(new Bench(config));
+  // }
 }

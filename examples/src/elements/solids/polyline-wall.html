@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Polyline Wall</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Polyline Wall</div>
+  <div id="app" style="width: 100%; height: 100vh;"></div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    const DEFAULT_POINTS = [
+      [0, 0, 0],
+      [3.5, 0, 0],
+      [5.5, 0, 1.75],
+      [7, 0, -0.5],
+    ];
+
+    let polyWall;
+    let openPlans;
+    let gui;
+    let pointFolder;
+    let demoOpening = null;
+    let demoDoor = null;
+    let selectedPointControllers = [];
+    let selectedIndexController = null;
+
+    const state = {
+      outline: true,
+      thickness: 0.35,
+      height: 3,
+      profileView: true,
+      modelView: true,
+      selectedPointIndex: 0,
+      selectedPoint: { x: 0, y: 0, z: 0 },
+    };
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      document.body.appendChild(stats.dom);
+
+      openPlans.CameraMode = CameraMode.Model;
+      openPlans.toggleGrid(false);
+
+      polyWall = openPlans.polyWall({
+        points: DEFAULT_POINTS,
+        thickness: state.thickness,
+        height: state.height,
+      });
+      polyWall.outline = state.outline;
+      polyWall.profileView = state.profileView;
+      polyWall.modelView = state.modelView;
+
+      syncStateFromWall();
+      openPlans.fitToView([polyWall]);
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function clampSelectedIndex() {
+      const maxIndex = Math.max(polyWall.points.length - 1, 0);
+      state.selectedPointIndex = Math.min(Math.max(state.selectedPointIndex, 0), maxIndex);
+    }
+
+    function syncSelectedPointFromWall() {
+      clampSelectedIndex();
+      const point = polyWall.points[state.selectedPointIndex];
+      state.selectedPoint.x = point[0];
+      state.selectedPoint.y = point[1];
+      state.selectedPoint.z = point[2];
+
+      if (selectedIndexController) {
+        selectedIndexController.max(Math.max(polyWall.points.length - 1, 0));
+        selectedIndexController.updateDisplay();
+      }
+
+      for (const controller of selectedPointControllers) {
+        controller.updateDisplay();
+      }
+    }
+
+    function syncStateFromWall() {
+      state.outline = polyWall.outline;
+      state.thickness = polyWall.wallThickness;
+      state.height = polyWall.wallHeight;
+      state.profileView = polyWall.profileView;
+      state.modelView = polyWall.modelView;
+      syncSelectedPointFromWall();
+    }
+
+    function rebuildPointFolder() {
+      if (pointFolder) {
+        pointFolder.destroy();
+      }
+
+      pointFolder = gui.addFolder('Points');
+      pointFolder.open();
+      clampSelectedIndex();
+      syncSelectedPointFromWall();
+
+      selectedIndexController = pointFolder
+        .add(state, 'selectedPointIndex', 0, Math.max(polyWall.points.length - 1, 0), 1)
+        .name('Selected Index')
+        .onChange((value) => {
+          state.selectedPointIndex = value;
+          syncSelectedPointFromWall();
+        });
+
+      selectedPointControllers = [
+        pointFolder.add(state.selectedPoint, 'x', -10, 10, 0.1).name('Point X').onChange(() => {
+          updateSelectedPoint();
+        }),
+        pointFolder.add(state.selectedPoint, 'y', -10, 10, 0.1).name('Point Y').onChange(() => {
+          updateSelectedPoint();
+        }),
+        pointFolder.add(state.selectedPoint, 'z', -10, 10, 0.1).name('Point Z').onChange(() => {
+          updateSelectedPoint();
+        }),
+      ];
+
+      pointFolder.add({
+        appendPoint: () => {
+          const points = polyWall.points;
+          const last = points[points.length - 1];
+          const newPoint = [last[0] + 1.5, last[1], last[2] + 0.75];
+          if (polyWall.appendPoint(newPoint)) {
+            state.selectedPointIndex = polyWall.points.length - 1;
+            rebuildPointFolder();
+          }
+        }
+      }, 'appendPoint').name('Append Point');
+
+      pointFolder.add({
+        insertAfterSelected: () => {
+          const points = polyWall.points;
+          const current = points[state.selectedPointIndex];
+          const next = points[state.selectedPointIndex + 1];
+          const newPoint = next
+            ? [
+              (current[0] + next[0]) / 2,
+              (current[1] + next[1]) / 2,
+              (current[2] + next[2]) / 2,
+            ]
+            : [current[0] + 1.25, current[1], current[2] + 0.75];
+
+          if (polyWall.insertPoint(state.selectedPointIndex + 1, newPoint)) {
+            state.selectedPointIndex += 1;
+            rebuildPointFolder();
+          }
+        }
+      }, 'insertAfterSelected').name('Insert After');
+
+      pointFolder.add({
+        removeSelected: () => {
+          if (polyWall.removePoint(state.selectedPointIndex)) {
+            clampSelectedIndex();
+            rebuildPointFolder();
+          }
+        }
+      }, 'removeSelected').name('Remove Point');
+    }
+
+    function updateSelectedPoint() {
+      const nextPoint = [
+        state.selectedPoint.x,
+        state.selectedPoint.y,
+        state.selectedPoint.z,
+      ];
+
+      if (!polyWall.updatePoint(state.selectedPointIndex, nextPoint)) {
+        syncSelectedPointFromWall();
+      }
+    }
+
+    function attachDemoOpening() {
+      if (demoOpening) {
+        return;
+      }
+
+      demoOpening = openPlans.opening({
+        points: [
+          [0.9, 0, 0],
+          [2.1, 0, 0],
+        ],
+        thickness: polyWall.wallThickness,
+        height: 2.2,
+        baseHeight: 0.4,
+      });
+      demoOpening.outline = true;
+      polyWall.attachOpening(demoOpening);
+    }
+
+    function attachDemoDoor() {
+      if (demoDoor) {
+        return;
+      }
+
+      demoDoor = openPlans.door({
+        stationPoint: [2.7, 0, 0],
+        panelDimensions: {
+          width: 1,
+          thickness: 0.12,
+        },
+        frameDimensions: {
+          width: 0.1,
+          thickness: polyWall.wallThickness,
+        },
+        doorHeight: 2.1,
+        doorColor: 0xcc7a00,
+        frameColor: 0x654321,
+      });
+      // demoDoor.modelView = false;
+      polyWall.attachDoor(demoDoor);
+    }
+
+    function setUI() {
+      gui = new GUI();
+
+      const wallFolder = gui.addFolder('Polyline Wall');
+      wallFolder.open();
+
+      wallFolder.add(state, 'outline').name('Outline').onChange((value) => {
+        polyWall.outline = value;
+      });
+
+      wallFolder.add(state, 'thickness', 0.1, 2, 0.05).name('Thickness').onChange((value) => {
+        polyWall.wallThickness = value;
+        if (demoOpening) {
+          demoOpening.thickness = value;
+        }
+        if (demoDoor) {
+          demoDoor.frameThickness = value;
+        }
+      });
+
+      wallFolder.add(state, 'height', 1, 10, 0.1).name('Height').onChange((value) => {
+        polyWall.wallHeight = value;
+      });
+
+      wallFolder.add(state, 'profileView').name('Profile View').onChange((value) => {
+        polyWall.profileView = value;
+      });
+
+      wallFolder.add(state, 'modelView').name('Model View').onChange((value) => {
+        polyWall.modelView = value;
+      });
+
+      wallFolder.add({
+        resetPath: () => {
+          if (polyWall.setPoints(DEFAULT_POINTS)) {
+            state.selectedPointIndex = 0;
+            rebuildPointFolder();
+          }
+        }
+      }, 'resetPath').name('Reset Path');
+
+      wallFolder.add({
+        logConfig: () => {
+          console.log('Current PolyWall Config:', polyWall.getOPConfig());
+        }
+      }, 'logConfig').name('Log Config');
+
+      wallFolder.add({
+        fit: () => {
+          openPlans.fitToView([polyWall]);
+        }
+      }, 'fit').name('Fit');
+
+      wallFolder.add({
+        preloadWall: () => {
+          const preloaded = openPlans.polyWall({
+            ogid: 'poly-wall-preload-example',
+            points: [
+              [-6, 0, -3],
+              [-3, 0, -3],
+              [-1.5, 0, -1],
+              [-1, 0, -4],
+            ],
+            color: 0xff0000,
+            thickness: 0.25,
+            height: 2.7,
+          });
+          preloaded.outline = state.outline;
+          console.log('Preloaded PolyWall Config:', preloaded.getOPConfig());
+        }
+      }, 'preloadWall').name('Preload Wall');
+
+      const hostingFolder = gui.addFolder('Hosted Openings');
+      hostingFolder.open();
+      hostingFolder.add({ attachDemoOpening }, 'attachDemoOpening').name('Attach Opening');
+      hostingFolder.add({ attachDemoDoor }, 'attachDemoDoor').name('Attach Door');
+
+      rebuildPointFolder();
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

@@ -90,13 +90,6 @@
         if (cylinder) cylinder.outline = value;
       });
 
-      // cylinderFolder.add({
-      //   createCylinder: () => {
-      //     cylinder = openPlans.cylinder();
-      //     cylinder.outline = params.outline;
-      //   }
-      // }, 'createCylinder');
-
       cylinderFolder.add({
         preloadCylinder: () => {
           const config = {

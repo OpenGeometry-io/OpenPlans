@@ -3,15 +3,7 @@ import { IShape } from "../../shapes/base-type";
 import { ElementType, WindowType } from "./../base-type";
 import { Cuboid, Line, Polygon, Sweep, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
-import {
-  applyPlacement,
-  clearObjectMap,
-  normalizePlacement,
-  orderedRoots,
-  setMapVisibility,
-  syncCombinedSubElements,
-  toColorNumber,
-} from "../shared/dual-view";
+
 
 type Window2DSubElementType = "frame" | "glass";
 type Window3DSubElementType = "frame" | "glass";

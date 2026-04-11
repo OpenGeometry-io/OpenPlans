@@ -16,8 +16,10 @@ export interface CylinderOptions {
 
 export class CylinderShape extends Cylinder implements IShape {
   ogType: string = 'CylinderShape';
-  subElements: Map<string, THREE.Object3D>;
-  
+
+  subElements2D: Map<string, THREE.Object3D<THREE.Object3DEventMap>>;
+  subElements3D: Map<string, THREE.Object3D<THREE.Object3DEventMap>>;
+
   selected: boolean = false;
   edit: boolean = false;
   locked: boolean = false;
@@ -50,7 +52,8 @@ export class CylinderShape extends Cylinder implements IShape {
       scale: new Vector3(properties?.placement?.scale[0] || 1, properties?.placement?.scale[1] || 1, properties?.placement?.scale[2] || 1),
     });
 
-    this.subElements = new Map<string, THREE.Object3D>();
+    this.subElements2D = new Map<string, THREE.Object3D>();
+    this.subElements3D = new Map<string, THREE.Object3D>();
     
     if (properties) {
       this.propertySet = { ...this.propertySet, ...properties };
