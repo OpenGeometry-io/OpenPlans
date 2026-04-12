@@ -29,7 +29,7 @@
   "dependencies": {
     "@opengeometry/openglyph": "^0.0.7",
     "jspdf": "^4.0.0",
-    "opengeometry": "^2.0.4"
+    "opengeometry": "^2.0.6"
   },
   "peerDependencies": {
     "@types/three": "^0.168.0",

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Window</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Window</div>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    let windowElement;
+    let openPlans;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.CameraMode = CameraMode.Model;
+      openPlans.toggleGrid(false);
+
+      windowElement = openPlans.window();
+      openPlans.fitToView([windowElement]);
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      const windowFolder = gui.addFolder('Window');
+      windowFolder.open();
+
+      const params = {
+        station: { x: 0, y: 0, z: 0 },
+        windowDimensions: { width: 1.5, thickness: 0.2 },
+        frameDimensions: { width: 0.2, thickness: 0.2 },
+        windowHeight: 1.2,
+        sillHeight: 0.9,
+        glassColor: '#87ceeb',
+        frameColor: '#2f2f2f',
+        isProfileView: true,
+        isModelView: true,
+        isHostObject: false,
+        outline: true,
+      };
+
+      windowFolder.add(params, 'isHostObject').name('Host Object').onChange((value) => {
+        if (windowElement && value) {
+          windowElement.hostObject = 'example-wall-id';
+        } else if (windowElement) {
+          windowElement.hostObject = null;
+        }
+      });
+      windowFolder.add(params.station, 'x', -10, 10, 0.1).name('Station X').onChange((value) => {
+        if (windowElement) windowElement.station = [value, params.station.y, params.station.z];
+      });
+      windowFolder.add(params.station, 'y', -10, 10, 0.1).name('Station Y').onChange((value) => {
+        if (windowElement) windowElement.station = [params.station.x, value, params.station.z];
+      });
+      windowFolder.add(params.station, 'z', -10, 10, 0.1).name('Station Z').onChange((value) => {
+        if (windowElement) windowElement.station = [params.station.x, params.station.y, value];
+      });
+      windowFolder.add(params.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {
+        if (windowElement) windowElement.windowWidth = value;
+      });
+      windowFolder.add(params.windowDimensions, 'thickness', 0.05, 1, 0.05).name('Thickness').onChange((value) => {
+        if (windowElement) windowElement.windowThickness = value;
+      });
+      windowFolder.add(params.frameDimensions, 'width', 0.05, 0.6, 0.05).name('Frame Width').onChange((value) => {
+        if (windowElement) windowElement.frameWidth = value;
+      });
+      windowFolder.add(params.frameDimensions, 'thickness', 0.05, 0.6, 0.05).name('Frame Thickness').onChange((value) => {
+        if (windowElement) windowElement.frameThickness = value;
+      });
+      windowFolder.add(params, 'windowHeight', 0.2, 4, 0.1).name('Height').onChange((value) => {
+        if (windowElement) windowElement.windowHeight = value;
+      });
+      windowFolder.add(params, 'sillHeight', 0, 3, 0.1).name('Sill Height').onChange((value) => {
+        if (windowElement) windowElement.sillHeight = value;
+      });
+      windowFolder.addColor(params, 'glassColor').name('Glass Color').onChange((value) => {
+        if (windowElement) windowElement.glassColor = value;
+      });
+      windowFolder.addColor(params, 'frameColor').name('Frame Color').onChange((value) => {
+        if (windowElement) windowElement.frameColor = value;
+      });
+      windowFolder.add(params, 'outline').name('Outline').onChange((value) => {
+        if (windowElement) windowElement.outline = value;
+      });
+      windowFolder.add(params, 'isProfileView').name('Profile View').onChange((value) => {
+        if (windowElement) windowElement.profileView = value;
+      });
+      windowFolder.add(params, 'isModelView').name('Model View').onChange((value) => {
+        if (windowElement) windowElement.modelView = value;
+      });
+
+      windowFolder.add({
+        preloadWindow: () => {
+          const config = {
+            ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
+            labelName: 'Preloaded Window',
+            hostWallId: 'example-wall-id',
+            stationPoint: [1.5, 0, 0],
+            windowDimensions: { width: 1.8, thickness: 0.16 },
+            frameDimensions: { width: 0.14, thickness: 0.18 },
+            windowType: 'CASEMENT',
+            windowHeight: 1.4,
+            sillHeight: 1,
+            glassColor: '#8fbfdf',
+            frameColor: '#2f2f2f',
+            placement: {
+              position: [0, 0, 0],
+              rotation: [0, 0, 0],
+              scale: [1, 1, 1],
+            },
+          };
+          const preloadConfig = openPlans.window(config);
+          preloadConfig.outline = params.outline;
+
+          console.log('Preloaded Window Config:', preloadConfig.getOPConfig());
+        }
+      }, 'preloadWindow');
+
+      windowFolder.add({
+        logConfig: () => {
+          if (windowElement) {
+            console.log('Current Window Config:', windowElement.getOPConfig());
+          } else {
+            console.log('No window created yet.');
+          }
+        }
+      }, 'logConfig');
+
+      windowFolder.add({ fit: () => { if (windowElement) openPlans.fitToView([windowElement]); } }, 'fit').name('Fit');
+      windowFolder.add({ getConfig: () => console.log(windowElement.getOPConfig()) }, 'getConfig').name('Get Config');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

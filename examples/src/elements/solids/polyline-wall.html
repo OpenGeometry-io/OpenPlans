@@ -67,6 +67,7 @@
     let pointFolder;
     let demoOpening = null;
     let demoDoor = null;
+    let wallControllers = [];
     let selectedPointControllers = [];
     let selectedIndexController = null;
 
@@ -136,6 +137,11 @@
       state.height = polyWall.wallHeight;
       state.profileView = polyWall.profileView;
       state.modelView = polyWall.modelView;
+
+      for (const controller of wallControllers) {
+        controller.updateDisplay();
+      }
+
       syncSelectedPointFromWall();
     }
 
@@ -161,7 +167,7 @@
         pointFolder.add(state.selectedPoint, 'x', -10, 10, 0.1).name('Point X').onChange(() => {
           updateSelectedPoint();
         }),
-        pointFolder.add(state.selectedPoint, 'y', -10, 10, 0.1).name('Point Y').onChange(() => {
+        pointFolder.add(state.selectedPoint, 'y', -10, 10, 0.1).name('Point Y (flat)').onChange(() => {
           updateSelectedPoint();
         }),
         pointFolder.add(state.selectedPoint, 'z', -10, 10, 0.1).name('Point Z').onChange(() => {
@@ -218,9 +224,8 @@
         state.selectedPoint.z,
       ];
 
-      if (!polyWall.updatePoint(state.selectedPointIndex, nextPoint)) {
-        syncSelectedPointFromWall();
-      }
+      polyWall.updatePoint(state.selectedPointIndex, nextPoint);
+      syncSelectedPointFromWall();
     }
 
     function attachDemoOpening() {
@@ -269,32 +274,49 @@
 
       const wallFolder = gui.addFolder('Polyline Wall');
       wallFolder.open();
+      wallControllers = [];
 
-      wallFolder.add(state, 'outline').name('Outline').onChange((value) => {
-        polyWall.outline = value;
-      });
+      wallControllers.push(
+        wallFolder.add(state, 'outline').name('Outline').onChange((value) => {
+          polyWall.outline = value;
+          syncStateFromWall();
+        }),
+      );
 
-      wallFolder.add(state, 'thickness', 0.1, 2, 0.05).name('Thickness').onChange((value) => {
-        polyWall.wallThickness = value;
-        if (demoOpening) {
-          demoOpening.thickness = value;
-        }
-        if (demoDoor) {
-          demoDoor.frameThickness = value;
-        }
-      });
+      wallControllers.push(
+        wallFolder.add(state, 'thickness', 0.1, 2, 0.05).name('Thickness').onChange((value) => {
+          polyWall.wallThickness = value;
+          const appliedThickness = polyWall.wallThickness;
+          if (demoOpening) {
+            demoOpening.thickness = appliedThickness;
+          }
+          if (demoDoor) {
+            demoDoor.frameThickness = appliedThickness;
+          }
+          syncStateFromWall();
+        }),
+      );
 
-      wallFolder.add(state, 'height', 1, 10, 0.1).name('Height').onChange((value) => {
-        polyWall.wallHeight = value;
-      });
+      wallControllers.push(
+        wallFolder.add(state, 'height', 1, 10, 0.1).name('Height').onChange((value) => {
+          polyWall.wallHeight = value;
+          syncStateFromWall();
+        }),
+      );
 
-      wallFolder.add(state, 'profileView').name('Profile View').onChange((value) => {
-        polyWall.profileView = value;
-      });
+      wallControllers.push(
+        wallFolder.add(state, 'profileView').name('Profile View').onChange((value) => {
+          polyWall.profileView = value;
+          syncStateFromWall();
+        }),
+      );
 
-      wallFolder.add(state, 'modelView').name('Model View').onChange((value) => {
-        polyWall.modelView = value;
-      });
+      wallControllers.push(
+        wallFolder.add(state, 'modelView').name('Model View').onChange((value) => {
+          polyWall.modelView = value;
+          syncStateFromWall();
+        }),
+      );
 
       wallFolder.add({
         resetPath: () => {

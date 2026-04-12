@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Polygon, Polyline, Solid, Vector3 } from "opengeometry";
+import { BooleanResult, Polygon, Polyline, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
@@ -9,6 +9,26 @@ import { WallMaterial, WallOptions } from "./wall-types";
 
 type WallPoint = [number, number, number];
 
+type GeometryState = {
+  points: WallPoint[];
+  thickness: number;
+  footprint: Vector3[];
+};
+
+type GeometryStateResult =
+  | { state: GeometryState }
+  | { error: string };
+
+const DEFAULT_POINTS: WallPoint[] = [
+  [0, 0, 0],
+  [1.5, 0, 0],
+  [2.5, 0, 1.5],
+];
+
+const GEOMETRY_EPSILON = 1e-6;
+const FOOTPRINT_AREA_EPSILON = 1e-6;
+const PLAN_RENDER_ORDER = 20;
+
 function clonePoint(point: WallPoint): WallPoint {
   return [point[0], point[1], point[2]];
 }
@@ -17,12 +37,252 @@ function clonePoints(points: WallPoint[]): WallPoint[] {
   return points.map((point) => clonePoint(point));
 }
 
-function pointsMatch(a: WallPoint, b: WallPoint): boolean {
-  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+function cloneVector(point: Vector3): Vector3 {
+  return new Vector3(point.x, point.y, point.z);
 }
 
 function isFinitePoint(point: WallPoint): boolean {
   return Number.isFinite(point[0]) && Number.isFinite(point[1]) && Number.isFinite(point[2]);
+}
+
+function pointsMatch(a: WallPoint, b: WallPoint, epsilon = GEOMETRY_EPSILON): boolean {
+  return (
+    Math.abs(a[0] - b[0]) <= epsilon &&
+    Math.abs(a[1] - b[1]) <= epsilon &&
+    Math.abs(a[2] - b[2]) <= epsilon
+  );
+}
+
+function vectorsMatch(a: Vector3, b: Vector3, epsilon = GEOMETRY_EPSILON): boolean {
+  return (
+    Math.abs(a.x - b.x) <= epsilon &&
+    Math.abs(a.y - b.y) <= epsilon &&
+    Math.abs(a.z - b.z) <= epsilon
+  );
+}
+
+function pointDistanceSquared(a: WallPoint, b: WallPoint): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return dx * dx + dy * dy + dz * dz;
+}
+
+function signedAreaXZ(vertices: Vector3[]): number {
+  let area = 0;
+  for (let index = 0; index < vertices.length; index += 1) {
+    const current = vertices[index];
+    const next = vertices[(index + 1) % vertices.length];
+    area += current.x * next.z - next.x * current.z;
+  }
+  return area / 2;
+}
+
+function sanitizeFootprintVertices(vertices: Vector3[]): Vector3[] {
+  const sanitized: Vector3[] = [];
+
+  for (const vertex of vertices) {
+    const lastVertex = sanitized[sanitized.length - 1];
+    if (!lastVertex || !vectorsMatch(lastVertex, vertex)) {
+      sanitized.push(cloneVector(vertex));
+    }
+  }
+
+  if (sanitized.length > 1 && vectorsMatch(sanitized[0], sanitized[sanitized.length - 1])) {
+    sanitized.pop();
+  }
+
+  return sanitized;
+}
+
+function orientationXZ(a: Vector3, b: Vector3, c: Vector3): number {
+  return (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+}
+
+function onSegmentXZ(a: Vector3, b: Vector3, point: Vector3, epsilon = GEOMETRY_EPSILON): boolean {
+  return (
+    point.x <= Math.max(a.x, b.x) + epsilon &&
+    point.x >= Math.min(a.x, b.x) - epsilon &&
+    point.z <= Math.max(a.z, b.z) + epsilon &&
+    point.z >= Math.min(a.z, b.z) - epsilon
+  );
+}
+
+function segmentsIntersectXZ(a1: Vector3, a2: Vector3, b1: Vector3, b2: Vector3): boolean {
+  const o1 = orientationXZ(a1, a2, b1);
+  const o2 = orientationXZ(a1, a2, b2);
+  const o3 = orientationXZ(b1, b2, a1);
+  const o4 = orientationXZ(b1, b2, a2);
+
+  const o1Zero = Math.abs(o1) <= GEOMETRY_EPSILON;
+  const o2Zero = Math.abs(o2) <= GEOMETRY_EPSILON;
+  const o3Zero = Math.abs(o3) <= GEOMETRY_EPSILON;
+  const o4Zero = Math.abs(o4) <= GEOMETRY_EPSILON;
+
+  if (o1Zero && onSegmentXZ(a1, a2, b1)) {
+    return true;
+  }
+  if (o2Zero && onSegmentXZ(a1, a2, b2)) {
+    return true;
+  }
+  if (o3Zero && onSegmentXZ(b1, b2, a1)) {
+    return true;
+  }
+  if (o4Zero && onSegmentXZ(b1, b2, a2)) {
+    return true;
+  }
+
+  return (o1 > 0) !== (o2 > 0) && (o3 > 0) !== (o4 > 0);
+}
+
+function hasSelfIntersectionXZ(vertices: Vector3[]): boolean {
+  const edgeCount = vertices.length;
+
+  for (let firstIndex = 0; firstIndex < edgeCount; firstIndex += 1) {
+    const firstStart = vertices[firstIndex];
+    const firstEnd = vertices[(firstIndex + 1) % edgeCount];
+
+    for (let secondIndex = firstIndex + 1; secondIndex < edgeCount; secondIndex += 1) {
+      const firstSharesStart = secondIndex === firstIndex;
+      const firstSharesEnd = secondIndex === (firstIndex + 1) % edgeCount;
+      const wrapsBackToStart = firstIndex === 0 && secondIndex === edgeCount - 1;
+      if (firstSharesStart || firstSharesEnd || wrapsBackToStart) {
+        continue;
+      }
+
+      const secondStart = vertices[secondIndex];
+      const secondEnd = vertices[(secondIndex + 1) % edgeCount];
+
+      if (segmentsIntersectXZ(firstStart, firstEnd, secondStart, secondEnd)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function discardGeometry(shape: { discardGeometry?: () => void } | null | undefined): void {
+  shape?.discardGeometry?.();
+}
+
+function buildFootprint(points: WallPoint[], thickness: number): GeometryStateResult {
+  const sourceLine = new Polyline({
+    points: points.map((point) => new Vector3(point[0], point[1], point[2])),
+    color: 0xffffff,
+  });
+
+  try {
+    const positiveOffset = sourceLine.getOffset(thickness / 2, 50, true);
+    const negativeOffset = sourceLine.getOffset(-thickness / 2, 50, true);
+
+    console.log(positiveOffset.points);
+    console.log(negativeOffset.points);
+
+
+    const footprint = sanitizeFootprintVertices([
+      ...positiveOffset.points.map((point) => cloneVector(point)),
+      ...negativeOffset.points.slice().reverse().map((point) => cloneVector(point)),
+    ]);
+
+    if (footprint.length < 3) {
+      return {
+        error: "Invalid polyline wall geometry: Offset footprint must contain at least three unique vertices.",
+      };
+    }
+
+    if (hasSelfIntersectionXZ(footprint)) {
+      return {
+        error:
+          "Invalid polyline wall geometry: Offset footprint self-intersects. Reduce the wall thickness or simplify the path.",
+      };
+    }
+
+    const area = signedAreaXZ(footprint);
+    if (Math.abs(area) <= FOOTPRINT_AREA_EPSILON) {
+      return {
+        error: "Invalid polyline wall geometry: Offset footprint area is too small to build a stable wall.",
+      };
+    }
+
+    const normalizedFootprint = area > 0 ? footprint.slice().reverse() : footprint;
+
+    return {
+      state: {
+        points: clonePoints(points),
+        thickness,
+        footprint: normalizedFootprint.map((point) => cloneVector(point)),
+      },
+    };
+  } catch (error) {
+    return {
+      error: `Invalid polyline wall geometry: Failed to compute wall footprint${
+        error instanceof Error && error.message ? ` (${error.message})` : "."
+      }`,
+    };
+  } finally {
+    discardGeometry(sourceLine);
+  }
+}
+
+function prepareGeometryState(points: WallPoint[], thickness: number): GeometryStateResult {
+  if (!Number.isFinite(thickness) || thickness <= 0) {
+    return {
+      error: "Invalid polyline wall geometry: Wall thickness must be a positive finite number.",
+    };
+  }
+
+  if (points.length < 2) {
+    return {
+      error: "Invalid polyline wall geometry: A polyline wall requires at least two points.",
+    };
+  }
+
+  const clonedPoints = clonePoints(points);
+  const baseY = clonedPoints[0][1];
+
+  for (let index = 0; index < clonedPoints.length; index += 1) {
+    const point = clonedPoints[index];
+    if (!isFinitePoint(point)) {
+      return {
+        error: `Invalid polyline wall geometry: Point ${index} must contain finite numbers.`,
+      };
+    }
+
+    if (Math.abs(point[1] - baseY) > GEOMETRY_EPSILON) {
+      return {
+        error:
+          "Invalid polyline wall geometry: Polyline walls currently support only horizontal paths, so all point Y values must match.",
+      };
+    }
+
+    if (index > 0 && pointDistanceSquared(clonedPoints[index - 1], point) <= GEOMETRY_EPSILON * GEOMETRY_EPSILON) {
+      return {
+        error: `Invalid polyline wall geometry: Consecutive points at index ${index - 1} and ${index} cannot define a zero-length segment.`,
+      };
+    }
+  }
+
+  if (pointsMatch(clonedPoints[0], clonedPoints[clonedPoints.length - 1])) {
+    return {
+      error: "Invalid polyline wall geometry: First and last points cannot be the same.",
+    };
+  }
+
+  return buildFootprint(clonedPoints, thickness);
+}
+
+function disposeObject(obj: THREE.Object3D): void {
+  const mesh = obj as THREE.Mesh;
+  if (mesh.geometry) {
+    mesh.geometry.dispose();
+  }
+  if (Array.isArray(mesh.material)) {
+    mesh.material.forEach((material) => material.dispose());
+  } else if (mesh.material) {
+    mesh.material.dispose();
+  }
+  obj.removeFromParent();
 }
 
 export class PolyWall extends Polyline implements IShape {
@@ -51,11 +311,7 @@ export class PolyWall extends Polyline implements IShape {
     material: WallMaterial.CONCRETE,
     color: 0xcccccc,
     height: 3,
-    points: [
-      [0, 0, 0],
-      [1.5, 0, 0],
-      [2.5, 0, 1.5],
-    ],
+    points: clonePoints(DEFAULT_POINTS),
     placement: {
       position: [0, 0, 0],
       rotation: [0, 0, 0],
@@ -70,16 +326,7 @@ export class PolyWall extends Polyline implements IShape {
 
   set outline(value: boolean) {
     this._outlineEnabled = value;
-    for (const obj of this.subElements2D.values()) {
-      if ("outline" in obj) {
-        (obj as Polygon).outline = value;
-      }
-    }
-    for (const obj of this.subElements3D.values()) {
-      if ("outline" in obj) {
-        (obj as Solid).outline = value;
-      }
-    }
+    this.applyRenderStyles();
   }
 
   get labelName() {
@@ -95,8 +342,14 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   set wallThickness(value: number) {
-    this.propertySet.thickness = Math.max(0.1, value);
-    this.setOPGeometry();
+    const nextThickness = Math.max(0.1, value);
+    const geometryState = this.resolveGeometryState(this.propertySet.points, nextThickness);
+    if (!geometryState) {
+      return;
+    }
+
+    this.propertySet.thickness = nextThickness;
+    this.setOPGeometry(geometryState);
   }
 
   get wallMaterial() {
@@ -151,18 +404,7 @@ export class PolyWall extends Polyline implements IShape {
 
   set profileView(value: boolean) {
     this.isProfileView = value;
-
-    if (this.subElements2D.has(this.ogid + "-2d-resolved")) {
-      const resolved2D = this.subElements2D.get(this.ogid + "-2d-resolved");
-      if (resolved2D) {
-        resolved2D.visible = value;
-      }
-      return;
-    }
-
-    for (const obj of this.subElements2D.values()) {
-      obj.visible = value;
-    }
+    this.syncViewVisibility();
   }
 
   get modelView() {
@@ -171,30 +413,26 @@ export class PolyWall extends Polyline implements IShape {
 
   set modelView(value: boolean) {
     this.isModelView = value;
-
-    if (this.subElements3D.has(this.ogid + "-3d-resolved")) {
-      const resolved3D = this.subElements3D.get(this.ogid + "-3d-resolved");
-      if (resolved3D) {
-        resolved3D.visible = value;
-      }
-      return;
-    }
-
-    for (const obj of this.subElements3D.values()) {
-      obj.visible = value;
-    }
+    this.syncViewVisibility();
   }
 
   constructor(wallConfig?: Partial<WallOptions>) {
+    const requestedThickness = Math.max(0.1, wallConfig?.thickness ?? 0.3);
+    const requestedState = prepareGeometryState(clonePoints(wallConfig?.points ?? DEFAULT_POINTS), requestedThickness);
+    const fallbackState = prepareGeometryState(clonePoints(DEFAULT_POINTS), 0.3);
+    if ("error" in fallbackState) {
+      throw new Error(fallbackState.error);
+    }
+
+    const initialState = "state" in requestedState ? requestedState.state : fallbackState.state;
+
+    if ("error" in requestedState) {
+      console.error(`${requestedState.error} Falling back to the default polyline wall path.`);
+    }
+
     super({
       ogid: wallConfig?.ogid,
-      points: clonePoints(
-        wallConfig?.points ?? [
-          [0, 0, 0],
-          [1.5, 0, 0],
-          [2.5, 0, 1.5],
-        ],
-      ).map((point) => new Vector3(point[0], point[1], point[2])),
+      points: initialState.points.map((point) => new Vector3(point[0], point[1], point[2])),
       color: wallConfig?.color ?? 0xcccccc,
     });
 
@@ -205,37 +443,34 @@ export class PolyWall extends Polyline implements IShape {
       this.propertySet = {
         ...this.propertySet,
         ...wallConfig,
-        points: clonePoints(wallConfig.points ?? this.propertySet.points),
         openings: [...(wallConfig.openings ?? this.propertySet.openings)],
       };
     }
 
-    if (!this.validatePoints(this.propertySet.points)) {
-      this.propertySet.points = [
-        [0, 0, 0],
-        [1.5, 0, 0],
-        [2.5, 0, 1.5],
-      ];
-    }
-
+    this.propertySet.points = clonePoints(initialState.points);
+    this.propertySet.thickness = initialState.thickness;
     this.propertySet.ogid = this.ogid;
-    this.setOPGeometry();
+
+    this.setOPGeometry(initialState);
   }
 
   setOPConfig(config: WallOptions): void {
+    const nextThickness = Math.max(0.1, config.thickness ?? this.propertySet.thickness);
     const nextPoints = clonePoints(config.points ?? this.propertySet.points);
-    if (!this.validatePoints(nextPoints)) {
+    const geometryState = this.resolveGeometryState(nextPoints, nextThickness);
+    if (!geometryState) {
       return;
     }
 
     this.propertySet = {
       ...this.propertySet,
       ...config,
-      points: nextPoints,
+      thickness: nextThickness,
+      points: clonePoints(geometryState.points),
       openings: [...(config.openings ?? this.propertySet.openings)],
     };
 
-    this.setOPGeometry();
+    this.setOPGeometry(geometryState);
     this.setOPMaterial();
   }
 
@@ -244,12 +479,13 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   setPoints(points: WallPoint[]): boolean {
-    if (!this.validatePoints(points)) {
+    const geometryState = this.resolveGeometryState(points, this.propertySet.thickness);
+    if (!geometryState) {
       return false;
     }
 
-    this.propertySet.points = clonePoints(points);
-    this.setOPGeometry();
+    this.propertySet.points = clonePoints(geometryState.points);
+    this.setOPGeometry(geometryState);
     return true;
   }
 
@@ -293,11 +529,19 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   attachDoor(doorElement: Door) {
+    if (doorElement.hostWallId !== this.ogid) {
+      doorElement.hostWallId = this.ogid;
+      doorElement.setOPGeometry();
+    }
+
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
       console.error("Door element does not have a valid opening configuration.");
       return;
     }
+
+    openingFromDoor.profileView = false;
+    openingFromDoor.modelView = false;
 
     this.openings.push(openingFromDoor);
     const openingConfig = openingFromDoor.getOPConfig();
@@ -314,6 +558,9 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   attachOpening(openingElement: Opening) {
+    openingElement.profileView = false;
+    openingElement.modelView = false;
+
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
     this.propertySet.openings.push(openingConfig.ogid!);
@@ -341,88 +588,56 @@ export class PolyWall extends Polyline implements IShape {
 
   resolveOpenings() {
     const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
-    if (!wall2D) {
-      return;
-    }
+    const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
 
-    const resolved2DKey = this.ogid + "-2d-resolved";
-    const existingResolved2D = this.subElements2D.get(resolved2DKey);
-    if (existingResolved2D) {
-      existingResolved2D.removeFromParent();
-      this.subElements2D.delete(resolved2DKey);
-    }
+    this.clearResolvedElement(this.subElements2D, this.ogid + "-2d-resolved");
+    this.clearResolvedElement(this.subElements3D, this.ogid + "-3d-resolved");
 
     const all2DOpenings = this.openings
       .map((opening) => opening.opening2D)
       .filter((opening): opening is Polygon => Boolean(opening));
-
-    if (all2DOpenings.length === 0) {
-      wall2D.visible = this.isProfileView;
-    } else {
-      const result2D = wall2D.subtract(all2DOpenings) as THREE.Object3D;
-      wall2D.visible = false;
-      all2DOpenings.forEach((opening2D) => {
-        opening2D.visible = false;
-      });
-      this.subElements2D.set(resolved2DKey, result2D);
-      this.add(result2D);
-    }
-
-    const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
-    if (!wall3D) {
-      return;
-    }
-
-    const resolved3DKey = this.ogid + "-3d-resolved";
-    const existingResolved3D = this.subElements3D.get(resolved3DKey);
-    if (existingResolved3D) {
-      existingResolved3D.removeFromParent();
-      this.subElements3D.delete(resolved3DKey);
-    }
-
     const all3DOpenings = this.openings
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
 
-    if (all3DOpenings.length === 0) {
-      wall3D.visible = this.isModelView;
-      return;
+    if (wall2D && all2DOpenings.length > 0) {
+      const result2D = wall2D.subtract(all2DOpenings, {
+        color: this.propertySet.color,
+        outline: this._outlineEnabled,
+      }) as BooleanResult;
+
+      this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
+      this.add(result2D);
     }
 
-    const result3D = wall3D.subtract(all3DOpenings) as THREE.Object3D;
-    wall3D.visible = false;
+    if (wall3D && all3DOpenings.length > 0) {
+      const result3D = wall3D.subtract(all3DOpenings, {
+        color: this.propertySet.color,
+        outline: this._outlineEnabled,
+      }) as BooleanResult;
+
+      this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
+      this.add(result3D);
+    }
+
+    all2DOpenings.forEach((opening2D) => {
+      opening2D.visible = false;
+    });
     all3DOpenings.forEach((opening3D) => {
       opening3D.visible = false;
     });
-    this.subElements3D.set(resolved3DKey, result3D);
-    this.add(result3D);
+
+    this.applyRenderStyles();
+    this.syncViewVisibility();
   }
 
   dispose() {
     for (const obj of this.subElements2D.values()) {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.geometry) {
-        mesh.geometry.dispose();
-      }
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach((material) => material.dispose());
-      } else if (mesh.material) {
-        mesh.material.dispose();
-      }
-      mesh.removeFromParent();
+      disposeObject(obj);
     }
 
     for (const obj of this.subElements3D.values()) {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.geometry) {
-        mesh.geometry.dispose();
-      }
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach((material) => material.dispose());
-      } else if (mesh.material) {
-        mesh.material.dispose();
-      }
-      mesh.removeFromParent();
+      disposeObject(obj);
     }
 
     this.subElements2D.clear();
@@ -430,11 +645,16 @@ export class PolyWall extends Polyline implements IShape {
     this.discardGeometry();
   }
 
-  setOPGeometry(): void {
+  setOPGeometry(prevalidatedGeometry?: GeometryState): void {
+    const geometryState = prevalidatedGeometry ?? this.resolveGeometryState(this.propertySet.points, this.propertySet.thickness);
+    if (!geometryState) {
+      return;
+    }
+
     this.dispose();
 
     this.setConfig({
-      points: this.propertySet.points.map((point) => new Vector3(point[0], point[1], point[2])),
+      points: geometryState.points.map((point) => new Vector3(point[0], point[1], point[2])),
       color: this.propertySet.color,
     });
 
@@ -442,22 +662,9 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
-    const offset1 = this.getOffset(this.propertySet.thickness / 2);
-    const offset2 = this.getOffset(-this.propertySet.thickness / 2);
-
-    const footprint = this.sanitizeFootprintVertices([
-      ...offset1.points.map((point) => point.clone()),
-      ...offset2.points.slice().reverse().map((point) => point.clone()),
-    ]);
-
-    if (footprint.length < 3) {
-      console.error("Invalid polyline wall geometry: Offset footprint must contain at least three unique vertices.");
-      return;
-    }
-
     const polygon = new Polygon({
       ogid: this.ogid + "-2d-base",
-      vertices: footprint,
+      vertices: geometryState.footprint.map((point) => cloneVector(point)),
       color: this.propertySet.color,
     });
     this.subElements2D.set(polygon.ogid, polygon);
@@ -470,86 +677,131 @@ export class PolyWall extends Polyline implements IShape {
     this.add(extrudedShape);
 
     this.resolveOpenings();
-
-    this.outline = this._outlineEnabled;
-    this.profileView = this.isProfileView;
-    this.modelView = this.isModelView;
-    this.setOPMaterial();
+    this.applyRenderStyles();
+    this.syncViewVisibility();
   }
 
   setOPMaterial(): void {
     this.color = this.propertySet.color;
+    this.applyRenderStyles();
+  }
 
+  private resolveGeometryState(points: WallPoint[], thickness: number): GeometryState | null {
+    const result = prepareGeometryState(points, thickness);
+    if ("error" in result) {
+      console.error(result.error);
+      return null;
+    }
+
+    return result.state;
+  }
+
+  private clearResolvedElement(store: Map<string, THREE.Object3D>, key: string): void {
+    const existing = store.get(key);
+    if (!existing) {
+      return;
+    }
+
+    disposeObject(existing);
+    store.delete(key);
+  }
+
+  private syncViewVisibility(): void {
+    const resolved2DKey = this.ogid + "-2d-resolved";
+    const resolved3DKey = this.ogid + "-3d-resolved";
+    const hasResolved2D = this.subElements2D.has(resolved2DKey);
+    const hasResolved3D = this.subElements3D.has(resolved3DKey);
+
+    for (const [key, obj] of this.subElements2D.entries()) {
+      obj.visible = this.isProfileView && (!hasResolved2D || key === resolved2DKey);
+    }
+
+    for (const [key, obj] of this.subElements3D.entries()) {
+      obj.visible = this.isModelView && (!hasResolved3D || key === resolved3DKey);
+    }
+  }
+
+  private applyRenderStyles(): void {
     for (const obj of this.subElements2D.values()) {
-      if ("color" in obj) {
-        (obj as Polygon).color = this.propertySet.color;
-      }
+      this.apply2DRenderStyle(obj);
     }
 
     for (const obj of this.subElements3D.values()) {
-      if ("color" in obj) {
-        (obj as Solid).color = this.propertySet.color;
-      }
+      this.apply3DRenderStyle(obj);
     }
   }
 
-  private validatePoints(points: WallPoint[]): boolean {
-    if (points.length < 2) {
-      console.error("Invalid polyline wall geometry: A polyline wall requires at least two points.");
-      return false;
+  private apply2DRenderStyle(obj: THREE.Object3D): void {
+    if ("outline" in obj) {
+      (obj as Polygon | BooleanResult).outline = this._outlineEnabled;
     }
 
-    for (let index = 0; index < points.length; index += 1) {
-      const point = points[index];
-      if (!isFinitePoint(point)) {
-        console.error(`Invalid polyline wall geometry: Point ${index} must contain finite numbers.`);
-        return false;
+    obj.renderOrder = PLAN_RENDER_ORDER;
+    this.applyObjectColor(obj, this.propertySet.color);
+    this.forEachMaterial(obj, (material) => {
+      material.depthWrite = false;
+      material.depthTest = false;
+      material.transparent = true;
+      material.opacity = 1;
+      if ("side" in material) {
+        material.side = THREE.DoubleSide;
       }
-
-      if (index === 0) {
-        continue;
-      }
-
-      if (!this.distanceChecker(points[index - 1], point)) {
-        console.error(
-          `Invalid polyline wall geometry: Consecutive points at index ${index - 1} and ${index} cannot define a zero-length segment.`,
-        );
-        return false;
-      }
-    }
-
-    if (pointsMatch(points[0], points[points.length - 1])) {
-      console.error("Invalid polyline wall geometry: First and last points cannot be the same.");
-      return false;
-    }
-
-    return true;
+      material.needsUpdate = true;
+    });
   }
 
-  private distanceChecker(start: WallPoint, end: WallPoint): boolean {
-    const startVec = new Vector3(start[0], start[1], start[2]);
-    const endVec = new Vector3(end[0], end[1], end[2]);
-    return startVec.subtract(endVec).length() > 0;
-  }
+  private apply3DRenderStyle(obj: THREE.Object3D): void {
+    if ("outline" in obj) {
+      (obj as Solid | BooleanResult).outline = this._outlineEnabled;
+    }
 
-  private sanitizeFootprintVertices(points: Vector3[]): Vector3[] {
-    const sanitized: Vector3[] = [];
-
-    for (const point of points) {
-      const lastPoint = sanitized[sanitized.length - 1];
-      if (!lastPoint || !this.vectorMatches(lastPoint, point)) {
-        sanitized.push(point);
+    obj.renderOrder = 0;
+    this.applyObjectColor(obj, this.propertySet.color);
+    this.forEachMaterial(obj, (material) => {
+      material.depthWrite = true;
+      material.depthTest = true;
+      material.transparent = true;
+      material.opacity = 0.6;
+      if ("side" in material) {
+        material.side = THREE.FrontSide;
       }
-    }
-
-    if (sanitized.length > 1 && this.vectorMatches(sanitized[0], sanitized[sanitized.length - 1])) {
-      sanitized.pop();
-    }
-
-    return sanitized;
+      material.needsUpdate = true;
+    });
   }
 
-  private vectorMatches(a: Vector3, b: Vector3): boolean {
-    return a.x === b.x && a.y === b.y && a.z === b.z;
+  private applyObjectColor(obj: THREE.Object3D, color: number): void {
+    if ("color" in obj && typeof (obj as { color?: unknown }).color === "number") {
+      (obj as Polygon | Solid).color = color;
+    }
+
+    this.forEachMaterial(obj, (material) => {
+      if ("color" in material && material.color) {
+        material.color.set(color);
+      }
+    });
+  }
+
+  private forEachMaterial(
+    obj: THREE.Object3D,
+    callback: (material: THREE.Material & { color?: THREE.Color; opacity: number; transparent: boolean; depthWrite: boolean; depthTest: boolean; side?: THREE.Side; needsUpdate: boolean }) => void,
+  ): void {
+    if (!(obj instanceof THREE.Mesh)) {
+      return;
+    }
+
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    materials.forEach((material) => {
+      callback(
+        material as THREE.Material & {
+          color?: THREE.Color;
+          opacity: number;
+          transparent: boolean;
+          depthWrite: boolean;
+          depthTest: boolean;
+          side?: THREE.Side;
+          needsUpdate: boolean;
+        },
+      );
+    });
   }
 }

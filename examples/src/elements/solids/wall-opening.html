@@ -54,7 +54,7 @@
     const stats = new Stats();
     stats.showPanel(2);
 
-    let singleWall, opening, door;
+    let singleWall, opening, door, windowElement;
     let openPlans;
 
     async function init() {
@@ -64,7 +64,7 @@
 
       openPlans.CameraMode = CameraMode.Model;
 
-      openPlans.showGrid = false;
+      openPlans.toggleGrid(false);
 
       // Create a default wall on scene load
       singleWall = openPlans.singleWall({
@@ -89,7 +89,8 @@
 
       // Adding Door
       door = openPlans.door({
-        station: [4.5, 0, 0],
+        hostWallId: singleWall.ogid,
+        stationPoint: [4.5, 0, 0],
         panelDimensions: { width: 1, thickness: 0.3 },
         frameDimensions: { width: 0.2, thickness: 0.3 },
         doorHeight: 2.1,
@@ -98,6 +99,22 @@
       });
       singleWall.attachDoor(door);
       door.modelView = false;
+
+      // Adding Window
+      windowElement = openPlans.window({
+        hostWallId: singleWall.ogid,
+        stationPoint: [7.5, 0, 0],
+        windowDimensions: { width: 1.6, thickness: 0.2 },
+        frameDimensions: { width: 0.14, thickness: 0.2 },
+        windowHeight: 1.2,
+        sillHeight: 1,
+        glassColor: '#8fbfdf',
+        frameColor: '#2f2f2f'
+      });
+      singleWall.attachWindow(windowElement);
+      windowElement.modelView = false;
+
+      openPlans.fitToView([singleWall, opening, door, windowElement]);
 
       openPlans.onRender.add(() => {
         stats.begin();
@@ -174,7 +191,12 @@
         }
       }, 'logConfig');
 
-      wallFolder.add({ fit: () => { if (singleWall) openPlans.fit(singleWall.id) } }, 'fit').name('Fit');
+      wallFolder.add({
+        fit: () => {
+          const focusElements = [singleWall, opening, door, windowElement].filter(Boolean);
+          if (focusElements.length > 0) openPlans.fitToView(focusElements);
+        }
+      }, 'fit').name('Fit');
       wallFolder.add({ getConfig: () => console.log(singleWall.getOPConfig()) }, 'getConfig').name('Get Config');
     
       
@@ -222,6 +244,64 @@
       });
       openingFolder.add(openingParams, 'modelView').name('Model View').onChange((value) => {
         if (opening) opening.modelView = value;
+      });
+
+      const windowFolder = gui.addFolder('Window');
+      windowFolder.open();
+      const windowParams = {
+        station: { x: 7.5, y: 0, z: 0 },
+        windowDimensions: { width: 1.6, thickness: 0.2 },
+        frameDimensions: { width: 0.14, thickness: 0.2 },
+        windowHeight: 1.2,
+        sillHeight: 1,
+        glassColor: '#8fbfdf',
+        frameColor: '#2f2f2f',
+        outline: true,
+        profileView: true,
+        modelView: false,
+      };
+
+      windowFolder.add(windowParams.station, 'x', -10, 10, 0.1).name('Station X').onChange((value) => {
+        if (windowElement) windowElement.station = [value, windowParams.station.y, windowParams.station.z];
+      });
+      windowFolder.add(windowParams.station, 'y', -10, 10, 0.1).name('Station Y').onChange((value) => {
+        if (windowElement) windowElement.station = [windowParams.station.x, value, windowParams.station.z];
+      });
+      windowFolder.add(windowParams.station, 'z', -10, 10, 0.1).name('Station Z').onChange((value) => {
+        if (windowElement) windowElement.station = [windowParams.station.x, windowParams.station.y, value];
+      });
+      windowFolder.add(windowParams.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {
+        if (windowElement) windowElement.windowWidth = value;
+      });
+      windowFolder.add(windowParams.windowDimensions, 'thickness', 0.05, 1, 0.05).name('Thickness').onChange((value) => {
+        if (windowElement) windowElement.windowThickness = value;
+      });
+      windowFolder.add(windowParams.frameDimensions, 'width', 0.05, 0.6, 0.05).name('Frame Width').onChange((value) => {
+        if (windowElement) windowElement.frameWidth = value;
+      });
+      windowFolder.add(windowParams.frameDimensions, 'thickness', 0.05, 0.6, 0.05).name('Frame Thickness').onChange((value) => {
+        if (windowElement) windowElement.frameThickness = value;
+      });
+      windowFolder.add(windowParams, 'windowHeight', 0.2, 4, 0.1).name('Height').onChange((value) => {
+        if (windowElement) windowElement.windowHeight = value;
+      });
+      windowFolder.add(windowParams, 'sillHeight', 0, 3, 0.1).name('Sill Height').onChange((value) => {
+        if (windowElement) windowElement.sillHeight = value;
+      });
+      windowFolder.addColor(windowParams, 'glassColor').name('Glass Color').onChange((value) => {
+        if (windowElement) windowElement.glassColor = value;
+      });
+      windowFolder.addColor(windowParams, 'frameColor').name('Frame Color').onChange((value) => {
+        if (windowElement) windowElement.frameColor = value;
+      });
+      windowFolder.add(windowParams, 'outline').name('Outline').onChange((value) => {
+        if (windowElement) windowElement.outline = value;
+      });
+      windowFolder.add(windowParams, 'profileView').name('Profile View').onChange((value) => {
+        if (windowElement) windowElement.profileView = value;
+      });
+      windowFolder.add(windowParams, 'modelView').name('Model View').onChange((value) => {
+        if (windowElement) windowElement.modelView = value;
       });
     }
 
