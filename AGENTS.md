@@ -1,38 +1,53 @@
-# OpenPlans Agent Operating Guide
+# OpenPlans Agent Guide
 
-## Purpose
-This file defines the canonical operating contract for development agents in this repository.
+`AGENTS.md` is the canonical operating contract for coding agents in this repository. If another repo document disagrees with this file, follow `AGENTS.md` and update the stale document as part of the task.
 
-## Source of Truth Order
-1. `AGENTS.md` (this file)
-2. `brain/README.md` and linked files under `brain/`
-3. Legacy operational notes under `.agent/`
+## Goals
+- Optimize for shipping small, correct changes.
+- Read the current code before editing; do not rely on stale assumptions.
+- Keep changes targeted and leave touched areas clearer than you found them.
+- Report what you verified and call out any validation limits plainly.
 
-## Development Workflow
-1. Research-first discovery for non-trivial tasks.
-2. Write or update a project research note before implementation.
-3. Implement with minimal, targeted changes.
-4. Verify behavior and capture evidence in research notes.
-5. Promote reusable conclusions into topic notes.
+## Repo Map
+- `src/index.ts`: public facade and export surface. Update this when public APIs or top-level exports change.
+- `src/packages/openplans-core/src/`: primitives, shapes, elements, layouts, exporters, model types, and view management.
+- `src/packages/openplans-three/src/`: Three.js runtime, renderer wiring, camera logic, grid, and helpers.
+- `examples/src/`: browser examples used for manual verification of runtime and visual behavior.
+- `docs/docs/`: product documentation pages. The rest of `docs/` contains Docusaurus config and site assets.
+- `scripts/`: build helpers such as `scripts/tracking.js`, which injects analytics into built example HTML.
+- `dist/` and `examples/dist/`: generated output. Do not edit these by hand.
 
-## Research Brain Contract
-For every non-trivial task:
-1. Start from an existing note or create a note in `brain/research/projects/...`.
-2. Before final delivery, update `decisions` and `next_actions` in that note.
-3. If findings are reusable, promote them into `brain/research/topics/...` and backlink from the project note.
+## Working Rules
+1. Inspect the relevant code paths and existing examples before making changes.
+2. Prefer the smallest change that solves the real problem.
+3. Keep public API changes synchronized across implementation, exports, examples, and docs.
+4. When changing visual or interactive behavior, update an existing example or add a focused example under `examples/src/`.
+5. Keep `<!-- MIXPANEL_TRACKING -->` in example HTML files. The Vite build relies on that placeholder when generating `examples/dist/`.
+6. Do not hand-edit generated or installed content such as `dist/`, `examples/dist/`, or `node_modules/`.
+7. Do not assume `npm test` is a reliable signal. The repo does not currently include a maintained committed automated test suite, so validation is build- and example-driven.
 
-## Research Naming Conventions
-- Project notes: `YYYY-MM-DD--<slug>.md`
-- Topic notes: `<topic>--<slug>.md`
-- Experiment notes: `exp--YYYY-MM-DD--<slug>.md`
-- Source notes: `src--<author-or-site>--<slug>.md`
+## Where To Edit
+- Public factory methods or package exports: `src/index.ts`
+- Core geometry-facing behavior: `src/packages/openplans-core/src/`
+- Three.js runtime behavior: `src/packages/openplans-three/src/`
+- Example pages and manual verification harnesses: `examples/src/`
+- Repository onboarding or workflow docs: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`
+- Product docs for users: `docs/docs/`
 
-## Practical Rules
-- Keep claims evidence-backed with links to source notes.
-- Keep one active cockpit note per project in `projects/<project>/_index.md`.
-- Use `inbox/` for raw capture; triage daily.
-- Keep research assets local-only (`brain/research/assets/` is git-ignored).
+## Validation Expectations
+- Library source changes: run `npm run build`
+- Example or visual workflow changes: run `npm run build-examples`
+- Docs site changes under `docs/`: run `npm run build` from `docs/`
+- Visual debugging or manual review: run `npm run dev` and inspect the relevant page on `http://localhost:5555`
+- Multi-area changes: run the relevant command for each changed area
+- If an expected validation command is broken because of current repo state, say so clearly in the handoff instead of silently skipping it
 
-## Scope Guardrails
-- This rollout changes process and documentation only.
-- Do not treat research notes as runtime code or API changes.
+## Docs And Examples
+- Update `README.md` when the repo entry experience, setup steps, or key capability summary changes.
+- Update `docs/docs/` when public APIs, workflows, or tutorials change.
+- Update or add an example when behavior would be easier to understand or verify in the browser than by reading code alone.
+
+## Finish Line
+- Summarize the user-visible change, the files or areas touched, and the validation you ran.
+- Mention follow-ups only when they are real blockers or meaningful next steps.
+- If you encounter stale instructions while touching an area, fix them instead of leaving contradictory guidance behind.

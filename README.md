@@ -2,45 +2,22 @@
 
 Floor-planning, drawing, and export toolkit for the web, built on top of OpenGeometry and Three.js.
 
-[OpenGeometry](https://opengeometry.io) · [OpenGeometry Docs](https://docs.opengeometry.io) · [Repo Docs](./docs/README.md) · [Examples](./examples)
+[OpenGeometry](https://opengeometry.io) · [OpenGeometry Docs](https://docs.opengeometry.io) · [Contributor Guide](./CONTRIBUTING.md) · [Agent Guide](./AGENTS.md) · [Docs Site Guide](./docs/README.md)
 
----
+> **Actively under development.** OpenPlans is evolving in the open, so APIs, examples, and docs may change as the library matures.
 
-> **Actively under development.** OpenPlans is evolving in the open. APIs, examples, and docs are still being refined, so breaking changes are still possible.
+## What OpenPlans Provides
 
----
+OpenPlans is the application-facing layer on top of [`opengeometry`](https://github.com/OpenGeometry-io/OpenGeometry). It combines scene setup, plan-view authoring, building elements, drawing helpers, and export workflows in one package.
 
-## What is OpenPlans?
+Today the repo includes:
 
-OpenPlans is the higher-level application layer built on top of [`opengeometry`](https://github.com/OpenGeometry-io/OpenGeometry). It combines browser-native rendering, floor-plan oriented primitives and elements, drawing helpers, and export workflows in a single package.
-
-Whether you're building a floor-planning editor, a browser-based drawing workflow, or a geometry-heavy design tool with plan-view semantics, OpenPlans gives you an application-focused layer on top of the OpenGeometry kernel without leaving JavaScript.
-
-### What you can do today
-
-| Category | Capabilities |
-| --- | --- |
-| Runtime | Three.js-powered scene setup, camera modes, view fitting, browser rendering |
-| Primitives | Lines, arcs, polylines, rectangles |
-| Shapes | Cuboids, cylinders |
-| Elements | Walls, doors, windows, slabs, stairs, boards, spaces, furniture, fixtures, appliances, kitchen elements, and landscape elements with dual-view runtime support |
-| Layouts | Paper frames, viewport blocks, and drawing-oriented helpers |
-| Dimensions | Line, angle, and radius dimensions |
-| Exports | IFC for architectural core elements and vector/PDF export across the broader dual-view catalog through `PlanPDFGenerator` |
-| Integration | One package that bridges OpenGeometry kernel setup with an application-facing API |
-
-## Examples
-
-The repository includes browser examples for primitives, shapes, semantic elements, plan-view drawing blocks, and export workflows.
-
-Start here:
-
-- [Floor plan demo](./examples/demo.html)
-- [Semantic IFC export](./examples/export-ifc.html)
-- [Door 2D with vector/PDF export](./examples/elements/2DElements/baseDoor.html)
-- [Window 2D with vector/PDF export](./examples/elements/2DElements/baseWindow.html)
-- [Wall 2D with vector/PDF export](./examples/elements/2DElements/wall2D.html)
-- [Shared element catalog demo](./examples/elements/demo.html?element=chair)
+- primitives such as lines, arcs, polylines, and rectangles
+- shapes such as cuboids and cylinders
+- architectural elements such as walls, openings, doors, and windows
+- drawing helpers such as paper frames, viewport blocks, and dimensions
+- export flows such as IFC and PDF/vector-oriented plan output
+- browser examples for runtime and visual verification
 
 ## Quick Start
 
@@ -54,65 +31,87 @@ npm install @opengeometry/openplans three camera-controls lil-gui
 import { CameraMode, OpenPlans } from "@opengeometry/openplans";
 
 const container = document.getElementById("app");
-const openPlans = new OpenPlans(container);
+if (!container) throw new Error("Missing app container");
 
+const openPlans = new OpenPlans(container);
 await openPlans.setupOpenGeometry();
+
 openPlans.CameraMode = CameraMode.Plan;
 
-const wall = openPlans.wall();
+const wall = openPlans.singleWall();
 wall.position.set(2, 0, 0);
 ```
 
-The package also exports drawing and export helpers such as `PlanPDFGenerator`, `PaperFrame`, `ViewportBlock`, `LineDimension`, `AngleDimension`, and `RadiusDimension`, along with core element classes like `Wall`, `Door`, and `Window`.
+`setupOpenGeometry()` must complete before creating geometry-backed content.
+
+## Examples
+
+The repository keeps example source files under `examples/src/`. Useful entry points:
+
+- [Demo](./examples/src/demo.html)
+- [IFC export](./examples/src/export-ifc.html)
+- [Single wall](./examples/src/elements/solids/single-wall.html)
+- [Door opening](./examples/src/elements/openings/door.html)
+- [Viewport block](./examples/src/drawings/viewport-block.html)
+- [Primitive line](./examples/src/primitives/line.html)
+
+Run `npm run dev` to serve these locally at `http://localhost:5555`.
 
 ## Documentation
 
-OpenPlans documentation currently lives in this repository:
+Product documentation lives in this repository:
 
 - [Introduction](./docs/docs/intro.md)
-- [Semantic Architecture](./docs/docs/semantic-architecture.md)
-- [Semantic IFC Export](./docs/docs/semantic-ifc-export.md)
-- [Colors and Appearance](./docs/docs/colors-and-appearance.md)
-- [Create Wall Tutorial](./docs/docs/tutorial-create-elements/create-wall.md)
+- [Semantic architecture](./docs/docs/semantic-architecture.md)
+- [Semantic IFC export](./docs/docs/semantic-ifc-export.md)
+- [Colors and appearance](./docs/docs/colors-and-appearance.md)
+- [Create wall tutorial](./docs/docs/tutorial-create-elements/create-wall.md)
 
-If you need kernel-level geometry docs as well, see [docs.opengeometry.io](https://docs.opengeometry.io).
+If you also need kernel-level geometry docs, see [docs.opengeometry.io](https://docs.opengeometry.io).
 
-## Repository Structure
+## Repository Layout
 
 ```text
-src/index.ts                      Public facade package
-src/packages/openplans-core/      Semantic document, primitives, shapes, elements, exporters
-src/packages/openplans-three/     Three.js runtime, camera, grid, helpers
-examples/                         Browser examples and demos
-docs/                             Docusaurus documentation source
-tests/                            Node-based verification against the built package
+src/index.ts                         Public facade and top-level exports
+src/packages/openplans-core/src/     Primitives, shapes, elements, layouts, exporters
+src/packages/openplans-three/src/    Three.js runtime, camera, grid, helpers
+examples/src/                        Browser examples used for manual verification
+docs/docs/                           User-facing documentation pages
+scripts/                             Build helpers and example build utilities
+dist/                                Generated library output
+examples/dist/                       Generated example site output
 ```
 
-## Building from Source
+## Develop From Source
 
-**Prerequisites:** Node.js and npm
+Prerequisites:
+
+- Node.js 18 or newer
+- npm
+
+Install and build:
 
 ```bash
 npm install
 npm run build
-npm run dev
 ```
 
-`npm run dev` starts the Vite example server for local browser work.
+Useful commands:
 
-As of 2026-04-01, `npm run build`, `npm run build-examples`, and `npm test` all pass against the current public surface.
+- `npm run dev`: start the Vite example server on port `5555`
+- `npm run build`: build the library into `dist/`
+- `npm run build-examples`: build the example site into `examples/dist/`
 
-## Who is this for?
+For docs site work:
 
-- Teams building browser-based floor-planning or BIM-adjacent tools
-- Developers who want OpenGeometry-powered CAD behavior with a higher-level application layer
-- Contributors exploring semantic document workflows plus Three.js rendering
-- Anyone prototyping plan-view authoring or export pipelines on the web
+```bash
+cd docs
+npm install
+npm run start
+```
+
+The repository does not currently include a maintained committed automated test suite, so build and example validation are the primary verification paths.
 
 ## Contributing
 
-OpenPlans is open source under the [MIT license](./LICENSE.md). Contributions are welcome through [GitHub Issues](https://github.com/opengeometry-io/openplans/issues) and pull requests.
-
-## AI Agent Workflow
-
-- Repository-level AI agent instructions live in [AGENTS.md](./AGENTS.md).
+OpenPlans is open source under the [MIT license](./LICENSE.md). For the practical change workflow, see [CONTRIBUTING.md](./CONTRIBUTING.md). For repository-specific agent instructions, see [AGENTS.md](./AGENTS.md).
