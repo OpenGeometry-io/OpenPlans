@@ -2,226 +2,662 @@
 <html lang="en">
 
 <head>
-    <title>OpenPlans Demo - Floor Plan Elements</title>
-    <!-- MIXPANEL_TRACKING -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="OpenPlans Demo showcasing floor plan elements on a paper frame">
-    <meta name="author" content="OpenGeometry">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
+  <title>OpenPlans Demo - Featured Floorplan</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Featured OpenPlans apartment floorplan demo built from walls, doors, windows, and plan-view fixtures">
+  <meta name="author" content="OpenGeometry">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f5efe5;
+      --paper-shadow: rgba(36, 28, 22, 0.12);
+      --panel: rgba(255, 251, 246, 0.92);
+      --panel-border: rgba(48, 37, 29, 0.16);
+      --text: #201813;
+      --muted: rgba(32, 24, 19, 0.68);
+      --accent: #7f5f4a;
+      --accent-soft: rgba(127, 95, 74, 0.12);
+      --button: rgba(255, 255, 255, 0.76);
+      --button-active: #201813;
+      --button-active-text: #fff8ef;
+    }
 
-        #app {
-            width: 100%;
-            height: 100vh;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        .example-title {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Space Mono', monospace;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #fff;
-            background: rgba(26, 26, 26, 0.8);
-            padding: 12px 24px;
-            z-index: 1000;
-        }
-    </style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(205, 184, 161, 0.5), transparent 26%),
+        radial-gradient(circle at 82% 14%, rgba(160, 136, 115, 0.16), transparent 18%),
+        linear-gradient(180deg, #f9f3ea 0%, #efe6d9 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .hero {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      max-width: min(430px, calc(100vw - 40px));
+      padding: 18px 20px 16px;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 48px var(--paper-shadow);
+      pointer-events: auto;
+    }
+
+    .hero,
+    .hero *,
+    .legend,
+    .legend * {
+      pointer-events: auto;
+    }
+
+    .eyebrow {
+      margin-bottom: 10px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 34ch;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .controls button {
+      appearance: none;
+      border: 1px solid rgba(32, 24, 19, 0.12);
+      background: var(--button);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .controls button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(32, 24, 19, 0.28);
+    }
+
+    .controls button.is-active {
+      background: var(--button-active);
+      color: var(--button-active-text);
+      border-color: var(--button-active);
+    }
+
+    .legend {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: min(340px, calc(100vw - 40px));
+      padding: 14px 16px;
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      background: rgba(255, 249, 241, 0.88);
+      box-shadow: 0 18px 40px rgba(55, 39, 27, 0.1);
+      backdrop-filter: blur(14px);
+      pointer-events: auto;
+    }
+
+    .legend strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .legend p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .legend .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      .hero {
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        max-width: none;
+      }
+
+      .legend {
+        right: 14px;
+        left: 14px;
+        bottom: 14px;
+        max-width: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <div class="example-title">Floor Plan Demo</div>
-    <div id="app" style="width: 100%; height: 100vh;">
+  <div class="hud">
+    <div class="hero">
+      <div class="eyebrow">Featured Demo</div>
+      <h1>Apartment Floorplan</h1>
+      <p>
+        A close reinterpretation of a two-bedroom, two-bath apartment using the current OpenPlans wall, door, and
+        window primitives with a layer of plan-view fixtures for readability.
+      </p>
+      <div class="controls">
+        <button id="plan-view">Plan View</button>
+        <button id="model-view" class="is-active">Model View</button>
+        <button id="reset-view">Reset View</button>
+      </div>
     </div>
-    <script type="module">
-        import { OpenPlans, CameraMode } from './../../src/index.ts';
-        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-        let openPlans;
-        let paperFrame, door, window2D, cabinet, island;
+    <div class="legend">
+      <strong>Demo Notes</strong>
+      <p>
+        Hosted openings are attached only on the wall directions that are reliable in the current implementation.
+        Furniture and fixtures are plan-only dressing so the apartment reads like a real floorplan in top view.
+      </p>
+      <div class="pill" id="mode-pill">Model View Active · 2 bedrooms · 2 baths · balcony · laundry</div>
+    </div>
+  </div>
 
-        async function init() {
-            const container = document.getElementById('app');
-            openPlans = new OpenPlans(container);
-            await openPlans.setupOpenGeometry();
+  <div id="app"></div>
 
-            openPlans.CameraMode = CameraMode.Plan;
+  <script type="module">
+    import * as THREE from 'three';
+    import { CameraMode, OpenPlans } from './../../src/index.ts';
+    import { Bed2D, DiningTable2D, Sofa2D } from './../../src/packages/openplans-core/src/elements/planview/furniture/index.ts';
+    import { Bathtub2D, Toilet2D } from './../../src/packages/openplans-core/src/elements/planview/fixtures/index.ts';
+    import { Cabinet2D, Island2D } from './../../src/packages/openplans-core/src/elements/planview/kitchen/index.ts';
+    import { Washer2D } from './../../src/packages/openplans-core/src/elements/planview/appliances/index.ts';
 
-            openPlans.showGrid = false;
-            openPlans.openThree.toggleTheme('darkBlue');
+    const palette = {
+      paper: 0xf5efe5,
+      modelPaper: 0xe5ddd0,
+      wall: 0x241d18,
+      frame: 0x201914,
+      doorPanel: 0xf9f3e8,
+      windowGlass: 0xcddbeb,
+      swing: 0x7a6757,
+      fixture: 0xffffff,
+      fixtureSecondary: 0xd6cec2,
+      sofa: 0xb39f8d,
+      sofaCushion: 0xe7dfd2,
+      counter: 0xf8f5f0,
+    };
 
-            // Create Paper Frame (A3 Landscape)
-            paperFrame = openPlans.paperFrame();
-            paperFrame.format = 'A3';
-            paperFrame.orientation = 'landscape';
-            paperFrame.margin = 10;
-            paperFrame.paperName = 'Floor Plan Demo';
+    const layout = {
+      wallThickness: 0.28,
+      wallHeight: 3,
+    };
 
-            // Set renderer and scene for PDF export
-            paperFrame.renderer = openPlans.openThree.renderer;
-            paperFrame.scene = openPlans.openThree.scene;
+    const state = {
+      viewMode: 'model',
+    };
 
-            // Create Door 2D
-            door = openPlans.door2D({
-                labelName: 'Entry Door'
-            });
-            door.position.set(-8, 0, 4);
+    const walls = new Map();
+    const openings = [];
+    const planOnly = [];
+    const focusElements = [];
 
-            // Create Single Window 2D
-            window2D = openPlans.singleWindow2D({
-                labelName: 'Living Room Window'
-            });
-            window2D.position.set(-8, 0, -2);
+    let openPlans;
+    let planCamera;
+    let scene;
 
-            // Create Cabinet 2D (Kitchen)
-            cabinet = openPlans.cabinet2D({
-                labelName: 'Kitchen Cabinet',
-                dimensions: { width: 1.5, depth: 0.6 },
-                doorSlots: 3
-            });
-            cabinet.position.set(4, 0, 4);
+    function point(x, z) {
+      return [x, 0, z];
+    }
 
-            // Create Island 2D (Kitchen)
-            island = openPlans.island2D({
-                labelName: 'Kitchen Island',
-                dimensions: { width: 2, depth: 1 }
-            });
-            island.position.set(4, 0, -2);
-        }
+    function addFocus(element) {
+      focusElements.push(element);
+      return element;
+    }
 
-        function setUI() {
-            const gui = new GUI();
+    function createWall({ id, start, end, thickness = layout.wallThickness, height = layout.wallHeight, color = palette.wall }) {
+      const wall = openPlans.singleWall({
+        labelName: id,
+        thickness,
+        height,
+        color,
+        points: [point(...start), point(...end)],
+      });
 
-            // Paper Frame Controls
-            const paperFolder = gui.addFolder('📄 Paper Frame');
-            const paperControls = {
-                'format': paperFrame.format,
-                'orientation': paperFrame.orientation,
-                'margin': paperFrame.margin
-            };
-            paperFolder.add(paperControls, 'format', ['A4', 'A3', 'A2']).name('Format').onChange((value) => {
-                paperFrame.format = value;
-            });
-            paperFolder.add(paperControls, 'orientation', ['portrait', 'landscape']).name('Orientation').onChange((value) => {
-                paperFrame.orientation = value;
-            });
-            paperFolder.add(paperControls, 'margin', 0, 50).name('Margin').onChange((value) => {
-                paperFrame.margin = value;
-            });
-            // paperFolder.add({ exportPDF: () => paperFrame.exportToPDF() }, 'exportPDF').name('📥 Export to PDF');
-            paperFolder.open();
+      wall.outline = true;
+      walls.set(id, wall);
+      addFocus(wall);
+      return wall;
+    }
 
-            // Door Controls
-            const doorFolder = gui.addFolder('🚪 Door 2D');
-            const doorControls = {
-                'labelName': door.labelName,
-                'swingRotation': door.swingRotation,
-                'doorWidth': door.doorDimensions.width,
-                'doorColor': door.doorColor,
-                'frameColor': door.frameColor
-            };
-            doorFolder.add(doorControls, 'labelName').name('Label').onChange((value) => {
-                door.labelName = value;
-            });
-            doorFolder.add(doorControls, 'swingRotation', 0, 90).name('Swing Rotation').onChange((value) => {
-                door.swingRotation = value;
-            });
-            doorFolder.add(doorControls, 'doorWidth', 0.5, 3).name('Width').onChange((value) => {
-                door.doorDimensions = { ...door.doorDimensions, width: value };
-            });
-            doorFolder.addColor(doorControls, 'doorColor').name('Door Color').onChange((value) => {
-                door.doorColor = value;
-            });
-            doorFolder.addColor(doorControls, 'frameColor').name('Frame Color').onChange((value) => {
-                door.frameColor = value;
-            });
+    function tintDoorSwing(door) {
+      const swingArc = door.subElements2D.get('swingArc');
+      if (swingArc) {
+        swingArc.color = palette.swing;
+      }
+    }
 
-            // Window Controls
-            const windowFolder = gui.addFolder('🪟 Window 2D');
-            const windowControls = {
-                'labelName': window2D.labelName,
-                'windowWidth': window2D.windowDimensions.width,
-                'glassColor': window2D.glassColor,
-                'frameColor': window2D.frameColor
-            };
-            windowFolder.add(windowControls, 'labelName').name('Label').onChange((value) => {
-                window2D.labelName = value;
-            });
-            windowFolder.add(windowControls, 'windowWidth', 0.5, 3).name('Width').onChange((value) => {
-                window2D.windowDimensions = { ...window2D.windowDimensions, width: value };
-            });
-            windowFolder.addColor(windowControls, 'glassColor').name('Glass Color').onChange((value) => {
-                window2D.glassColor = value;
-            });
-            windowFolder.addColor(windowControls, 'frameColor').name('Frame Color').onChange((value) => {
-                window2D.frameColor = value;
-            });
+    function createDoor({
+      id,
+      wallId,
+      station,
+      width = 0.96,
+      height = 2.1,
+      panelThickness = 0.06,
+      frameWidth = 0.08,
+      frameThickness = 0.12,
+      rotationY = 0,
+    }) {
+      const wall = walls.get(wallId);
+      if (!wall) {
+        throw new Error(`Missing host wall for door: ${wallId}`);
+      }
+      const door = openPlans.door({
+        labelName: id,
+        hostWallId: wall.ogid,
+        stationPoint: point(...station),
+        panelDimensions: {
+          width,
+          thickness: panelThickness,
+        },
+        frameDimensions: {
+          width: frameWidth,
+          thickness: frameThickness,
+        },
+        doorHeight: height,
+        doorColor: palette.doorPanel,
+        frameColor: palette.frame,
+      });
 
-            // Cabinet Controls
-            const cabinetFolder = gui.addFolder('🗄️ Cabinet 2D');
-            const cabinetControls = {
-                'labelName': cabinet.labelName,
-                'width': cabinet.dimensions.width,
-                'depth': cabinet.dimensions.depth,
-                'doorSlots': cabinet.doorSlots,
-                'cabinetColor': cabinet.cabinetColor,
-                'doorColor': cabinet.doorColor
-            };
-            cabinetFolder.add(cabinetControls, 'labelName').name('Label').onChange((value) => {
-                cabinet.labelName = value;
-            });
-            cabinetFolder.add(cabinetControls, 'width', 0.5, 3).name('Width').onChange((value) => {
-                cabinet.dimensions = { ...cabinet.dimensions, width: value };
-            });
-            cabinetFolder.add(cabinetControls, 'depth', 0.3, 1.5).name('Depth').onChange((value) => {
-                cabinet.dimensions = { ...cabinet.dimensions, depth: value };
-            });
-            cabinetFolder.add(cabinetControls, 'doorSlots', 1, 6, 1).name('Door Slots').onChange((value) => {
-                cabinet.doorSlots = value;
-            });
-            cabinetFolder.addColor(cabinetControls, 'cabinetColor').name('Cabinet Color').onChange((value) => {
-                cabinet.cabinetColor = value;
-            });
-            cabinetFolder.addColor(cabinetControls, 'doorColor').name('Door Color').onChange((value) => {
-                cabinet.doorColor = value;
-            });
+      door.outline = true;
+      if (rotationY !== 0) {
+        door.rotation.y = rotationY;
+      }
 
-            // Island Controls
-            const islandFolder = gui.addFolder('🏝️ Island 2D');
-            const islandControls = {
-                'labelName': island.labelName,
-                'width': island.dimensions.width,
-                'depth': island.dimensions.depth,
-                'islandColor': island.islandColor
-            };
-            islandFolder.add(islandControls, 'labelName').name('Label').onChange((value) => {
-                island.labelName = value;
-            });
-            islandFolder.add(islandControls, 'width', 0.5, 4).name('Width').onChange((value) => {
-                island.dimensions = { ...island.dimensions, width: value };
-            });
-            islandFolder.add(islandControls, 'depth', 0.5, 2).name('Depth').onChange((value) => {
-                island.dimensions = { ...island.dimensions, depth: value };
-            });
-            islandFolder.addColor(islandControls, 'islandColor').name('Island Color').onChange((value) => {
-                island.islandColor = value;
-            });
-        }
+      wall.attachDoor(door);
+      tintDoorSwing(door);
+      openings.push(door);
+      addFocus(door);
+      return door;
+    }
 
-        (async function () {
-            await init();
-            setUI();
-        })();
-    </script>
+    function createWindow({
+      id,
+      wallId,
+      station,
+      width = 1.5,
+      height = 1,
+      sillHeight = 1.0,
+      frameWidth = 0.08,
+      frameThickness = 0.12,
+      windowThickness = 0.08,
+    }) {
+      const wall = walls.get(wallId);
+      if (!wall) {
+        throw new Error(`Missing host wall for window: ${wallId}`);
+      }
+      const windowElement = openPlans.window({
+        labelName: id,
+        hostWallId: wall.ogid,
+        stationPoint: point(...station),
+        windowDimensions: {
+          width,
+          thickness: windowThickness,
+        },
+        frameDimensions: {
+          width: frameWidth,
+          thickness: frameThickness,
+        },
+        windowHeight: height,
+        sillHeight,
+        frameColor: palette.frame,
+        glassColor: palette.windowGlass,
+      });
+
+      windowElement.outline = true;
+      wall.attachWindow(windowElement);
+      openings.push(windowElement);
+      addFocus(windowElement);
+      return windowElement;
+    }
+
+    function addPlanOnly(object, x, z, rotationY = 0) {
+      object.position.set(x, 0, z);
+      object.rotation.y = rotationY;
+      scene.add(object);
+      planOnly.push(object);
+      return object;
+    }
+
+    function buildShell() {
+      [
+        { id: 'ext-left', start: [-12, -7], end: [-12, 7] },
+        { id: 'balcony-base', start: [-12, 7], end: [-8, 7] },
+        { id: 'balcony-left', start: [-8, 7], end: [-8, 10] },
+        { id: 'balcony-top', start: [-8, 10], end: [-4, 10] },
+        { id: 'balcony-return', start: [-4, 10], end: [-4, 8.25] },
+        { id: 'living-top', start: [-4, 8.25], end: [-1.8, 8.25] },
+        { id: 'living-angle', start: [-1.8, 8.25], end: [0.2, 7] },
+        { id: 'bed1-top', start: [0.2, 7], end: [6.2, 7] },
+        { id: 'step-down', start: [6.2, 7], end: [6.2, 4.5] },
+        { id: 'upper-right-top', start: [6.2, 4.5], end: [16.4, 4.5] },
+        { id: 'ext-right', start: [16.4, 4.5], end: [16.4, -6.5] },
+        { id: 'ext-bottom-right', start: [16.4, -6.5], end: [8.1, -6.5] },
+        { id: 'bath2-right', start: [8.1, -6.5], end: [8.1, -3.5] },
+        { id: 'bath2-top', start: [8.1, -3.5], end: [5.2, -3.5] },
+        { id: 'bath2-left-exterior', start: [5.2, -3.5], end: [5.2, -6.5] },
+        { id: 'ext-bottom-left', start: [5.2, -6.5], end: [-6.2, -6.5] },
+        { id: 'entry-jamb', start: [-6.2, -6.5], end: [-6.2, -7] },
+        { id: 'ext-entry-wall', start: [-6.2, -7], end: [-12, -7] },
+        { id: 'bed1-left', start: [0.2, 7], end: [0.2, 1.1] },
+        { id: 'bed1-right', start: [6.2, 7], end: [6.2, 1.1] },
+        { id: 'bed1-bottom', start: [0.2, 1.1], end: [6.2, 1.1] },
+        { id: 'bath1-left', start: [7.4, 4.5], end: [7.4, 1.3] },
+        { id: 'bath-divider', start: [10.4, 4.5], end: [10.4, -1.0] },
+        { id: 'bath1-bottom', start: [7.4, 1.3], end: [10.4, 1.3] },
+        { id: 'bed2-bottom', start: [10.4, -1.0], end: [16.4, -1.0] },
+        { id: 'hall-closet-top', start: [1.0, -1.5], end: [3.4, -1.5] },
+        { id: 'hall-closet-right', start: [3.4, -1.5], end: [3.4, -3.2] },
+        { id: 'hall-closet-bottom', start: [3.4, -3.2], end: [1.8, -3.2] },
+        { id: 'laundry-left', start: [7.05, -3.5], end: [7.05, -2.0] },
+        { id: 'laundry-top', start: [7.05, -2.0], end: [8.1, -2.0] },
+      ].forEach(createWall);
+    }
+
+    function buildOpenings() {
+      createDoor({
+        id: 'Entry Door',
+        wallId: 'ext-entry-wall',
+        station: [-8.65, -7],
+        width: 1.1,
+      });
+
+      createDoor({
+        id: 'Bedroom 1 Door',
+        wallId: 'bed1-bottom',
+        station: [3.25, 1.1],
+        width: 0.94,
+      });
+
+      createDoor({
+        id: 'Bathroom 1 Door',
+        wallId: 'bath1-bottom',
+        station: [8.85, 1.3],
+        width: 0.82,
+      });
+
+      createDoor({
+        id: 'Bedroom 2 Door',
+        wallId: 'bed2-bottom',
+        station: [12.75, -1.0],
+        width: 0.96,
+      });
+
+      createDoor({
+        id: 'Bathroom 2 Door',
+        wallId: 'bath2-top',
+        station: [6.55, -3.5],
+        width: 0.84,
+        rotationY: Math.PI,
+      });
+
+      createWindow({
+        id: 'Living Balcony Window',
+        wallId: 'living-top',
+        station: [-2.9, 8.25],
+        width: 1.4,
+        height: 1.05,
+        sillHeight: 0.88,
+      });
+
+      createWindow({
+        id: 'Bedroom 1 Window',
+        wallId: 'bed1-top',
+        station: [3.2, 7],
+        width: 1.8,
+        height: 1.0,
+        sillHeight: 0.92,
+      });
+
+      createWindow({
+        id: 'Bathroom 1 Window',
+        wallId: 'upper-right-top',
+        station: [8.7, 4.5],
+        width: 0.88,
+        height: 0.8,
+        sillHeight: 1.18,
+      });
+
+      createWindow({
+        id: 'Bedroom 2 Window',
+        wallId: 'upper-right-top',
+        station: [13.4, 4.5],
+        width: 1.6,
+        height: 1.0,
+        sillHeight: 0.92,
+      });
+    }
+
+    function buildFurnishings() {
+      addPlanOnly(new Sofa2D({
+        dimensions: { width: 3.1, depth: 1.1 },
+        sofaColor: palette.sofa,
+        cushionColor: palette.sofaCushion,
+      }), -2.8, 3.0, Math.PI);
+
+      addPlanOnly(new DiningTable2D({
+        dimensions: { width: 2.0, depth: 1.15 },
+        tableColor: palette.fixture,
+        chairColor: palette.fixtureSecondary,
+        seats: 4,
+      }), -8.2, 3.0, 0);
+
+      addPlanOnly(new Cabinet2D({
+        dimensions: { width: 3.6, depth: 0.7 },
+        cabinetColor: palette.counter,
+        doorColor: palette.fixtureSecondary,
+        doorSlots: 4,
+      }), -10.0, -5.85, 0);
+
+      addPlanOnly(new Cabinet2D({
+        dimensions: { width: 2.5, depth: 0.7 },
+        cabinetColor: palette.counter,
+        doorColor: palette.fixtureSecondary,
+        doorSlots: 3,
+      }), -11.05, -3.7, Math.PI / 2);
+
+      addPlanOnly(new Island2D({
+        dimensions: { width: 2.2, depth: 0.95 },
+        islandColor: palette.counter,
+      }), -7.6, -4.4, -Math.PI / 4);
+
+      addPlanOnly(new Bed2D({
+        dimensions: { width: 2.0, depth: 2.85 },
+        bedColor: palette.fixture,
+        pillowColor: palette.fixtureSecondary,
+      }), 3.2, 4.0, Math.PI);
+
+      addPlanOnly(new Bed2D({
+        dimensions: { width: 1.9, depth: 2.65 },
+        bedColor: palette.fixture,
+        pillowColor: palette.fixtureSecondary,
+      }), 13.3, 1.6, Math.PI);
+
+      addPlanOnly(new Toilet2D({
+        dimensions: { width: 0.82, depth: 1.25 },
+        bowlColor: palette.fixture,
+        tankColor: 0xefebe4,
+      }), 8.15, 2.25, 0);
+
+      addPlanOnly(new Bathtub2D({
+        dimensions: { width: 0.82, depth: 1.85 },
+        tubColor: palette.fixture,
+      }), 9.6, 2.85, Math.PI / 2);
+
+      addPlanOnly(new Toilet2D({
+        dimensions: { width: 0.82, depth: 1.25 },
+        bowlColor: palette.fixture,
+        tankColor: 0xefebe4,
+      }), 5.95, -5.55, Math.PI);
+
+      addPlanOnly(new Bathtub2D({
+        dimensions: { width: 0.82, depth: 1.95 },
+        tubColor: palette.fixture,
+      }), 7.25, -5.15, Math.PI / 2);
+
+      addPlanOnly(new Washer2D({
+        dimensions: { width: 0.72, depth: 0.7 },
+        bodyColor: palette.fixture,
+      }), 7.55, -2.8, 0);
+    }
+
+    function nextFrame() {
+      return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+
+    async function resetView() {
+      if (planCamera?.fitToElement) {
+        await planCamera.fitToElement(focusElements);
+        return;
+      }
+
+      openPlans.fitToView(focusElements);
+    }
+
+    function updateButtons() {
+      document.getElementById('plan-view').classList.toggle('is-active', state.viewMode === 'plan');
+      document.getElementById('model-view').classList.toggle('is-active', state.viewMode === 'model');
+
+      const modePill = document.getElementById('mode-pill');
+      if (modePill) {
+        modePill.textContent = state.viewMode === 'plan'
+          ? 'Plan View Active · 2 bedrooms · 2 baths · balcony · laundry'
+          : 'Model View Active · 2 bedrooms · 2 baths · balcony · laundry';
+      }
+    }
+
+    async function setViewMode(mode) {
+      state.viewMode = mode;
+      const planMode = mode === 'plan';
+
+      openPlans.CameraMode = planMode ? CameraMode.Plan : CameraMode.Model;
+
+      walls.forEach((wall) => {
+        wall.profileView = planMode;
+        wall.modelView = !planMode;
+      });
+
+      openings.forEach((element) => {
+        element.profileView = planMode;
+        element.modelView = !planMode;
+      });
+
+      planOnly.forEach((element) => {
+        element.visible = planMode;
+      });
+
+      scene.background = new THREE.Color(planMode ? palette.paper : palette.modelPaper);
+      updateButtons();
+      await nextFrame();
+      await resetView();
+    }
+
+    async function init() {
+      openPlans = new OpenPlans(document.getElementById('app'));
+      await openPlans.setupOpenGeometry();
+      openPlans.toggleGrid(false);
+
+      scene = openPlans['openThree'].scene;
+      planCamera = openPlans['planCamera'];
+      scene.background = new THREE.Color(palette.modelPaper);
+
+      buildShell();
+      buildOpenings();
+      // buildFurnishings();
+
+      await setViewMode('model');
+    }
+
+    function bindUI() {
+      document.getElementById('plan-view').addEventListener('click', () => {
+        void setViewMode('plan');
+      });
+
+      document.getElementById('model-view').addEventListener('click', () => {
+        void setViewMode('model');
+      });
+
+      document.getElementById('reset-view').addEventListener('click', () => {
+        void resetView();
+      });
+    }
+
+    (async function () {
+      await init();
+      bindUI();
+    })();
+  </script>
 </body>
 
 </html>

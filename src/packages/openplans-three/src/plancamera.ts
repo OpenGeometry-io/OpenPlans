@@ -29,6 +29,16 @@ export class PlanCamera {
     return this.mode;
   }
 
+  get position() {
+    return this.controls.getPosition(new THREE.Vector3());
+  }
+
+  get target() {
+    const lookAt = new THREE.Vector3();
+    this.controls.getTarget(lookAt);
+    return lookAt;
+  }
+
   constructor(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, container: HTMLElement) {
     this.camera = camera;
 
@@ -55,12 +65,20 @@ export class PlanCamera {
   private planMode() {
     this.controls.enabled = true;
     this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+    this.controls.mouseButtons.right = CameraControls.ACTION.ROTATE;
+    this.controls.mouseButtons.middle = CameraControls.ACTION.DOLLY;
+    this.controls.touches.one = CameraControls.ACTION.TOUCH_TRUCK;
+    this.controls.touches.two = CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
     this.setView([0, 20, 0.001], [0, 0, 0], [0, 0, -1]);
   }
 
   private modelMode() {
     this.controls.enabled = true;
     this.controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+    this.controls.mouseButtons.right = CameraControls.ACTION.TRUCK;
+    this.controls.mouseButtons.middle = CameraControls.ACTION.DOLLY;
+    this.controls.touches.one = CameraControls.ACTION.TOUCH_ROTATE;
+    this.controls.touches.two = CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
     this.setView([20, 20, 20], [0, 0, 0], [0, 1, 0]);
   }
 

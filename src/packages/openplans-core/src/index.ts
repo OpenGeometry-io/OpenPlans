@@ -7,3 +7,4 @@ export * from "./layouts";
 export * from "./shapes";
 export * from "./dimensions";
 export * from "./primitives";
+export * from "./view-manager";

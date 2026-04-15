@@ -31,7 +31,9 @@ export interface PaperFrameOptions {
 
 export class PaperFrame extends Polygon implements IShape {
   ogType = 'paperFrame';
-  subElements: Map<string, THREE.Object3D> = new Map();
+  
+  subElements2D: Map<string, THREE.Object3D> = new Map();
+  subElements3D: Map<string, THREE.Object3D> = new Map();
 
   selected: boolean = false;
   edit: boolean = false;
@@ -132,7 +134,8 @@ export class PaperFrame extends Polygon implements IShape {
       color: 0
     });
 
-    this.subElements = new Map<string, THREE.Object3D>();
+    this.subElements2D = new Map<string, THREE.Object3D>();
+    this.subElements3D = new Map<string, THREE.Object3D>();
 
     if (paperFrameConfig) {
       this.propertySet = { ...this.propertySet, ...paperFrameConfig };
@@ -189,7 +192,7 @@ export class PaperFrame extends Polygon implements IShape {
 
   private createInnerBorder() {
     // Cleanup Previous Inner Border
-    this.remove(this.subElements.get('InnerBorder')!);
+    this.remove(this.subElements2D.get('InnerBorder')!);
 
     const { width, height } = this.propertySet.paperSize;
     const margin = this.propertySet.margin / 10;
@@ -221,7 +224,7 @@ export class PaperFrame extends Polygon implements IShape {
     innerBorderMesh.position.set(0, 0, this.Y_OFFSET);
     this.add(innerBorderMesh);
 
-    this.subElements.set('InnerBorder', innerBorderMesh);
+    this.subElements2D.set('InnerBorder', innerBorderMesh);
   }
 
   /*
@@ -234,7 +237,7 @@ export class PaperFrame extends Polygon implements IShape {
     // Create a new Viewport Block
     const viewportBlock = new ViewportBlock(viewport);
     this.add(viewportBlock);
-    this.subElements.set(viewport.id, viewportBlock);
+    this.subElements3D.set(viewport.id, viewportBlock);
   }
 
   /**

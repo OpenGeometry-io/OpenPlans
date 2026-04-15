@@ -45,6 +45,8 @@ import {
   Wardrobe,
 } from './packages/openplans-core/src/elements';
 
+import { ViewManager } from './packages/openplans-core/src/view-manager';
+
 import { Event } from './utils/event';
 import { Opening } from './packages/openplans-core/src/elements/openings/opening';
 
@@ -63,6 +65,10 @@ export class OpenPlans {
 
   private elements: Array<THREE.Object3D> = [];
   
+  // TODO: Make this optional later and lazy load when needed
+  // Views and Layouts
+  viewManager: ViewManager = new ViewManager();
+
   // Events
   onRender: Event<any> = new Event<any>();
 
