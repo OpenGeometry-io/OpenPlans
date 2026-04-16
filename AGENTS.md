@@ -25,6 +25,8 @@
 5. Keep `<!-- MIXPANEL_TRACKING -->` in example HTML files. The Vite build relies on that placeholder when generating `examples/dist/`.
 6. Do not hand-edit generated or installed content such as `dist/`, `examples/dist/`, or `node_modules/`.
 7. Do not assume `npm test` is a reliable signal. The repo does not currently include a maintained committed automated test suite, so validation is build- and example-driven.
+8. Do not introduce arbitrary user-facing colors, temporary debug styling, helper fills, or placeholder visuals. Reuse the established palette/material behavior for the touched area, and keep helper geometry hidden or neutral unless the user explicitly asks for a new visual treatment.
+9. Remove debug `console.log` output from runtime code before handoff. User-facing examples and production paths should not gain noisy diagnostic logging.
 
 ## Where To Edit
 - Public factory methods or package exports: `src/index.ts`
