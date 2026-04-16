@@ -15,8 +15,8 @@ Today the repo includes:
 - primitives such as lines, arcs, polylines, and rectangles
 - shapes such as cuboids and cylinders
 - architectural elements such as walls, openings, doors, and windows
-- drawing helpers such as paper frames, viewport blocks, and dimensions
-- export flows such as IFC and PDF/vector-oriented plan output
+- drawing helpers such as paper frames, linked viewport blocks, and dimensions
+- export flows such as IFC and printable PDF output
 - browser examples for runtime and visual verification
 
 ## Quick Start
@@ -44,6 +44,47 @@ wall.position.set(2, 0, 0);
 
 `setupOpenGeometry()` must complete before creating geometry-backed content.
 
+## Paper Frames And PDF Export
+
+The stable sheet/export workflow today is the paper-frame path: compose linked viewports on a paper frame and export the result as a downloadable PDF.
+
+```ts
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+const floorSource = openPlans.floorSection({
+  labelName: "Level 01",
+  center: [0, 0, 0],
+  cropSize: [12, 8],
+});
+
+const floorView = openPlans.createLinkedView(floorSource.getOPConfig().ogid, {
+  labelName: "Floor Plan",
+});
+
+const paperFrame = openPlans.paperFrame({
+  labelName: "Sheet A101",
+  format: "A3",
+  orientation: "landscape",
+});
+
+paperFrame.addViewport({
+  id: "floor-plan",
+  ogType: "VIEWPORT_BLOCK",
+  size: [11.8, 8.2],
+  position: [-5.8, 0.03, 0.8],
+  scale: 1,
+  rotation: 0,
+  viewId: floorView.ogid,
+});
+
+await openPlans.exportPaperFrameToPDF(paperFrame, {
+  fileName: "sheet-a101.pdf",
+});
+```
+
+There is active work in the repository toward a larger document-first views/sheets architecture, but that path is still experimental and is not the primary production-facing API yet.
+
 ## Examples
 
 The repository keeps example source files under `examples/src/`. Useful entry points:
@@ -52,6 +93,10 @@ The repository keeps example source files under `examples/src/`. Useful entry po
 - [IFC export](./examples/src/export-ifc.html)
 - [Single wall](./examples/src/elements/solids/single-wall.html)
 - [Door opening](./examples/src/elements/openings/door.html)
+- [Section and floor views](./examples/src/views/section-floor-views.html)
+- [Paper frame export](./examples/src/drawings/paper.html)
+- [Paper section sheet](./examples/src/drawings/paper-section-sheet.html)
+- [Document sheet editor (experimental)](./examples/src/drawings/document-sheet-editor.html)
 - [Viewport block](./examples/src/drawings/viewport-block.html)
 - [Primitive line](./examples/src/primitives/line.html)
 

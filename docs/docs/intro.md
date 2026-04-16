@@ -4,14 +4,18 @@ sidebar_position: 1
 
 # OpenPlans
 
-A robust floorplanning sdk being developed using **[OpenGeometry Kernel](https://github.com/OpenGeometry-io/OpenGeometry)**. You can use OpenPlans as a library and import it into your web project. OpenPlans uses Three.js for rendering on web. 
+A robust floorplanning sdk being developed using **[OpenGeometry Kernel](https://github.com/OpenGeometry-io/OpenGeometry)**. You can use OpenPlans as a library and import it into your web project. OpenPlans uses Three.js for rendering on web.
 
-OpenPlans now uses a semantic-core plus Three-adapter architecture internally while keeping the public package unchanged. See:
+The current production-facing workflow centers on geometry authoring, linked views, paper frames, and PDF export. For reference:
 
 - [Semantic Architecture](./semantic-architecture)
 - [Semantic IFC Export](./semantic-ifc-export)
 - [Colors And Appearance](./colors-and-appearance)
 - [Migration Notes](./migration-semantic-core)
+
+There is also an experimental document/views/sheets track in active development:
+
+- [Experimental Document Views And Sheets](./document-views-sheets)
 
 More information on **[Three.js can be found here](https://threejs.org)**.
 
