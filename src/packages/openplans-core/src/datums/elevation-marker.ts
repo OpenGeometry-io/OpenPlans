@@ -108,16 +108,9 @@ export class ElevationMarker extends Datum {
     const center = new Vector3(px, py, pz);
     const radius = this.propertySet.bubbleRadius;
 
-    const segments = 32;
-    for (let i = 0; i < segments; i++) {
-      const a0 = (i / segments) * Math.PI * 2;
-      const a1 = ((i + 1) / segments) * Math.PI * 2;
-      const p0 = new Vector3(center.x + Math.cos(a0) * radius, center.y, center.z + Math.sin(a0) * radius);
-      const p1 = new Vector3(center.x + Math.cos(a1) * radius, center.y, center.z + Math.sin(a1) * radius);
-      const seg = new Line({ start: p0, end: p1, color, fatLines: true, width: 1 });
-      this.add(seg);
-      this.subElements3D.set(`${keyPrefix}-bubble-${i}`, seg);
-    }
+    const bubble = this.buildCircleLine(center, radius, color);
+    this.add(bubble);
+    this.subElements3D.set(`${keyPrefix}-bubble`, bubble);
 
     const divider = new Line({
       start: new Vector3(center.x - radius * 0.9, center.y, center.z),

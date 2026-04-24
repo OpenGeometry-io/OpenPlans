@@ -57,7 +57,7 @@ export class ReferencePlane extends Datum {
 
   setOPGeometry(): void {
     this.dispose();
-    const { origin, normal, extents, color, lineWidth, dash, showBody } = this.propertySet;
+    const { origin, normal, extents, color, dash, showBody } = this.propertySet;
 
     const nrm = new Vector3(normal[0], normal[1], normal[2]);
     const nlen = Math.sqrt(nrm.x * nrm.x + nrm.y * nrm.y + nrm.z * nrm.z) || 1;
@@ -83,7 +83,9 @@ export class ReferencePlane extends Datum {
     for (let i = 0; i < 4; i++) {
       const a = corners[i];
       const b = corners[(i + 1) % 4];
-      this.addDashedEdge(a, b, color ?? DATUM_COLORS.REFERENCE, lineWidth ?? 1, dash, `edge-${i}`);
+      const edge = this.buildDashedSegments(a, b, color ?? DATUM_COLORS.REFERENCE, dash.length, dash.gap);
+      this.add(edge);
+      this.subElements3D.set(`edge-${i}`, edge);
     }
 
     if (showBody) {
@@ -120,37 +122,6 @@ export class ReferencePlane extends Datum {
     this.subElements3D.set("label", labelAnchor);
 
     this.onDatumUpdated.trigger(null);
-  }
-
-  private addDashedEdge(
-    a: Vector3,
-    b: Vector3,
-    color: number,
-    width: number,
-    dash: { length: number; gap: number },
-    key: string,
-  ) {
-    const dir = new Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
-    const total = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-    if (total === 0) return;
-    const unit = new Vector3(dir.x / total, dir.y / total, dir.z / total);
-    const stride = dash.length + dash.gap;
-    let dist = 0;
-    let index = 0;
-    while (dist < total) {
-      const segLen = Math.min(dash.length, total - dist);
-      const p0 = new Vector3(a.x + unit.x * dist, a.y + unit.y * dist, a.z + unit.z * dist);
-      const p1 = new Vector3(
-        p0.x + unit.x * segLen,
-        p0.y + unit.y * segLen,
-        p0.z + unit.z * segLen,
-      );
-      const seg = new Line({ start: p0, end: p1, color, fatLines: true, width });
-      this.add(seg);
-      this.subElements3D.set(`${key}-${index}`, seg);
-      dist += stride;
-      index += 1;
-    }
   }
 
   private crossV(a: Vector3, b: Vector3): Vector3 {
