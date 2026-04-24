@@ -47,6 +47,22 @@ import {
 
 import { ViewManager } from './packages/openplans-core/src/view-manager';
 
+import {
+  DatumTool,
+  Level,
+  LevelOptions,
+  Grid,
+  GridOptions,
+  ReferencePlane,
+  ReferencePlaneOptions,
+  ProjectOrigin,
+  ProjectOriginOptions,
+  SectionLine,
+  SectionLineOptions,
+  ElevationMarker,
+  ElevationMarkerOptions,
+} from './packages/openplans-core/src/datums';
+
 import { Event } from './utils/event';
 import { Opening } from './packages/openplans-core/src/elements/openings/opening';
 
@@ -106,6 +122,8 @@ export class OpenPlans {
 
     // const dimensionTool = DimensionTool;
     // dimensionTool.sceneRef = this.openThree.scene;
+
+    DatumTool.sceneRef = this.openThree.scene;
 
     // this.pencil?.onCursorDown.add((coords) => {
     //   console.log('Cursor Down', coords)
@@ -359,4 +377,33 @@ export class OpenPlans {
   // bench(config?: ConstructorParameters<typeof Bench>[0]) {
   //   return this.addElement(new Bench(config));
   // }
+
+  // Datums — reference geometry (levels, grids, reference planes, origin,
+  // section lines, elevation markers). Match the element factory style:
+  // direct instantiation inside the method, then register with the scene
+  // via addElement.
+
+  level(config?: Partial<LevelOptions>) {
+    return this.addElement(new Level(config));
+  }
+
+  grid(config?: Partial<GridOptions>) {
+    return this.addElement(new Grid(config));
+  }
+
+  referencePlane(config?: Partial<ReferencePlaneOptions>) {
+    return this.addElement(new ReferencePlane(config));
+  }
+
+  projectOrigin(config?: Partial<ProjectOriginOptions>) {
+    return this.addElement(new ProjectOrigin(config));
+  }
+
+  sectionLine(config?: Partial<SectionLineOptions>) {
+    return this.addElement(new SectionLine(config));
+  }
+
+  elevationMarker(config?: Partial<ElevationMarkerOptions>) {
+    return this.addElement(new ElevationMarker(config));
+  }
 }

@@ -16,6 +16,7 @@ export enum ElementType {
   FURNITURE = 'FURNITURE',
   APPLIANCE = 'APPLIANCE',
   LANDSCAPE = 'LANDSCAPE',
+  DATUM = 'DATUM',
 }
 
 export enum DoorType {

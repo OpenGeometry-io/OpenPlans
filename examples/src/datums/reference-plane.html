@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans — Reference Plane</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans Datum — Reference Plane">
+  <meta name="author" content="OpenPlans">
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #app { width: 100%; height: 100vh; cursor: unset !important; }
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Reference Plane</div>
+  <div id="app"></div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let rp;
+
+    const params = {
+      originX: 0,
+      originY: 1.5,
+      originZ: 0,
+      angleDeg: 45,
+      extentW: 3,
+      extentH: 3,
+      showBody: true,
+    };
+
+    function normalFromAngle(angleDeg) {
+      const rad = (angleDeg * Math.PI) / 180;
+      return [Math.cos(rad), Math.sin(rad), 0];
+    }
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+      openPlans.CameraMode = CameraMode.Model;
+
+      rp = openPlans.referencePlane({
+        labelName: 'Ref Plane 1',
+        origin: [params.originX, params.originY, params.originZ],
+        normal: normalFromAngle(params.angleDeg),
+        extents: [params.extentW, params.extentH],
+        showBody: params.showBody,
+      });
+    }
+
+    function rebuild() {
+      rp.setOPConfig({
+        origin: [params.originX, params.originY, params.originZ],
+        normal: normalFromAngle(params.angleDeg),
+        extents: [params.extentW, params.extentH],
+        showBody: params.showBody,
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const origin = gui.addFolder('Origin');
+      origin.add(params, 'originX', -10, 10, 0.1).onChange(rebuild);
+      origin.add(params, 'originY', -5, 10, 0.1).onChange(rebuild);
+      origin.add(params, 'originZ', -10, 10, 0.1).onChange(rebuild);
+      origin.open();
+
+      gui.add(params, 'angleDeg', 0, 180, 1).name('Normal angle (°)').onChange(rebuild);
+      gui.add(params, 'extentW', 1, 10, 0.5).name('Extent U').onChange(rebuild);
+      gui.add(params, 'extentH', 1, 10, 0.5).name('Extent V').onChange(rebuild);
+      gui.add(params, 'showBody').name('Show plane body').onChange(rebuild);
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>
