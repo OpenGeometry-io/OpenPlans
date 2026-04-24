@@ -8,3 +8,4 @@ export * from "./shapes";
 export * from "./dimensions";
 export * from "./primitives";
 export * from "./view-manager";
+export * from "./datums";
