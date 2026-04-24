@@ -6,6 +6,20 @@ import { ElementType } from "../base-type";
 import { Door, Window } from "../openings";
 import { Opening } from "../openings/opening";
 import { WallMaterial, WallOptions } from "./wall-types";
+import { WallFrame, computeWallFrame } from "./wall-frame";
+
+/** Optional hosting placement for PolyWall.attach* — offset is total arc-length along the polyline. */
+export interface PolyWallHostPlacement {
+  offset?: number;
+  baseHeight?: number;
+}
+
+/** Resolution of a polyline arc-length offset into a specific segment. */
+export interface PolyWallSegmentResolution {
+  segmentIndex: number;
+  localU: number;
+  frame: WallFrame;
+}
 
 type WallPoint = [number, number, number];
 
@@ -528,11 +542,52 @@ export class PolyWall extends Polyline implements IShape {
     return this.setPoints(nextPoints);
   }
 
-  attachDoor(doorElement: Door) {
-    if (doorElement.hostWallId !== this.ogid) {
-      doorElement.hostWallId = this.ogid;
-      doorElement.setOPGeometry();
+  /**
+   * Resolve an arc-length offset along the polyline into the segment that
+   * owns it, plus the wall-local u distance within that segment and the
+   * segment's WallFrame. Throws if the polyline has fewer than 2 points
+   * or the offset is out of range.
+   */
+  getFrameForOffset(offset: number): PolyWallSegmentResolution {
+    const pts = this.propertySet.points;
+    if (pts.length < 2) {
+      throw new Error("PolyWall.getFrameForOffset: polyline must have at least 2 points.");
     }
+
+    let remaining = offset;
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      const a = new Vector3(pts[i][0], pts[i][1], pts[i][2]);
+      const b = new Vector3(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
+      const segLength = a.clone().subtract(b).length();
+      if (remaining <= segLength || i === pts.length - 2) {
+        const frame = computeWallFrame(a, b);
+        const localU = Math.max(0, Math.min(remaining, segLength));
+        return { segmentIndex: i, localU, frame };
+      }
+      remaining -= segLength;
+    }
+
+    throw new Error("PolyWall.getFrameForOffset: unreachable offset resolution.");
+  }
+
+  private applyHostPlacement(element: Door | Window | Opening, placement?: PolyWallHostPlacement): WallFrame {
+    const offset = placement?.offset ?? 0;
+    const baseHeight = placement?.baseHeight ?? 0;
+    const resolution = this.getFrameForOffset(offset);
+
+    if (element instanceof Door) {
+      element.station = { u: resolution.localU, h: baseHeight };
+    } else if (element instanceof Window) {
+      element.station = { u: resolution.localU };
+    }
+
+    element.bindHostFrame(resolution.frame);
+    return resolution.frame;
+  }
+
+  attachDoor(doorElement: Door, placement?: PolyWallHostPlacement) {
+    doorElement.hostWallId = this.ogid;
+    this.applyHostPlacement(doorElement, placement);
 
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
@@ -549,15 +604,13 @@ export class PolyWall extends Polyline implements IShape {
     this.resolveOpenings();
 
     openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
-  attachWindow(windowElement: Window) {
-    if (windowElement.hostWallId !== this.ogid) {
-      windowElement.hostWallId = this.ogid;
-      windowElement.setOPGeometry();
-    }
+  attachWindow(windowElement: Window, placement?: PolyWallHostPlacement) {
+    windowElement.hostWallId = this.ogid;
+    this.applyHostPlacement(windowElement, placement);
 
     const openingFromWindow = windowElement.opening as Opening;
     if (!openingFromWindow) {
@@ -574,11 +627,13 @@ export class PolyWall extends Polyline implements IShape {
     this.resolveOpenings();
 
     openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
-  attachOpening(openingElement: Opening) {
+  attachOpening(openingElement: Opening, placement?: PolyWallHostPlacement) {
+    this.applyHostPlacement(openingElement, placement);
+
     openingElement.profileView = false;
     openingElement.modelView = false;
 
@@ -588,7 +643,7 @@ export class PolyWall extends Polyline implements IShape {
     this.resolveOpenings();
 
     openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
