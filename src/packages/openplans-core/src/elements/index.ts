@@ -1,3 +1,4 @@
+export * from "./base-type";
 export * from "./openings";
 export * from "./solids";
 export * from "./catalog";
