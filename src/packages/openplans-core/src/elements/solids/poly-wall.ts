@@ -553,8 +553,29 @@ export class PolyWall extends Polyline implements IShape {
     });
   }
 
-  attachWindow(_windowElement: Window) {
-    // Match current SingleWall behavior. Window hosting can be wired later.
+  attachWindow(windowElement: Window) {
+    if (windowElement.hostWallId !== this.ogid) {
+      windowElement.hostWallId = this.ogid;
+      windowElement.setOPGeometry();
+    }
+
+    const openingFromWindow = windowElement.opening as Opening;
+    if (!openingFromWindow) {
+      console.error("Window element does not have a valid opening configuration.");
+      return;
+    }
+
+    openingFromWindow.profileView = false;
+    openingFromWindow.modelView = false;
+
+    this.openings.push(openingFromWindow);
+    const openingConfig = openingFromWindow.getOPConfig();
+    this.propertySet.openings.push(openingConfig.ogid!);
+    this.resolveOpenings();
+
+    openingFromWindow.onOpeningUpdated.add(() => {
+      this.setOPGeometry();
+    });
   }
 
   attachOpening(openingElement: Opening) {
