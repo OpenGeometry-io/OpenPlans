@@ -111,60 +111,21 @@ export class Level extends Datum {
     const text = headLabel && headLabel.length > 0 ? headLabel : labelName;
 
     if (headSide === "start" || headSide === "both") {
-      const bubble = this.buildBubble(
-        new Vector3(start.x - bubbleOffset - bubbleRadius, start.y, start.z),
-        bubbleRadius,
-        color ?? DATUM_COLORS.LEVEL,
-      );
+      const center = new Vector3(start.x - bubbleOffset - bubbleRadius, start.y, start.z);
+      const bubble = this.buildCircleLine(center, bubbleRadius, color ?? DATUM_COLORS.LEVEL);
       this.add(bubble);
       this.subElements3D.set("bubbleStart", bubble);
-      this.subElements3D.set("bubbleStartLabel", this.buildLabel(
-        text,
-        new Vector3(start.x - bubbleOffset - bubbleRadius, start.y, start.z),
-      ));
+      this.subElements3D.set("bubbleStartLabel", this.buildLabel(text, center));
     }
     if (headSide === "end" || headSide === "both") {
-      const bubble = this.buildBubble(
-        new Vector3(end.x + bubbleOffset + bubbleRadius, end.y, end.z),
-        bubbleRadius,
-        color ?? DATUM_COLORS.LEVEL,
-      );
+      const center = new Vector3(end.x + bubbleOffset + bubbleRadius, end.y, end.z);
+      const bubble = this.buildCircleLine(center, bubbleRadius, color ?? DATUM_COLORS.LEVEL);
       this.add(bubble);
       this.subElements3D.set("bubbleEnd", bubble);
-      this.subElements3D.set("bubbleEndLabel", this.buildLabel(
-        text,
-        new Vector3(end.x + bubbleOffset + bubbleRadius, end.y, end.z),
-      ));
+      this.subElements3D.set("bubbleEndLabel", this.buildLabel(text, center));
     }
 
     this.onDatumUpdated.trigger(null);
-  }
-
-  private buildBubble(center: Vector3, radius: number, color: number) {
-    const segments = 32;
-    const pts: Vector3[] = [];
-    for (let i = 0; i <= segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      pts.push(new Vector3(center.x + Math.cos(a) * radius, center.y, center.z + Math.sin(a) * radius));
-    }
-    const group = new Line({
-      start: pts[0],
-      end: pts[0],
-      color,
-      fatLines: true,
-      width: 1,
-    });
-    for (let i = 0; i < segments; i++) {
-      const segment = new Line({
-        start: pts[i],
-        end: pts[i + 1],
-        color,
-        fatLines: true,
-        width: 1,
-      });
-      group.add(segment);
-    }
-    return group;
   }
 
   private buildLabel(text: string, position: Vector3) {

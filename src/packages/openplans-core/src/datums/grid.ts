@@ -210,24 +210,15 @@ export class Grid extends Datum {
         elevation,
         spec.center[1] + spec.radius * Math.sin(spec.endAngle),
       );
-      const segments = 48;
-      for (let i = 0; i < segments; i++) {
-        const t0 = i / segments;
-        const t1 = (i + 1) / segments;
-        const a0 = spec.startAngle + (spec.endAngle - spec.startAngle) * t0;
-        const a1 = spec.startAngle + (spec.endAngle - spec.startAngle) * t1;
-        const p0 = new Vector3(
-          spec.center[0] + spec.radius * Math.cos(a0),
-          elevation,
-          spec.center[1] + spec.radius * Math.sin(a0),
-        );
-        const p1 = new Vector3(
-          spec.center[0] + spec.radius * Math.cos(a1),
-          elevation,
-          spec.center[1] + spec.radius * Math.sin(a1),
-        );
-        group.add(new Line({ start: p0, end: p1, color, fatLines: true, width }));
-      }
+      const arc = this.buildCircleLine(
+        { x: spec.center[0], y: elevation, z: spec.center[1] },
+        spec.radius,
+        color,
+        48,
+        spec.startAngle,
+        spec.endAngle,
+      );
+      group.add(arc);
     }
 
     const head = axis.head ?? { start: true, end: true };
@@ -255,32 +246,8 @@ export class Grid extends Datum {
     const dir = isStart ? -1 : 1;
     const bubbleCenter = new Vector3(anchor.x, anchor.y, anchor.z + dir * offset);
 
-    // We don't know the axis direction without re-deriving it; a
-    // centred bubble offset along Z is fine for rectangular grids and
-    // keeps the implementation simple. Radial grids use end-of-curve
-    // offsets via the axis specification.
-    const segments = 32;
-    const pts: Vector3[] = [];
-    for (let i = 0; i <= segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      pts.push(
-        new Vector3(
-          bubbleCenter.x + Math.cos(a) * radius,
-          bubbleCenter.y,
-          bubbleCenter.z + Math.sin(a) * radius,
-        ),
-      );
-    }
-    for (let i = 0; i < segments; i++) {
-      const seg = new Line({
-        start: pts[i],
-        end: pts[i + 1],
-        color,
-        fatLines: true,
-        width: 1,
-      });
-      group.add(seg);
-    }
+    const circle = this.buildCircleLine(bubbleCenter, radius, color);
+    group.add(circle);
 
     const tagAnchor = new Line({
       start: bubbleCenter.clone(),

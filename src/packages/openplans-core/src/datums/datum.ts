@@ -152,10 +152,82 @@ export abstract class Datum extends Line implements IShape {
   abstract setOPGeometry(): void;
 
   setOPMaterial(): void {
-    // Colour changes rebuild the sub-elements in setOPGeometry by
-    // default. Subclasses can override for cheaper material-only
-    // updates where useful.
-    this.setOPGeometry();
+    // Intentionally empty — matches the pattern in SingleWall, Opening
+    // and Door. All property changes flow through setOPGeometry which
+    // disposes and rebuilds. Calling setOPGeometry from here would
+    // double every setOPConfig call.
+  }
+
+  /**
+   * Draws a closed circle (or polyline arc if `endAngle < 2π`) as a
+   * single `THREE.Line` — one geometry, one material, one draw call.
+   * Replaces the naive "32 individual line segments" tessellation and
+   * keeps datum rebuilds cheap.
+   */
+  protected buildCircleLine(
+    center: { x: number; y: number; z: number },
+    radius: number,
+    color: number,
+    segments: number = 48,
+    startAngle: number = 0,
+    endAngle: number = Math.PI * 2,
+  ): THREE.Line {
+    const points = new Float32Array((segments + 1) * 3);
+    const span = endAngle - startAngle;
+    for (let i = 0; i <= segments; i++) {
+      const a = startAngle + (i / segments) * span;
+      const base = i * 3;
+      points[base] = center.x + Math.cos(a) * radius;
+      points[base + 1] = center.y;
+      points[base + 2] = center.z + Math.sin(a) * radius;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
+    const material = new THREE.LineBasicMaterial({ color });
+    return new THREE.Line(geometry, material);
+  }
+
+  /**
+   * Packs a dashed straight edge into a single `THREE.LineSegments`
+   * draw. `dashLength` and `gap` are in world units.
+   */
+  protected buildDashedSegments(
+    start: { x: number; y: number; z: number },
+    end: { x: number; y: number; z: number },
+    color: number,
+    dashLength: number,
+    gap: number,
+  ): THREE.LineSegments {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const dz = end.z - start.z;
+    const total = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({ color });
+    if (total === 0) {
+      geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(0), 3));
+      return new THREE.LineSegments(geometry, material);
+    }
+    const ux = dx / total;
+    const uy = dy / total;
+    const uz = dz / total;
+    const stride = dashLength + gap;
+    const pairs: number[] = [];
+    let dist = 0;
+    while (dist < total) {
+      const segLen = Math.min(dashLength, total - dist);
+      pairs.push(
+        start.x + ux * dist,
+        start.y + uy * dist,
+        start.z + uz * dist,
+        start.x + ux * (dist + segLen),
+        start.y + uy * (dist + segLen),
+        start.z + uz * (dist + segLen),
+      );
+      dist += stride;
+    }
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(pairs, 3));
+    return new THREE.LineSegments(geometry, material);
   }
 
   protected applyVisibility(): void {

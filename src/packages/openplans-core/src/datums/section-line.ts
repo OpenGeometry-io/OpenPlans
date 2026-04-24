@@ -75,7 +75,6 @@ export class SectionLine extends Datum {
   setOPGeometry(): void {
     this.dispose();
     const color = this.propertySet.color ?? DATUM_COLORS.SECTION;
-    const width = this.propertySet.lineWidth ?? 2;
 
     const polyline: [number, number, number][] = [
       this.propertySet.start,
@@ -85,13 +84,15 @@ export class SectionLine extends Datum {
     const toVec = (p: [number, number, number]) => new Vector3(p[0], p[1], p[2]);
 
     for (let i = 0; i < polyline.length - 1; i++) {
-      this.addDashedSegment(
+      const seg = this.buildDashedSegments(
         toVec(polyline[i]),
         toVec(polyline[i + 1]),
         color,
-        width,
-        `seg-${i}`,
+        0.6,
+        0.25,
       );
+      this.add(seg);
+      this.subElements3D.set(`seg-${i}`, seg);
     }
 
     const startVec = toVec(this.propertySet.start);
@@ -100,32 +101,6 @@ export class SectionLine extends Datum {
     this.buildHead(endVec, startVec, this.propertySet.headEnd, "headEnd", false);
 
     this.onDatumUpdated.trigger(null);
-  }
-
-  private addDashedSegment(a: Vector3, b: Vector3, color: number, width: number, key: string) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const dz = b.z - a.z;
-    const total = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (total === 0) return;
-    const ux = dx / total;
-    const uy = dy / total;
-    const uz = dz / total;
-    const dashLen = 0.6;
-    const gap = 0.25;
-    const stride = dashLen + gap;
-    let dist = 0;
-    let i = 0;
-    while (dist < total) {
-      const len = Math.min(dashLen, total - dist);
-      const p0 = new Vector3(a.x + ux * dist, a.y + uy * dist, a.z + uz * dist);
-      const p1 = new Vector3(p0.x + ux * len, p0.y + uy * len, p0.z + uz * len);
-      const seg = new Line({ start: p0, end: p1, color, fatLines: true, width });
-      this.add(seg);
-      this.subElements3D.set(`${key}-${i}`, seg);
-      dist += stride;
-      i += 1;
-    }
   }
 
   private buildHead(
@@ -182,16 +157,9 @@ export class SectionLine extends Datum {
       atPoint.y,
       atPoint.z - uz * (radius + 0.3),
     );
-    const segments = 32;
-    for (let i = 0; i < segments; i++) {
-      const a0 = (i / segments) * Math.PI * 2;
-      const a1 = ((i + 1) / segments) * Math.PI * 2;
-      const p0 = new Vector3(center.x + Math.cos(a0) * radius, center.y, center.z + Math.sin(a0) * radius);
-      const p1 = new Vector3(center.x + Math.cos(a1) * radius, center.y, center.z + Math.sin(a1) * radius);
-      const seg = new Line({ start: p0, end: p1, color, fatLines: true, width: 1 });
-      this.add(seg);
-      this.subElements3D.set(`${keyPrefix}-bubble-${i}`, seg);
-    }
+    const bubble = this.buildCircleLine(center, radius, color);
+    this.add(bubble);
+    this.subElements3D.set(`${keyPrefix}-bubble`, bubble);
 
     const divider = new Line({
       start: new Vector3(center.x - radius * 0.9, center.y, center.z),
