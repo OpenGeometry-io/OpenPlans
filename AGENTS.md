@@ -44,6 +44,16 @@
 - Multi-area changes: run the relevant command for each changed area
 - If an expected validation command is broken because of current repo state, say so clearly in the handoff instead of silently skipping it
 
+## Visual Verification (required for any `examples/src/**` change)
+OpenPlans output is inherently visual. Code review alone has repeatedly missed wrong glyphs, mirrored arrows, and misplaced tags. Before claiming any change under `examples/src/**` (or any src change that alters what an example renders) as done:
+
+1. Start the dev server (`npm run dev`) if it isn't already running on `http://localhost:5555`.
+2. Use the Playwright MCP server (configured in `.mcp.json`) to open the affected example page, drive any relevant controls, and capture a screenshot.
+3. Open the screenshot and confirm the rendered output matches the intent — arrow directions, label positions, line styles, counts. Compare against the industry reference when applicable.
+4. In the handoff, state which example URL was screenshotted and what you visually confirmed. If the screenshot could not be taken (dev server down, MCP unavailable), say so explicitly instead of declaring success.
+
+"The code looks right" is not visual verification. Only an actual screenshot counts.
+
 ## Docs And Examples
 - Update `README.md` when the repo entry experience, setup steps, or key capability summary changes.
 - Update `docs/docs/` when public APIs, workflows, or tutorials change.
