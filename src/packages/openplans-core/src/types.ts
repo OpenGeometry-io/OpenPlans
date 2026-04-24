@@ -52,7 +52,12 @@ export interface WallElement extends SemanticElementBase {
 export interface DoorElement extends SemanticElementBase {
   kind: "DOOR";
   hostWallId?: string;
-  doorPosition: Point3D;
+  /**
+   * Door center in the host wall's local frame.
+   *   u — distance along the wall from its start
+   *   h — vertical offset above wall base
+   */
+  stationLocal: { u: number; h: number };
   doorWidth: number;
   doorHeight: number;
   doorThickness: number;

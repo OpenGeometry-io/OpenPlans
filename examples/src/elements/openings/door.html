@@ -81,7 +81,8 @@
       doorFolder.open();
 
       const params = {
-        station: { x: 0, y: 0, z: 0 },
+        // Wall-local station: u is distance along the wall, h is vertical offset.
+        stationLocal: { u: 0, h: 0 },
         panelDimensions: { width: 1, thickness: 0.2 },
         frameDimensions: { width: 0.2, thickness: 0.2 },
         doorHeight: 2.1,
@@ -92,7 +93,7 @@
         isHostObject: false,
         outline: true,
       };
-      
+
       doorFolder.add(params, 'isHostObject').name('Host Object').onChange((value) => {
         if (door && value) {
           door.hostObject = 'example-wall-id';
@@ -100,14 +101,11 @@
           door.hostObject = null;
         }
       });
-      doorFolder.add(params.station, 'x', -10, 10, 0.1).name('Station X').onChange((value) => {
-        if (door) door.station = [value, params.station.y, params.station.z];
+      doorFolder.add(params.stationLocal, 'u', -10, 10, 0.1).name('Station U (along wall)').onChange((value) => {
+        if (door) door.station = { u: value, h: params.stationLocal.h };
       });
-      doorFolder.add(params.station, 'y', -10, 10, 0.1).name('Station Y').onChange((value) => {
-        if (door) door.station = [params.station.x, value, params.station.z];
-      });
-      doorFolder.add(params.station, 'z', -10, 10, 0.1).name('Station Z').onChange((value) => {
-        if (door) door.station = [params.station.x, params.station.y, value];
+      doorFolder.add(params.stationLocal, 'h', -5, 5, 0.1).name('Station H (vertical)').onChange((value) => {
+        if (door) door.station = { u: params.stationLocal.u, h: value };
       });
       doorFolder.add(params.panelDimensions, 'width', 0.1, 2, 0.1).name('Width').onChange((value) => {
         if (door) door.panelWidth = value;

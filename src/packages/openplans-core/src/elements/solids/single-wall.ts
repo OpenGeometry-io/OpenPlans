@@ -216,19 +216,24 @@ export class SingleWall extends Line implements IShape {
   }
 
   attachDoor(doorElement: Door) {
+    doorElement.hostWallId = this.ogid;
+    doorElement.bindHostFrame(this.getFrame());
+
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
       console.error("Door element does not have a valid opening configuration.");
       return;
     }
     this.openings.push(openingFromDoor);
-    const openingConfig = openingFromDoor.getOPConfig();
-    // Add Opening to Wall's propertySet
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.propertySet.openings.push(openingFromDoor.ogid!);
     this.resolveOpenings();
 
     openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      doorElement.bindHostFrame(this.getFrame());
     });
   }
 
@@ -249,6 +254,7 @@ export class SingleWall extends Line implements IShape {
   }
 
   attachOpening(openingElement: Opening) {
+    openingElement.bindHostFrame(this.getFrame());
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
     // Add Opening to Wall's propertySet
@@ -256,7 +262,11 @@ export class SingleWall extends Line implements IShape {
     this.resolveOpenings();
 
     openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      openingElement.bindHostFrame(this.getFrame());
     });
   }
 
