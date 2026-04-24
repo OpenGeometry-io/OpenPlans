@@ -89,7 +89,6 @@ export class Window extends Line implements IShape, PlanVectorExportable {
   }
   set hostObject(value: string | null) {
     this.propertySet.hostWallId = value || undefined;
-    console.log("Host Object set to:", this.propertySet.hostWallId);
     this.setOPGeometry();
   }
 

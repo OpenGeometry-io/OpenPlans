@@ -105,7 +105,6 @@ export class Door extends Line implements IShape
   }
   set hostObject(value: string | null) {
     this.propertySet.hostWallId = value || undefined;
-    console.log("Host Object set to:", this.propertySet.hostWallId);
   }
 
   get station() { return this.propertySet.stationPoint; }
@@ -351,10 +350,6 @@ export class Door extends Line implements IShape
     opening.outline = true;
     this.subElements3D.set('door-opening', opening);
     this.add(opening);
-    console.log("Created door opening with config:", opening.getOPConfig());
-
-    // opening.visible = false; // The opening geometry is used for boolean operations and as a reference for the door's position, so it should be invisible in both 2D and 3D views.
-
   }
 
   private create3D(): void {

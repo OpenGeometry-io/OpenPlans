@@ -21,6 +21,7 @@ export class SingleWall extends Line implements IShape {
   private isModelView: boolean = true;
 
   private openings: Opening[] = [];
+  private openingListeners: Map<string, () => void> = new Map();
 
   selected = false;
   edit = false;
@@ -203,15 +204,25 @@ export class SingleWall extends Line implements IShape {
       console.error("Door element does not have a valid opening configuration.");
       return;
     }
-    this.openings.push(openingFromDoor);
-    const openingConfig = openingFromDoor.getOPConfig();
-    // Add Opening to Wall's propertySet
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.registerOpening(openingFromDoor);
     this.resolveOpenings();
+  }
 
-    openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+  attachDoors(doorElements: Door[]) {
+    let added = false;
+    for (const doorElement of doorElements) {
+      const openingFromDoor = doorElement.opening as Opening;
+      if (!openingFromDoor) {
+        console.error("Door element does not have a valid opening configuration.");
+        continue;
+      }
+      if (this.registerOpening(openingFromDoor)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
   }
 
   attachWindow(windowElement: Window) {
@@ -220,101 +231,140 @@ export class SingleWall extends Line implements IShape {
       console.error("Window element does not have a valid opening configuration.");
       return;
     }
-    this.openings.push(openingFromWindow);
-    const openingConfig = openingFromWindow.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.registerOpening(openingFromWindow);
     this.resolveOpenings();
+  }
 
-    openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+  attachWindows(windowElements: Window[]) {
+    let added = false;
+    for (const windowElement of windowElements) {
+      const openingFromWindow = windowElement.opening as Opening;
+      if (!openingFromWindow) {
+        console.error("Window element does not have a valid opening configuration.");
+        continue;
+      }
+      if (this.registerOpening(openingFromWindow)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
   }
 
   attachOpening(openingElement: Opening) {
+    this.registerOpening(openingElement);
+    this.resolveOpenings();
+  }
+
+  /**
+   * Batch attach multiple openings so the wall runs a single boolean resolve
+   * after all cutters are registered, instead of one per attach call.
+   */
+  attachOpenings(openingElements: Opening[]) {
+    let added = false;
+    for (const openingElement of openingElements) {
+      if (this.registerOpening(openingElement)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
+  }
+
+  private registerOpening(openingElement: Opening): boolean {
+    if (this.openingListeners.has(openingElement.ogid)) {
+      return false;
+    }
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
-    // Add Opening to Wall's propertySet
-    this.propertySet.openings.push(openingConfig.ogid!);
-    this.resolveOpenings();
+    if (openingConfig.ogid) {
+      this.propertySet.openings.push(openingConfig.ogid);
+    }
 
-    openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+    const listener = () => {
+      this.resolveOpenings();
+    };
+    this.openingListeners.set(openingElement.ogid, listener);
+    openingElement.onOpeningUpdated.add(listener);
+    return true;
   }
 
   resolveOpenings() {
-    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
-    if (!wall2D) return;
-
     const resolved2DKey = this.ogid + "-2d-resolved";
-    const existingResolved2D = this.subElements2D.get(resolved2DKey);
-    if (existingResolved2D) {
-      existingResolved2D.removeFromParent();
-      this.subElements2D.delete(resolved2DKey);
-    }
+    const resolved3DKey = this.ogid + "-3d-resolved";
+    this.disposeResolvedEntry(this.subElements2D, resolved2DKey);
+    this.disposeResolvedEntry(this.subElements3D, resolved3DKey);
+
+    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
+    const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
 
     const all2DOpenings = this.openings
       .map((opening) => opening.opening2D)
       .filter((opening): opening is Polygon => Boolean(opening));
-
-    if (all2DOpenings.length === 0) {
-      wall2D.visible = this.isProfileView;
-      return;
-    }
-
-    const result = wall2D.subtract(all2DOpenings);
-
-    wall2D.visible = false;
-    all2DOpenings.forEach((opening2D) => {
-      opening2D.visible = false;
-    });
-
-    this.subElements2D.set(resolved2DKey, result);
-    this.add(result);
-
-    // 3D Resolution
-    const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
-    if (!wall3D) return;
-
-    const resolved3DKey = this.ogid + "-3d-resolved";
-    const existingResolved3D = this.subElements3D.get(resolved3DKey);
-    if (existingResolved3D) {
-      existingResolved3D.removeFromParent();
-      this.subElements3D.delete(resolved3DKey);
-    }
-
     const all3DOpenings = this.openings
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
 
-    if (all3DOpenings.length === 0) {
-      wall3D.visible = this.isModelView;
+    if (wall2D) {
+      if (all2DOpenings.length > 0) {
+        const result = wall2D.subtract(all2DOpenings);
+        wall2D.visible = false;
+        all2DOpenings.forEach((opening2D) => {
+          opening2D.visible = false;
+        });
+        this.subElements2D.set(resolved2DKey, result);
+        this.add(result);
+      } else {
+        wall2D.visible = this.isProfileView;
+      }
+    }
+
+    if (wall3D) {
+      if (all3DOpenings.length > 0) {
+        const result3D = wall3D.subtract(all3DOpenings);
+        wall3D.visible = false;
+        all3DOpenings.forEach((opening3D) => {
+          opening3D.visible = false;
+        });
+        this.subElements3D.set(resolved3DKey, result3D);
+        this.add(result3D);
+      } else {
+        wall3D.visible = this.isModelView;
+      }
+    }
+  }
+
+  detachOpening(ogid: string) {
+    const index = this.openings.findIndex((opening) => opening.ogid === ogid);
+    if (index === -1) {
       return;
     }
 
-    const result3D = wall3D.subtract(all3DOpenings);
-
-    wall3D.visible = false;
-    all3DOpenings.forEach((opening3D) => {
-      opening3D.visible = false;
-    });
-
-    this.subElements3D.set(resolved3DKey, result3D);
-    this.add(result3D);
-}
-
-
-  detachOpening(ogid: string) {
-    const index = this.openings.findIndex(opening => opening.ogid === ogid);
-    if (index !== -1) {
-      this.openings.splice(index, 1);
+    const [removed] = this.openings.splice(index, 1);
+    const listener = this.openingListeners.get(ogid);
+    if (listener && removed) {
+      removed.onOpeningUpdated.remove(listener);
     }
+    this.openingListeners.delete(ogid);
+    this.propertySet.openings = this.propertySet.openings.filter((id) => id !== ogid);
 
-    if (this.openings.length === 0) {
-      // If no more openings, remove resolved geometry and show original wall geometry
-      this.subElements2D.delete(this.ogid + '-2d-resolved');
-      this.subElements3D.delete(this.ogid + '-3d-resolved');
+    this.resolveOpenings();
+  }
+
+  private disposeResolvedEntry(store: Map<string, THREE.Object3D>, key: string) {
+    const existing = store.get(key);
+    if (!existing) return;
+    const mesh = existing as THREE.Mesh;
+    if (mesh.geometry) mesh.geometry.dispose();
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach((mat) => mat.dispose());
+    } else if (mesh.material) {
+      mesh.material.dispose();
     }
+    existing.removeFromParent();
+    store.delete(key);
   }
 
   getHostedOpenings() {
