@@ -6,4 +6,5 @@ examples/dist/
 .DS_Store
 
 # Scripts
-scripts/
+scripts/*
+!scripts/visual-verify.sh

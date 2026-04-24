@@ -28,6 +28,7 @@ export class OpenThree {
   activeTheme: activeTheme = 'light'
   // planGrid: PlanGrid
   openGrid: THREE.GridHelper | undefined
+  private _firstFrameRendered = false
 
   constructor(container: HTMLElement, private callback: any) {
     CameraControls.install({ THREE: THREE })
@@ -124,10 +125,16 @@ export class OpenThree {
   animate() {
     this.renderer.render(this.scene, this.threeCamera)
     this.planCamera.update()
-    // console.log('OpenThree animate')
+
+    if (!this._firstFrameRendered) {
+      this._firstFrameRendered = true
+      if (typeof window !== 'undefined') {
+        ;(window as any).__OP_READY__ = true
+        window.dispatchEvent(new CustomEvent('openplans:ready'))
+      }
+    }
+
     this.callback()
-    // ShapeSelector.update();
-    // ShapeEditor.update(this.threeCamera, this.renderer);
 
     requestAnimationFrame(() => this.animate())
   }
