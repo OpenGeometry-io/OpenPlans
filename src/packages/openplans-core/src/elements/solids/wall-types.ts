@@ -8,6 +8,13 @@ export enum WallMaterial {
   OTHER = "OTHER",
 }
 
+/** Declarative hosted-opening spec — wall-local offset + base height. */
+export interface HostedOpeningSpec {
+  openingId: string;
+  offset: number;
+  baseHeight: number;
+}
+
 export interface WallOptions {
   ogid?: string;
   labelName: string;
@@ -18,4 +25,5 @@ export interface WallOptions {
   points: Array<[number, number, number]>;
   placement: Placement;
   openings: Array<string>;
+  hostedOpenings?: HostedOpeningSpec[];
 }

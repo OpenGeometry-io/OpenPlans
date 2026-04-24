@@ -9,6 +9,8 @@ import {
 } from "./wall-types";
 import { Opening } from "../openings/opening";
 import { Door, Window } from "../openings";
+import { WallFrame, computeWallFrame } from "./wall-frame";
+import { Event } from "../../../../../utils/event";
 export { WallMaterial } from "./wall-types";
 
 export class SingleWall extends Line implements IShape {
@@ -21,6 +23,10 @@ export class SingleWall extends Line implements IShape {
   private isModelView: boolean = true;
 
   private openings: Opening[] = [];
+  private _frame: WallFrame | null = null;
+
+  /** Fires whenever the wall's frame changes (endpoints, thickness, height). */
+  onWallGeometryChanged: Event<null> = new Event();
 
   selected = false;
   edit = false;
@@ -197,6 +203,18 @@ export class SingleWall extends Line implements IShape {
     return this.propertySet;
   }
 
+  /** Returns this wall's local coordinate frame, computing on demand. */
+  getFrame(): WallFrame {
+    if (!this._frame) {
+      const [s, e] = this.propertySet.points;
+      this._frame = computeWallFrame(
+        new Vector3(s[0], s[1], s[2]),
+        new Vector3(e[0], e[1], e[2]),
+      );
+    }
+    return this._frame;
+  }
+
   attachDoor(doorElement: Door) {
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
@@ -353,11 +371,18 @@ export class SingleWall extends Line implements IShape {
   setOPGeometry(): void {
     this.dispose();
 
+    const [s, e] = this.propertySet.points;
+    const startVec = new Vector3(s[0], s[1], s[2]);
+    const endVec = new Vector3(e[0], e[1], e[2]);
+
     this.setConfig({
-      start: new Vector3(this.propertySet.points[0][0], this.propertySet.points[0][1], this.propertySet.points[0][2]),
-      end: new Vector3(this.propertySet.points[1][0], this.propertySet.points[1][1], this.propertySet.points[1][2]),
+      start: startVec,
+      end: endVec,
       color: this.propertySet.color,
     });
+
+    this._frame = computeWallFrame(startVec, endVec);
+    this.onWallGeometryChanged.trigger(null);
 
     if (this.isLineWall) {
       return;
