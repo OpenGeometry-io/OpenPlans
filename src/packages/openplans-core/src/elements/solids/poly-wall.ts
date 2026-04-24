@@ -176,10 +176,6 @@ function buildFootprint(points: WallPoint[], thickness: number): GeometryStateRe
     const positiveOffset = sourceLine.getOffset(thickness / 2, 50, true);
     const negativeOffset = sourceLine.getOffset(-thickness / 2, 50, true);
 
-    console.log(positiveOffset.points);
-    console.log(negativeOffset.points);
-
-
     const footprint = sanitizeFootprintVertices([
       ...positiveOffset.points.map((point) => cloneVector(point)),
       ...negativeOffset.points.slice().reverse().map((point) => cloneVector(point)),
@@ -295,6 +291,7 @@ export class PolyWall extends Polyline implements IShape {
   private isModelView = true;
 
   private openings: Opening[] = [];
+  private openingListeners: Map<string, () => void> = new Map();
 
   selected = false;
   edit = false;
@@ -529,67 +526,66 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   attachDoor(doorElement: Door) {
-    if (doorElement.hostWallId !== this.ogid) {
-      doorElement.hostWallId = this.ogid;
-      doorElement.setOPGeometry();
-    }
-
-    const openingFromDoor = doorElement.opening as Opening;
-    if (!openingFromDoor) {
-      console.error("Door element does not have a valid opening configuration.");
-      return;
-    }
-
-    openingFromDoor.profileView = false;
-    openingFromDoor.modelView = false;
-
-    this.openings.push(openingFromDoor);
-    const openingConfig = openingFromDoor.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    const opening = this.extractDoorOpening(doorElement);
+    if (!opening) return;
+    this.registerOpening(opening);
     this.resolveOpenings();
+  }
 
-    openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+  attachDoors(doorElements: Door[]) {
+    let added = false;
+    for (const doorElement of doorElements) {
+      const opening = this.extractDoorOpening(doorElement);
+      if (!opening) continue;
+      if (this.registerOpening(opening)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
   }
 
   attachWindow(windowElement: Window) {
-    if (windowElement.hostWallId !== this.ogid) {
-      windowElement.hostWallId = this.ogid;
-      windowElement.setOPGeometry();
-    }
-
-    const openingFromWindow = windowElement.opening as Opening;
-    if (!openingFromWindow) {
-      console.error("Window element does not have a valid opening configuration.");
-      return;
-    }
-
-    openingFromWindow.profileView = false;
-    openingFromWindow.modelView = false;
-
-    this.openings.push(openingFromWindow);
-    const openingConfig = openingFromWindow.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    const opening = this.extractWindowOpening(windowElement);
+    if (!opening) return;
+    this.registerOpening(opening);
     this.resolveOpenings();
+  }
 
-    openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+  attachWindows(windowElements: Window[]) {
+    let added = false;
+    for (const windowElement of windowElements) {
+      const opening = this.extractWindowOpening(windowElement);
+      if (!opening) continue;
+      if (this.registerOpening(opening)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
   }
 
   attachOpening(openingElement: Opening) {
-    openingElement.profileView = false;
-    openingElement.modelView = false;
-
-    this.openings.push(openingElement);
-    const openingConfig = openingElement.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.registerOpening(openingElement);
     this.resolveOpenings();
+  }
 
-    openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
-    });
+  /**
+   * Batch attach multiple openings so the wall runs a single boolean resolve
+   * after all cutters are registered, instead of one per attach call.
+   */
+  attachOpenings(openingElements: Opening[]) {
+    let added = false;
+    for (const openingElement of openingElements) {
+      if (this.registerOpening(openingElement)) {
+        added = true;
+      }
+    }
+    if (added) {
+      this.resolveOpenings();
+    }
   }
 
   detachOpening(ogid: string) {
@@ -598,9 +594,66 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
-    this.openings.splice(index, 1);
+    const [removed] = this.openings.splice(index, 1);
+    const listener = this.openingListeners.get(ogid);
+    if (listener && removed) {
+      removed.onOpeningUpdated.remove(listener);
+    }
+    this.openingListeners.delete(ogid);
     this.propertySet.openings = this.propertySet.openings.filter((openingId) => openingId !== ogid);
     this.resolveOpenings();
+  }
+
+  private extractDoorOpening(doorElement: Door): Opening | null {
+    if (doorElement.hostWallId !== this.ogid) {
+      doorElement.hostWallId = this.ogid;
+      doorElement.setOPGeometry();
+    }
+    const opening = doorElement.opening as Opening;
+    if (!opening) {
+      console.error("Door element does not have a valid opening configuration.");
+      return null;
+    }
+    opening.profileView = false;
+    opening.modelView = false;
+    return opening;
+  }
+
+  private extractWindowOpening(windowElement: Window): Opening | null {
+    if (windowElement.hostWallId !== this.ogid) {
+      windowElement.hostWallId = this.ogid;
+      windowElement.setOPGeometry();
+    }
+    const opening = windowElement.opening as Opening;
+    if (!opening) {
+      console.error("Window element does not have a valid opening configuration.");
+      return null;
+    }
+    opening.profileView = false;
+    opening.modelView = false;
+    return opening;
+  }
+
+  private registerOpening(openingElement: Opening): boolean {
+    if (this.openingListeners.has(openingElement.ogid)) {
+      return false;
+    }
+
+    openingElement.profileView = false;
+    openingElement.modelView = false;
+
+    this.openings.push(openingElement);
+    const openingConfig = openingElement.getOPConfig();
+    if (openingConfig.ogid) {
+      this.propertySet.openings.push(openingConfig.ogid);
+    }
+
+    const listener = () => {
+      this.resolveOpenings();
+    };
+    this.openingListeners.set(openingElement.ogid, listener);
+    openingElement.onOpeningUpdated.add(listener);
+    return true;
   }
 
   getHostedOpenings() {
