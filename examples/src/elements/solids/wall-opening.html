@@ -66,11 +66,15 @@
 
       openPlans.toggleGrid(false);
 
-      // Create a default wall on scene load
+      // Diagonal-wall regression fixture: a 10m wall at 45 degrees in the XZ plane.
+      // With wall-local hosting, the door at u=4.5 must sit centered on the wall
+      // centerline aligned with the wall direction (world ~ (3.18, 0, 3.18)), not
+      // off-wall along world X as the old world-space coord bug produced.
+      const DIAG = 10 / Math.SQRT2; // ~7.07
       singleWall = openPlans.singleWall({
         points: [
           [0, 0, 0],
-          [10, 0, 0],
+          [DIAG, 0, DIAG],
         ],
         height: 5
       });
@@ -87,10 +91,10 @@
       });
       singleWall.attachOpening(opening);
 
-      // Adding Door
+      // Adding Door — wall-local u = 4.5 m along the wall.
       door = openPlans.door({
         hostWallId: singleWall.ogid,
-        stationPoint: [4.5, 0, 0],
+        stationLocal: { u: 4.5, h: 0 },
         panelDimensions: { width: 1, thickness: 0.3 },
         frameDimensions: { width: 0.2, thickness: 0.3 },
         doorHeight: 2.1,
@@ -100,10 +104,10 @@
       singleWall.attachDoor(door);
       door.modelView = false;
 
-      // Adding Window
+      // Adding Window — wall-local u = 7.5 m along the wall.
       windowElement = openPlans.window({
         hostWallId: singleWall.ogid,
-        stationPoint: [7.5, 0, 0],
+        stationLocal: { u: 7.5 },
         windowDimensions: { width: 1.6, thickness: 0.2 },
         frameDimensions: { width: 0.14, thickness: 0.2 },
         windowHeight: 1.2,
@@ -249,7 +253,7 @@
       const windowFolder = gui.addFolder('Window');
       windowFolder.open();
       const windowParams = {
-        station: { x: 7.5, y: 0, z: 0 },
+        stationLocal: { u: 7.5 },
         windowDimensions: { width: 1.6, thickness: 0.2 },
         frameDimensions: { width: 0.14, thickness: 0.2 },
         windowHeight: 1.2,
@@ -261,14 +265,8 @@
         modelView: false,
       };
 
-      windowFolder.add(windowParams.station, 'x', -10, 10, 0.1).name('Station X').onChange((value) => {
-        if (windowElement) windowElement.station = [value, windowParams.station.y, windowParams.station.z];
-      });
-      windowFolder.add(windowParams.station, 'y', -10, 10, 0.1).name('Station Y').onChange((value) => {
-        if (windowElement) windowElement.station = [windowParams.station.x, value, windowParams.station.z];
-      });
-      windowFolder.add(windowParams.station, 'z', -10, 10, 0.1).name('Station Z').onChange((value) => {
-        if (windowElement) windowElement.station = [windowParams.station.x, windowParams.station.y, value];
+      windowFolder.add(windowParams.stationLocal, 'u', -10, 20, 0.1).name('Station U (along wall)').onChange((value) => {
+        if (windowElement) windowElement.station = { u: value };
       });
       windowFolder.add(windowParams.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {
         if (windowElement) windowElement.windowWidth = value;

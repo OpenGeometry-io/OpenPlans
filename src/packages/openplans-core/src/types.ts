@@ -70,7 +70,12 @@ export interface DoorElement extends SemanticElementBase {
 export interface WindowElement extends SemanticElementBase {
   kind: "WINDOW";
   hostWallId?: string;
-  windowPosition: Point3D;
+  /**
+   * Window center in the host wall's local frame.
+   *   u — distance along the wall from its start
+   * (Vertical position comes from sillHeight; v is always 0.)
+   */
+  stationLocal: { u: number };
   windowWidth: number;
   windowHeight: number;
   windowThickness: number;

@@ -238,18 +238,24 @@ export class SingleWall extends Line implements IShape {
   }
 
   attachWindow(windowElement: Window) {
+    windowElement.hostWallId = this.ogid;
+    windowElement.bindHostFrame(this.getFrame());
+
     const openingFromWindow = windowElement.opening as Opening;
     if (!openingFromWindow) {
       console.error("Window element does not have a valid opening configuration.");
       return;
     }
     this.openings.push(openingFromWindow);
-    const openingConfig = openingFromWindow.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.propertySet.openings.push(openingFromWindow.ogid!);
     this.resolveOpenings();
 
     openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      windowElement.bindHostFrame(this.getFrame());
     });
   }
 
