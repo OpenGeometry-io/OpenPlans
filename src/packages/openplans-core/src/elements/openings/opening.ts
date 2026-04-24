@@ -5,6 +5,7 @@ import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
 import { Placement } from "../../types";
 import { Event } from "../../../../../utils/event";
+import { WallFrame, localToWorld } from "../solids/wall-frame";
 
 export interface OpeningOptions {
   ogid?: string;
@@ -14,9 +15,15 @@ export interface OpeningOptions {
   thickness: number;
   height: number;
   baseHeight: number;
-  // The Points Here are defined in the local coordinate system of the wall, with the wall's start point as the origin, and the wall's direction as the positive X axis. The Z axis is vertical, and Y axis is perpendicular to the wall plane.
+  // Wall-local coordinates. +Y up; walls live in the XZ plane.
+  //   points[i] = [u, v, h] where
+  //     u — distance along the wall from its start,
+  //     v — perpendicular offset in the XZ plane (normal to the wall),
+  //     h — vertical offset above the wall's base.
+  // When no host frame has been bound, points are interpreted as world
+  // (x, y, z) — the unhosted/legacy path.
   length?: number; // Optional length property for convenience, can be derived from points if not provided
-  
+
   points: [number, number, number][];
   placement: Placement;
 }
@@ -36,7 +43,10 @@ export class Opening extends Line implements IShape {
 
   _outlineEnabled: boolean = false;
   onOpeningUpdated: Event<null> = new Event();
-  
+
+  /** Host wall's local coordinate frame. Null until bound via bindHostFrame. */
+  protected hostFrame: WallFrame | null = null;
+
   // Semantic Properties
   propertySet: OpeningOptions = {
     labelName: "Standard Opening",
@@ -44,10 +54,10 @@ export class Opening extends Line implements IShape {
     thickness: 0.3,
     height: 1,
     baseHeight: 0,
-    // The Points Here are defined in the local coordinate system of the wall, with the wall's start point as the origin, and the wall's direction as the positive X axis. The Z axis is vertical, and Y axis is perpendicular to the wall plane.
+    // Wall-local (u, v, h). Interpreted as world (x, y, z) until bindHostFrame is called.
     points: [
       [0, 0, 0],
-      [1.5, 0, 1.5],
+      [1.5, 0, 0],
     ],
     // TODO: Fix placement, something is wrong.
     placement: {
@@ -166,6 +176,32 @@ export class Opening extends Line implements IShape {
     return this.propertySet;
   }
 
+  /**
+   * Bind this opening to its host wall's frame. After binding, propertySet.points
+   * are interpreted as wall-local (u, v, h) and transformed to world on demand.
+   */
+  bindHostFrame(frame: WallFrame): void {
+    this.hostFrame = frame;
+    this.setOPGeometry();
+  }
+
+  /**
+   * Convert stored points to world-space Vector3s.
+   * If a host frame is bound: points are (u, v, h) local → world.
+   * Otherwise: points are already world (x, y, z).
+   */
+  toWorldPoints(): Vector3[] {
+    const frame = this.hostFrame;
+    if (!frame) {
+      return this.propertySet.points.map(
+        ([x, y, z]) => new Vector3(x, y, z),
+      );
+    }
+    return this.propertySet.points.map(
+      ([u, v, h]) => localToWorld(frame, u, v, h),
+    );
+  }
+
   dispose() {
     for (const obj of this.subElements2D.values()) {
       const mesh = obj as THREE.Mesh;
@@ -198,9 +234,14 @@ export class Opening extends Line implements IShape {
   setOPGeometry(): void {
     this.dispose();
 
+    const worldPoints = this.toWorldPoints();
+    if (worldPoints.length < 2) {
+      return;
+    }
+
     this.setConfig({
-      start: new Vector3(this.propertySet.points[0][0], this.propertySet.points[0][1], this.propertySet.points[0][2]),
-      end: new Vector3(this.propertySet.points[1][0], this.propertySet.points[1][1], this.propertySet.points[1][2]),
+      start: worldPoints[0],
+      end: worldPoints[1],
     });
 
     const offset1 = this.getOffset(this.propertySet.thickness / 2);

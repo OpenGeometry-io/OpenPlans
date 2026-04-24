@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { IShape } from "../../shapes/base-type";
 import { ElementType, DoorType } from "./../base-type";
-import { Arc, Cuboid, Line, Polygon, Sweep, Vector3 } from "opengeometry";
+import { Arc, Cuboid, Polygon, Sweep, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
 import { Opening } from "./opening";
+import { WallFrame, localToWorld } from "../solids/wall-frame";
 
 export type ElementViewType = 'plan' | '3d';
 export type SubElementType = 'frame' | 'finish' | 'swingArc' | 'panel';
@@ -18,13 +19,25 @@ export enum DoorMaterialType {
   OTHER = 'OTHER',
 }
 
+export interface StationLocal {
+  /** Distance along the wall (wall-local u). */
+  u: number;
+  /** Vertical offset above wall base (wall-local h). */
+  h: number;
+}
+
 export interface DoorOptions {
   ogid?: string;
   labelName: string;
   type: ElementType.DOOR;
   hostWallId?: string;
-  // Station point is the reference point for the door's position and rotation, defined in the local coordinate system of the host wall. It can be used to determine the door's placement along the wall and its swing direction. If not provided, it will default to the center of the door panel.
-  stationPoint: [number, number, number];
+  /**
+   * Door center in the host wall's local frame.
+   *   u — distance along the wall from its start
+   *   h — vertical offset above wall base (typically 0 for doors)
+   * v is always 0 (door sits centered on the wall plane).
+   */
+  stationLocal: StationLocal;
   panelDimensions: {
     width: number;
     thickness: number;
@@ -34,7 +47,7 @@ export interface DoorOptions {
     thickness: number;
   };
   doorType: DoorType;
-  doorHeight: number; // Height of the door panel
+  doorHeight: number;
   frameColor: number;
   panelMaterial: DoorMaterialType;
   doorColor: number;
@@ -43,24 +56,15 @@ export interface DoorOptions {
   placement: Placement;
 }
 
-// export class BaseDoor extends Opening implements IShape {
-export class Door extends Line implements IShape
-  //, PlanVectorExportable 
-  {
-  ogType: string = ElementType.DOOR;
-
-  subElements2D: Map<Door2DSubElementType, THREE.Object3D> = new Map();
-  private isProfileView = true;
-  subElements3D: Map<Door3DSubElementType, THREE.Object3D> = new Map();
-  private isModelView = true;
-
-  private _outlineEnabled: boolean = true;
-
-  selected: boolean = false;
-  edit: boolean = false;
-  locked: boolean = false;
-
-  propertySet: DoorOptions = {   
+/**
+ * Door IS an Opening — the hole it cuts in its host wall is carried on
+ * `subElements2D/3D` at keys `ogid + '-2d'` and `ogid + '-3d'` (inherited
+ * accessors `opening2D` / `opening3D` read those keys). Panel, frame, and
+ * swing arc geometry are extra decoration attached alongside.
+ */
+export class Door extends Opening implements IShape {
+  // @ts-ignore — Door's propertySet is DoorOptions (shaped differently than base OpeningOptions).
+  propertySet: DoorOptions = {
     type: ElementType.DOOR,
     labelName: 'Simple Door',
     hostWallId: undefined,
@@ -72,7 +76,7 @@ export class Door extends Line implements IShape
       width: 0.2,
       thickness: 0.2,
     },
-    stationPoint: [0, 0, 0],
+    stationLocal: { u: 0, h: 0 },
     doorType: DoorType.WOOD,
     doorHeight: 2.1,
     doorColor: 0xcc7a00,
@@ -87,9 +91,32 @@ export class Door extends Line implements IShape
     },
   };
 
-  get outline() { return this._outlineEnabled; }
+  // Door overrides Opening's view state (doors are visible by default in both views).
+  private _doorProfileView: boolean = true;
+  private _doorModelView: boolean = true;
+  private _doorOutlineEnabled: boolean = true;
+
+  constructor(baseDoorConfig?: DoorOptions) {
+    super();
+
+    this.ogType = ElementType.DOOR;
+    this.subElements2D = new Map<string, THREE.Object3D>();
+    this.subElements3D = new Map<string, THREE.Object3D>();
+
+    if (baseDoorConfig) {
+      this.propertySet = {
+        ...this.propertySet,
+        ...baseDoorConfig,
+      };
+    }
+
+    this.propertySet.ogid = this.ogid;
+    this.setOPGeometry();
+  }
+
+  get outline() { return this._doorOutlineEnabled; }
   set outline(value: boolean) {
-    this._outlineEnabled = value;
+    this._doorOutlineEnabled = value;
     for (const obj of this.subElements2D.values()) {
       // @ts-ignore
       obj.outline = value;
@@ -100,17 +127,16 @@ export class Door extends Line implements IShape
     }
   }
 
-  get hostObject() { 
+  get hostObject() {
     return this.propertySet.hostWallId || null;
   }
   set hostObject(value: string | null) {
     this.propertySet.hostWallId = value || undefined;
-    console.log("Host Object set to:", this.propertySet.hostWallId);
   }
 
-  get station() { return this.propertySet.stationPoint; }
-  set station(value: [number, number, number]) {
-    this.propertySet.stationPoint = value;
+  get station(): StationLocal { return this.propertySet.stationLocal; }
+  set station(value: StationLocal) {
+    this.propertySet.stationLocal = value;
     this.setOPGeometry();
   }
 
@@ -134,326 +160,288 @@ export class Door extends Line implements IShape
     this.propertySet.panelDimensions.width = value;
     this.setOPGeometry();
   }
-
-  get panelWidth() {
-    return this.propertySet.panelDimensions.width;
-  }
+  get panelWidth() { return this.propertySet.panelDimensions.width; }
 
   set panelThickness(value: number) {
     this.propertySet.panelDimensions.thickness = value;
     this.setOPGeometry();
   }
-
-  get panelThickness() {
-    return this.propertySet.panelDimensions.thickness;
-  }
+  get panelThickness() { return this.propertySet.panelDimensions.thickness; }
 
   set doorHeight(value: number) {
     this.propertySet.doorHeight = value;
     this.setOPGeometry();
   }
-
-  get doorHeight() {
-    return this.propertySet.doorHeight;
-  }
+  get doorHeight() { return this.propertySet.doorHeight; }
 
   set frameThickness(value: number) {
     this.propertySet.frameDimensions.thickness = value;
     this.setOPGeometry();
   }
-
-  get frameThickness() {
-    return this.propertySet.frameDimensions.thickness;
-  }
+  get frameThickness() { return this.propertySet.frameDimensions.thickness; }
 
   set frameWidth(value: number) {
     this.propertySet.frameDimensions.width = value;
     this.setOPGeometry();
   }
-
-  get frameWidth() {
-    return this.propertySet.frameDimensions.width;
-  }
+  get frameWidth() { return this.propertySet.frameDimensions.width; }
 
   set doorColor(value: number) {
     this.propertySet.doorColor = value;
     this.setOPMaterial();
   }
-
-  get doorColor() {
-    return this.propertySet.doorColor;
-  }
+  get doorColor() { return this.propertySet.doorColor; }
 
   set frameColor(value: number) {
     this.propertySet.frameColor = value;
     this.setOPMaterial();
   }
-
-  get frameColor() {
-    return this.propertySet.frameColor;
-  }
+  get frameColor() { return this.propertySet.frameColor; }
 
   set profileView(value: boolean) {
-    this.isProfileView = value;
-    for (const obj of this.subElements2D.values()) {
-      obj.visible = value;
-    }
-  }
-
-  get profileView() {
-    return this.isProfileView;
-  }
-
-  set modelView(value: boolean) {
-    this.isModelView = value;
-    for (const [key, obj] of this.subElements3D.entries()) {
-      if (key === 'door-opening') {
-        obj.visible = false; // The opening geometry is used for boolean operations and as a reference for the door's position, so it should be invisible in both 2D and 3D views.
+    this._doorProfileView = value;
+    for (const [key, obj] of this.subElements2D.entries()) {
+      if (key === this.ogid + '-2d') {
+        obj.visible = false; // The hole polygon is used for CSG only; never visible.
       } else {
         obj.visible = value;
       }
     }
   }
+  get profileView() { return this._doorProfileView; }
 
-  get modelView() {
-    return this.isModelView;
-  }
-
-  get opening() {
-    return this.subElements3D.get('door-opening') as Opening;
-  }
-
-  // getExportRoots(view: PlanExportView): THREE.Object3D[] {
-  //   return orderedRoots(
-  //     view,
-  //     this.subElements2D,
-  //     this.subElements3D,
-  //     ["frame", "swingArc", "panel", "door-opening"],
-  //     ["frame", "panel", "door-opening"],
-  //   );
-  // }
-
-  constructor(baseDoorConfig?: DoorOptions) {
-    // Call the parent class (Opening) constructor
-    super({
-      start: new Vector3(0, 0, 0),
-      end: new Vector3(1, 0, 0),
-      color: 0x00ff00,
-    });
-
-    this.subElements2D = new Map<Door2DSubElementType, THREE.Object3D>();
-    this.subElements3D = new Map<Door3DSubElementType, THREE.Object3D>();
-    
-    if (baseDoorConfig) {
-      this.propertySet = {
-        ...this.propertySet,
-        ...baseDoorConfig,
-      };
+  set modelView(value: boolean) {
+    this._doorModelView = value;
+    for (const [key, obj] of this.subElements3D.entries()) {
+      if (key === this.ogid + '-3d') {
+        obj.visible = false; // The hole solid is used for CSG only; never visible.
+      } else {
+        obj.visible = value;
+      }
     }
+  }
+  get modelView() { return this._doorModelView; }
 
-    this.propertySet.ogid = this.ogid;
-    this.setOPGeometry();
+  /** Door IS the opening — return self. Kept for back-compat with wall attachers. */
+  get opening(): Opening {
+    return this;
   }
 
-  setOPConfig(config: DoorOptions): void {
-    this.propertySet = {
-      ...this.propertySet,
-      ...config,
-    };
-
-    this.setOPGeometry();
-    this.setOPMaterial();
-  }
-
+  // @ts-ignore — returning DoorOptions where Opening returns OpeningOptions.
   getOPConfig(): DoorOptions {
     return this.propertySet;
   }
 
+  // @ts-ignore — accepting DoorOptions where Opening accepts OpeningOptions.
+  setOPConfig(config: DoorOptions): void {
+    this.propertySet = { ...this.propertySet, ...config };
+    this.setOPGeometry();
+    this.setOPMaterial();
+  }
+
   dispose() {
     for (const obj of this.subElements2D.values()) {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.geometry) mesh.geometry.dispose();
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach(mat => mat.dispose());
-      } else if (mesh.material) {
-        mesh.material.dispose();
-      }
-
-      mesh.removeFromParent();
+      this.disposeObject(obj);
     }
     for (const obj of this.subElements3D.values()) {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.geometry) mesh.geometry.dispose();
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach(mat => mat.dispose());
-      } else if (mesh.material) {
-        mesh.material.dispose();
-      }
-
-      mesh.removeFromParent();
+      this.disposeObject(obj);
     }
-
     this.subElements2D.clear();
     this.subElements3D.clear();
     this.discardGeometry();
   }
 
+  private disposeObject(obj: THREE.Object3D): void {
+    obj.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.geometry) {
+        mesh.geometry.dispose();
+      }
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((m) => m.dispose());
+      } else if (mesh.material) {
+        mesh.material.dispose();
+      }
+    });
+    obj.removeFromParent();
+  }
+
+  /**
+   * Transform a wall-local (u, v, h) point to world coordinates.
+   * If no host frame is bound, use an identity frame (u→x, h→y, v→z)
+   * so an unhosted door still renders sensibly in world space.
+   */
+  private worldFromLocal(u: number, v: number, h: number): Vector3 {
+    const frame = this.hostFrame;
+    if (!frame) {
+      return new Vector3(u, h, v);
+    }
+    return localToWorld(frame, u, v, h);
+  }
+
+  /**
+   * Override of Opening.setOPGeometry. We build:
+   *   - The hole polygon/solid at keys `ogid + '-2d'` and `ogid + '-3d'` (what CSG subtracts)
+   *   - Panel, frame, swing arc under keys 'panel', 'frame', 'swingArc'
+   * Everything is computed in wall-local (u, v, h) and transformed via worldFromLocal.
+   */
   setOPGeometry(): void {
+    // Guard: when super() is running, this.propertySet is still Opening's defaults
+    // (DoorOptions fields not yet initialized). Skip; Door constructor calls us again.
+    if (!this.propertySet?.panelDimensions) {
+      return;
+    }
+
     this.dispose();
 
-    // Station point is the reference point for the door's position and rotation, defined in the local coordinate system of the host wall. It can be used to determine the door's placement along the wall and its swing direction. If not provided, it will default to the center of the door panel.
-    const station = this.propertySet.hostWallId ? new Vector3(...this.propertySet.stationPoint) : new Vector3(0, 0, 0);
+    this.buildHole();
+    this.build3D();
+    this.build2D();
 
-    // Set Parent Geometry (Line) based on the panel width
-    const halfPanelWidth = this.propertySet.panelDimensions.width / 2 + this.propertySet.frameDimensions.width;
-    this.setConfig({
-      start: new Vector3(-halfPanelWidth + station.x, station.y, station.z),
-      end: new Vector3(halfPanelWidth + station.x, station.y, station.z),
-    });
-    this.renderOrder = 1;
+    this.outline = this._doorOutlineEnabled;
+    this.profileView = this._doorProfileView;
+    this.modelView = this._doorModelView;
 
-    this.create2D();
-    this.create3D();
-
-    // Create 2D and 3D Opening Geometry based on the door dimensions and type
-    this.createOpening();
-
-    // Retaining same outline and visibility settings for new geometry
-    this.outline = this._outlineEnabled;
-    this.profileView = this.isProfileView;
-    this.modelView = this.isModelView;
+    this.onOpeningUpdated.trigger(null);
   }
 
-  // TODO: Do something about tolerances
-  private createOpening(): void {
-    const station = this.propertySet.hostWallId ? new Vector3(...this.propertySet.stationPoint) : new Vector3(0, 0, 0);
+  /**
+   * Build the hole (what gets subtracted from the wall).
+   * A rectangular slab centered on stationLocal.u, spanning:
+   *   u:  [u - halfTotalWidth, u + halfTotalWidth]
+   *   v:  [-frameThickness/2, +frameThickness/2]   (wall thickness direction)
+   *   h:  [stationLocal.h, stationLocal.h + totalHeight]
+   */
+  private buildHole(): void {
+    const { panelDimensions, frameDimensions, doorHeight, stationLocal } = this.propertySet;
+    const tol = 0.001;
+    const halfTotalWidth = panelDimensions.width / 2 + frameDimensions.width + tol;
+    const totalHeight = doorHeight + frameDimensions.width + tol;
+    const halfThickness = frameDimensions.thickness / 2 + tol;
 
-    const { panelDimensions, frameDimensions, doorHeight } = this.propertySet;
-    const totalWidth = panelDimensions.width + frameDimensions.width * 2;
-    // Add a small tolerance to the width and height to ensure the opening fully encompasses the door panel and frame, preventing z-fighting issues in 3D view and ensuring clear visibility of the opening in 2D view.
-    const halfTotalWidth = totalWidth / 2 + 0.001; // Add a small tolerance to ensure the opening fully encompasses the door panel and frame
-    const totalHeight = doorHeight + frameDimensions.width + 0.001; // Add a small tolerance to ensure the opening fully encompasses the door panel and frame
-    const opening = new Opening({
-      labelName: this.propertySet.labelName + " Opening",
-      thickness: frameDimensions.thickness + 0.001, // Add a small tolerance to ensure the opening fully encompasses the door frame
-      height: totalHeight,
-      baseHeight: 0,
-      points: [
-        [-halfTotalWidth + station.x, station.y, station.z],
-        [halfTotalWidth + station.x, station.y, station.z],
-      ],
-      // placement: {
-      //   position: [0 + station.x, 0 + station.y, 0 + station.z],
-      //   rotation: [0, 0, 0],
-      //   scale: [1, 1, 1],
-      // },
+    const u0 = stationLocal.u - halfTotalWidth;
+    const u1 = stationLocal.u + halfTotalWidth;
+    const h0 = stationLocal.h;
+
+    const footprint: Vector3[] = [
+      this.worldFromLocal(u0, -halfThickness, h0),
+      this.worldFromLocal(u1, -halfThickness, h0),
+      this.worldFromLocal(u1, +halfThickness, h0),
+      this.worldFromLocal(u0, +halfThickness, h0),
+    ];
+
+    const polygon = new Polygon({
+      ogid: this.ogid + '-2d',
+      vertices: footprint,
+      color: 0xffcccc,
     });
-    opening.outline = true;
-    this.subElements3D.set('door-opening', opening);
-    this.add(opening);
-    console.log("Created door opening with config:", opening.getOPConfig());
+    polygon.outline = false;
+    this.subElements2D.set(polygon.ogid, polygon);
+    this.add(polygon);
 
-    // opening.visible = false; // The opening geometry is used for boolean operations and as a reference for the door's position, so it should be invisible in both 2D and 3D views.
-
+    const solid = polygon.extrude(totalHeight);
+    solid.ogid = this.ogid + '-3d';
+    this.subElements3D.set(solid.ogid, solid);
+    this.add(solid);
   }
 
-  private create3D(): void {
-    const station = this.propertySet.hostWallId ? new Vector3(...this.propertySet.stationPoint) : new Vector3(0, 0, 0);
-
-    const { panelDimensions, frameDimensions, doorHeight, doorColor, frameColor } = this.propertySet;
+  private build3D(): void {
+    const { panelDimensions, frameDimensions, doorHeight, doorColor, frameColor, stationLocal } = this.propertySet;
     const halfPanelWidth = panelDimensions.width / 2;
     const frameWidth = frameDimensions.width;
     const frameThickness = frameDimensions.thickness;
 
+    const u = stationLocal.u;
+    const h = stationLocal.h;
+
+    // Frame sweep: a U-shape around the door opening (left jamb, head, right jamb).
     const frameProfile = [
-      new Vector3(-frameWidth / 2 + station.x, station.y, -frameThickness / 2 + station.z),
-      new Vector3(-frameWidth / 2 + station.x, station.y, frameThickness / 2 + station.z),
-      new Vector3(frameWidth / 2 + station.x, station.y, frameThickness / 2 + station.z),
-      new Vector3(frameWidth / 2 + station.x, station.y, -frameThickness / 2 + station.z),
-      new Vector3(-frameWidth / 2 + station.x, station.y, -frameThickness / 2 + station.z),
+      this.worldFromLocal(-frameWidth / 2, -frameThickness / 2, 0),
+      this.worldFromLocal(-frameWidth / 2, +frameThickness / 2, 0),
+      this.worldFromLocal(+frameWidth / 2, +frameThickness / 2, 0),
+      this.worldFromLocal(+frameWidth / 2, -frameThickness / 2, 0),
+      this.worldFromLocal(-frameWidth / 2, -frameThickness / 2, 0),
     ];
 
     const frameSweep = new Sweep({
       path: [
-        new Vector3(-(halfPanelWidth + frameWidth / 2) + station.x, station.y, station.z),
-        new Vector3(-(halfPanelWidth + frameWidth / 2) + station.x, doorHeight + frameWidth / 2 + station.y, station.z),
-        new Vector3(halfPanelWidth + frameWidth / 2 + station.x, doorHeight + frameWidth / 2 + station.y, station.z),
-        new Vector3(halfPanelWidth + frameWidth / 2 + station.x, station.y, station.z)
+        this.worldFromLocal(u - halfPanelWidth - frameWidth / 2, 0, h),
+        this.worldFromLocal(u - halfPanelWidth - frameWidth / 2, 0, h + doorHeight + frameWidth / 2),
+        this.worldFromLocal(u + halfPanelWidth + frameWidth / 2, 0, h + doorHeight + frameWidth / 2),
+        this.worldFromLocal(u + halfPanelWidth + frameWidth / 2, 0, h),
       ],
       profile: frameProfile,
       color: frameColor,
     });
 
-    this.subElements3D.set("frame", frameSweep);
+    this.subElements3D.set('frame', frameSweep);
     this.add(frameSweep);
 
+    const panelCenter = this.worldFromLocal(u, 0, h + doorHeight / 2);
     const panelCuboid = new Cuboid({
-      center: new Vector3(0 + station.x, doorHeight / 2 + station.y, 0 + station.z),
+      center: panelCenter,
       width: panelDimensions.width,
       height: doorHeight,
       depth: panelDimensions.thickness,
       color: doorColor,
     });
 
-    this.subElements3D.set("panel", panelCuboid);
+    this.subElements3D.set('panel', panelCuboid);
     this.add(panelCuboid);
   }
 
-  // TODO: Later disable Y placement for 2D view elements
-  private create2D(): void {
-    const { panelDimensions, frameDimensions } = this.propertySet;
-
-    const station = this.propertySet.hostWallId ? new Vector3(...this.propertySet.stationPoint) : new Vector3(0, 0, 0);
-
+  private build2D(): void {
+    const { panelDimensions, frameDimensions, stationLocal } = this.propertySet;
     const halfPanelWidth = panelDimensions.width / 2;
     const frameWidth = frameDimensions.width;
+    const halfT = frameDimensions.thickness / 2;
+    const u = stationLocal.u;
+    const h = stationLocal.h;
 
-    // Create 2D Frame using Polygon
-    const frameLeftPolyline = new Polygon({
+    const frameLeftPolygon = new Polygon({
       vertices: [
-        new Vector3(-(halfPanelWidth + frameWidth) + station.x, station.y, -frameDimensions.thickness / 2 + station.z),
-        new Vector3(-(halfPanelWidth + frameWidth) + station.x, station.y, frameDimensions.thickness / 2 + station.z),
-        new Vector3(-(halfPanelWidth) + station.x, station.y, frameDimensions.thickness / 2 + station.z),
-        new Vector3(-(halfPanelWidth) + station.x, station.y, -frameDimensions.thickness / 2 + station.z)
+        this.worldFromLocal(u - halfPanelWidth - frameWidth, -halfT, h),
+        this.worldFromLocal(u - halfPanelWidth - frameWidth, +halfT, h),
+        this.worldFromLocal(u - halfPanelWidth,              +halfT, h),
+        this.worldFromLocal(u - halfPanelWidth,              -halfT, h),
       ],
-      color: this.propertySet.frameColor
+      color: this.propertySet.frameColor,
     });
 
-    const frameRightPolyline = new Polygon({
+    const frameRightPolygon = new Polygon({
       vertices: [
-        new Vector3(halfPanelWidth + frameWidth + station.x, station.y, -frameDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + frameWidth + station.x, station.y, frameDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + station.x, station.y, frameDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + station.x, station.y, -frameDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + frameWidth + station.x, station.y, -frameDimensions.thickness / 2 + station.z),
+        this.worldFromLocal(u + halfPanelWidth + frameWidth, -halfT, h),
+        this.worldFromLocal(u + halfPanelWidth + frameWidth, +halfT, h),
+        this.worldFromLocal(u + halfPanelWidth,              +halfT, h),
+        this.worldFromLocal(u + halfPanelWidth,              -halfT, h),
+        this.worldFromLocal(u + halfPanelWidth + frameWidth, -halfT, h),
       ],
-      color: this.propertySet.frameColor
+      color: this.propertySet.frameColor,
     });
 
     const frameGroup = new THREE.Group();
-    frameGroup.add(frameLeftPolyline);
-    frameGroup.add(frameRightPolyline);
+    frameGroup.add(frameLeftPolygon);
+    frameGroup.add(frameRightPolygon);
 
     this.subElements2D.set('frame', frameGroup);
     this.add(frameGroup);
 
     const panelPolygon = new Polygon({
       vertices: [
-        new Vector3(-halfPanelWidth + station.x, station.y, -panelDimensions.thickness / 2 + station.z),
-        new Vector3(-halfPanelWidth + station.x, station.y, panelDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + station.x, station.y, panelDimensions.thickness / 2 + station.z),
-        new Vector3(halfPanelWidth + station.x, station.y, -panelDimensions.thickness / 2 + station.z),
+        this.worldFromLocal(u - halfPanelWidth, -panelDimensions.thickness / 2, h),
+        this.worldFromLocal(u - halfPanelWidth, +panelDimensions.thickness / 2, h),
+        this.worldFromLocal(u + halfPanelWidth, +panelDimensions.thickness / 2, h),
+        this.worldFromLocal(u + halfPanelWidth, -panelDimensions.thickness / 2, h),
       ],
-      color: this.propertySet.doorColor
+      color: this.propertySet.doorColor,
     });
 
     this.subElements2D.set('panel', panelPolygon);
     this.add(panelPolygon);
 
-    // Create Door Swing Arc using Arc
     const swingRadius = panelDimensions.width;
     const swingArc = new Arc({
-      center: new Vector3(-halfPanelWidth + station.x, station.y, station.z),
+      center: this.worldFromLocal(u - halfPanelWidth, 0, h),
       radius: swingRadius,
       startAngle: 0,
       endAngle: Math.PI / 2,
@@ -472,28 +460,17 @@ export class Door extends Line implements IShape
     if (frameGroup2D) {
       const leftFrame = frameGroup2D.children[0] as Polygon | undefined;
       const rightFrame = frameGroup2D.children[1] as Polygon | undefined;
-      if (leftFrame) {
-        leftFrame.color = frameColor;
-      }
-      if (rightFrame) {
-        rightFrame.color = frameColor;
-      }
+      if (leftFrame) leftFrame.color = frameColor;
+      if (rightFrame) rightFrame.color = frameColor;
     }
 
     const panel2D = this.subElements2D.get('panel') as Polygon | undefined;
-    if (panel2D) {
-      panel2D.color = doorColor;
-    }
+    if (panel2D) panel2D.color = doorColor;
 
     const frame3D = this.subElements3D.get('frame') as Sweep | undefined;
-    if (frame3D) {
-      frame3D.color = frameColor;
-    }
+    if (frame3D) frame3D.color = frameColor;
 
     const panel3D = this.subElements3D.get('panel') as Cuboid | undefined;
-    if (panel3D) {
-      panel3D.color = doorColor;
-    }
+    if (panel3D) panel3D.color = doorColor;
   }
-
 }

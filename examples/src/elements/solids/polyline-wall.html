@@ -252,7 +252,6 @@
       }
 
       demoDoor = openPlans.door({
-        stationPoint: [2.7, 0, 0],
         panelDimensions: {
           width: 1,
           thickness: 0.12,
@@ -265,8 +264,8 @@
         doorColor: 0xcc7a00,
         frameColor: 0x654321,
       });
-      // demoDoor.modelView = false;
-      polyWall.attachDoor(demoDoor);
+      // offset = 2.7 m along the polyline; resolved to the owning segment.
+      polyWall.attachDoor(demoDoor, { offset: 2.7, baseHeight: 0 });
     }
 
     function setUI() {
