@@ -67,6 +67,38 @@ Use the smallest validation set that proves the change:
 Important note:
 - Do not rely on `npm test` as the main verification path. The repository does not currently include a maintained automated test suite, so build and example verification are the reliable signals today.
 
+## Visual Verification Harness
+
+OpenPlans output is inherently visual, so any change that affects a rendered example must be screenshot-verified against a reference before it is considered done. The binding checklist — the Definition of Done — lives in [AGENTS.md § Visual Verification](./AGENTS.md#visual-verification--definition-of-done); read it before making visual changes.
+
+Harness pieces:
+- `.mcp.json` — Playwright MCP server, headless Chromium. An agent or IDE integration must be restarted after first clone so this is picked up.
+- `scripts/visual-verify.sh <example-path>` — preflight. Prints the canonical URL to screenshot, or exits non-zero with a clear message if the dev server is down or the file is missing.
+- `window.__OP_READY__` (and a `openplans:ready` event) — set by `OpenThree.animate` after the first Three.js frame. Screenshots must wait for this signal; a shot taken too early is a blank canvas that *looks* fine.
+- `docs/references/<area>/<feature>/expected.md` — trait list the render must satisfy, cited from NCS/AIA/ISO or office convention. A symbol with no `expected.md` has no definition of "correct" — author one before or alongside the code change.
+
+Local agent bring-up:
+
+```bash
+npm install
+npm run dev     # leave running on :5555 in a separate terminal
+```
+
+Then restart your agent / IDE so `.mcp.json` registers the Playwright MCP server.
+
+### Smoke test for the harness
+
+To confirm the harness is working end-to-end, point a local agent at this task:
+
+> Verify that `examples/src/datums/section-line.html` satisfies every trait listed in `docs/references/datums/section-line/expected.md`. Follow the Definition of Done in `AGENTS.md § Visual Verification`.
+
+Expected behavior:
+1. The agent runs `scripts/visual-verify.sh examples/src/datums/section-line.html` and gets `ok` with the URL.
+2. It navigates via the Playwright MCP server, waits on `window.__OP_READY__`, and captures a full-viewport screenshot at 1600×900 plus a cropped shot of one section head.
+3. It walks the 7 traits in `expected.md` against the screenshot.
+
+Expected finding against the **current** code: **trait 4 fails** — the two section-head arrows point in opposite perpendicular directions, not the same direction. Trait 5 is also borderline — the arrowheads are open two-segment "L" shapes rather than solid filled triangles attached to the bubble. If the agent reports "looks right" without surfacing trait 4, the harness has not actually been exercised and something in the bring-up is wrong.
+
 ## Pull Requests
 
 - Keep PRs focused on one task when possible.
