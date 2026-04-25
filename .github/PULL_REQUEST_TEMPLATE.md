@@ -1,14 +1,21 @@
-<!-- Do You Really Need A PR? Push to Master, One Life! Joking! No Really Do It! -->
+## Summary
 
-### Description/Context/What Does Your PR Do
+<!-- What problem does this PR solve, and what changed? -->
 
-<!-- Please insert your description here. Make sure to provide info about the "what" this PR is solving -->
+## Verification
 
-### Steps To Run/Review for Other Devs
+<!-- List the commands you ran and any manual review steps. -->
 
-<!-- e.g. is there anything you'd like reviewers to focus on? -->
+## Docs And Examples
 
-### Production Log Message <!-- Put A Cross(X) If This Is User Reflecting PR And Provide a Nice Message That No Brainer Ape Can Understand -->
+<!-- Note whether you updated docs or examples, or explain why they were not needed. -->
 
-[ ] - 
+## Reviewer Notes
 
+<!-- Call out anything you want reviewers to focus on. -->
+
+## Checklist
+
+- [ ] I ran the relevant validation for the areas I changed
+- [ ] I updated docs and/or examples when user-facing behavior changed
+- [ ] I did not hand-edit generated output such as `dist/` or `examples/dist/`

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Wall Joins</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans wall join playground">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    :root {
+      --panel: rgba(18, 18, 18, 0.84);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text: #f5f2ea;
+      --muted: rgba(245, 242, 234, 0.72);
+      --accent: #d8a15a;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(216, 161, 90, 0.2), transparent 30%),
+        linear-gradient(135deg, #141414 0%, #1d1d1d 55%, #101010 100%);
+      font-family: "Space Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .banner {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 18px;
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      color: var(--text);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      min-width: 320px;
+      text-align: center;
+    }
+
+    .banner-title {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .banner-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .hint {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      z-index: 30;
+      max-width: 360px;
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+      backdrop-filter: blur(14px);
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="banner">
+    <div class="banner-title">Wall Joins</div>
+    <div class="banner-subtitle">Separate X/overlap join and T-junction playgrounds</div>
+  </div>
+  <div class="hint">
+    Use the two folders in the GUI to move each scenario independently. The top pair shows an interior overlap/X join
+    where the second wall is split around the first wall, and the bottom pair shows a T-junction. Both update live as
+    you move X and Z.
+  </div>
+  <div id="app"></div>
+
+  <script type="module">
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import { CameraMode, OpenPlans } from './../../src/index.ts';
+
+    const baseColor = 0xf0efe8;
+    const overlapColor = 0xd8a15a;
+    const tJoinColor = 0x9fa7b3;
+
+    const state = {
+      viewMode: 'plan',
+      overlapWallX: 0,
+      overlapWallZ: 0,
+      tWallX: 0,
+      tWallZ: 0,
+    };
+
+    let openPlans;
+    let walls = [];
+    let overlapBase;
+    let tWallBase;
+
+    function createWall(config) {
+      return openPlans.wall({
+        labelName: config.labelName,
+        path: config.points,
+        section: {
+          layers: [{
+            role: 'core',
+            thickness: 0.28,
+            material: 'CONCRETE',
+            color: config.wallColor,
+          }],
+        },
+        height: 3,
+        placement: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+        },
+      });
+    }
+
+    function setViewMode(mode) {
+      const planMode = mode === 'plan';
+      openPlans.CameraMode = planMode ? CameraMode.Plan : CameraMode.Model;
+
+      for (const wall of walls) {
+        wall.profileView = planMode;
+        wall.modelView = !planMode;
+      }
+    }
+
+    function updateOverlapWall() {
+      const start = {
+        x: overlapBase.start.x + state.overlapWallX,
+        y: 0,
+        z: overlapBase.start.z + state.overlapWallZ,
+      };
+      const end = {
+        x: overlapBase.end.x + state.overlapWallX,
+        y: 0,
+        z: overlapBase.end.z + state.overlapWallZ,
+      };
+
+      walls[1].updatePoints([start, end]);
+    }
+
+    function updateTWall() {
+      const start = {
+        x: tWallBase.start.x + state.tWallX,
+        y: 0,
+        z: tWallBase.start.z + state.tWallZ,
+      };
+      const end = {
+        x: tWallBase.end.x + state.tWallX,
+        y: 0,
+        z: tWallBase.end.z + state.tWallZ,
+      };
+
+      walls[3].updatePoints([start, end]);
+    }
+
+    async function init() {
+      openPlans = new OpenPlans(document.getElementById('app'));
+      await openPlans.setupOpenGeometry();
+      openPlans.toggleGrid(true);
+
+      walls = [
+        createWall({
+          labelName: 'Overlap Base',
+          wallColor: baseColor,
+          points: [
+            { x: -6, y: 0, z: 3.5 },
+            { x: 6, y: 0, z: 3.5 },
+          ],
+        }),
+        createWall({
+          labelName: 'Overlap Join',
+          wallColor: overlapColor,
+          points: [
+            { x: -2.4, y: 0, z: 1.1 },
+            { x: 2.4, y: 0, z: 5.9 },
+          ],
+        }),
+        createWall({
+          labelName: 'T Base',
+          wallColor: baseColor,
+          points: [
+            { x: -6, y: 0, z: -3.5 },
+            { x: 6, y: 0, z: -3.5 },
+          ],
+        }),
+        createWall({
+          labelName: 'T Join',
+          wallColor: tJoinColor,
+          points: [
+            { x: 0, y: 0, z: -3.5 },
+            { x: 0, y: 0, z: 1.2 },
+          ],
+        }),
+      ];
+
+      overlapBase = {
+        start: { ...walls[1].getOPConfig().path[0] },
+        end: { ...walls[1].getOPConfig().path[1] },
+      };
+
+      tWallBase = {
+        start: { ...walls[3].getOPConfig().path[0] },
+        end: { ...walls[3].getOPConfig().path[1] },
+      };
+
+      openPlans.fitToView(walls);
+    }
+
+    function setUI() {
+      const gui = new GUI({ width: 320 });
+      const viewFolder = gui.addFolder('View');
+      viewFolder.add(state, 'viewMode', { Plan: 'plan', Model: 'model' }).name('Mode').onChange((value) => {
+        state.viewMode = value;
+        setViewMode(value);
+      });
+
+      const overlapFolder = gui.addFolder('Overlap / X Join');
+      overlapFolder.add(state, 'overlapWallX', -3, 3, 0.05).name('X').onChange(() => {
+        updateOverlapWall();
+      });
+      overlapFolder.add(state, 'overlapWallZ', -3, 3, 0.05).name('Z').onChange(() => {
+        updateOverlapWall();
+      });
+
+      const tFolder = gui.addFolder('T Join');
+      tFolder.add(state, 'tWallX', -3, 3, 0.05).name('X').onChange(() => {
+        updateTWall();
+      });
+      tFolder.add(state, 'tWallZ', -3, 3, 0.05).name('Z').onChange(() => {
+        updateTWall();
+      });
+
+      const actions = {
+        fit: () => openPlans.fitToView(walls),
+      };
+      gui.add(actions, 'fit').name('Fit To View');
+    }
+
+    (async function run() {
+      await init();
+      setViewMode(state.viewMode);
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

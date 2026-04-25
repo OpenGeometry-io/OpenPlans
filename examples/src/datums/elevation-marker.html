@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans — Elevation Marker</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans Datum — Elevation Marker">
+  <meta name="author" content="OpenPlans">
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #app { width: 100%; height: 100vh; cursor: unset !important; }
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Elevation Marker</div>
+  <div id="app"></div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let single;
+    let cluster;
+
+    const params = {
+      cluster: true,
+      direction: 'N',
+      drawingNumber: '1',
+      sheetNumber: 'A-201',
+      bubbleRadius: 0.5,
+    };
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+      openPlans.CameraMode = CameraMode.Plan;
+
+      single = openPlans.elevationMarker({
+        labelName: 'Single Marker',
+        position: [-5, 0, 0],
+        direction: params.direction,
+        cluster: false,
+        head: { drawingNumber: params.drawingNumber, sheetNumber: params.sheetNumber },
+        bubbleRadius: params.bubbleRadius,
+      });
+
+      cluster = openPlans.elevationMarker({
+        labelName: 'Clustered Marker',
+        position: [5, 0, 0],
+        cluster: true,
+        head: { drawingNumber: params.drawingNumber, sheetNumber: params.sheetNumber },
+        bubbleRadius: params.bubbleRadius,
+      });
+    }
+
+    function rebuild() {
+      single.setOPConfig({
+        direction: params.direction,
+        head: { drawingNumber: params.drawingNumber, sheetNumber: params.sheetNumber },
+        bubbleRadius: params.bubbleRadius,
+      });
+      cluster.setOPConfig({
+        head: { drawingNumber: params.drawingNumber, sheetNumber: params.sheetNumber },
+        bubbleRadius: params.bubbleRadius,
+      });
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      gui.add(params, 'direction', ['N', 'S', 'E', 'W']).name('Single direction').onChange(rebuild);
+      gui.add(params, 'bubbleRadius', 0.2, 2, 0.1).name('Bubble radius').onChange(rebuild);
+      const head = gui.addFolder('Head');
+      head.add(params, 'drawingNumber').name('Drawing #').onChange(rebuild);
+      head.add(params, 'sheetNumber').name('Sheet #').onChange(rebuild);
+      head.open();
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

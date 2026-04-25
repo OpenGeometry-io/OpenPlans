@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Semantic IFC Export</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans semantic IFC export example">
+  <meta name="author" content="OpenGeometry">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0d1b2a;
+      color: #e0e1dd;
+      font-family: "Space Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title,
+    .example-status {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(8, 15, 23, 0.85);
+      padding: 12px 18px;
+      z-index: 1000;
+      border: 1px solid rgba(224, 225, 221, 0.2);
+      letter-spacing: 1px;
+    }
+
+    .example-title {
+      top: 20px;
+      text-transform: uppercase;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .example-status {
+      bottom: 20px;
+      font-size: 12px;
+      width: min(720px, calc(100vw - 40px));
+      text-align: center;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Semantic IFC Export</div>
+  <div id="app"></div>
+  <div class="example-status" id="status">Initializing semantic document...</div>
+
+  <script type="module">
+    import { OpenPlans, CameraMode } from "./../src/index.ts";
+    import wasmUrl from "opengeometry/opengeometry_bg.wasm?url";
+    import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+
+    let openPlans;
+    let wall;
+    let door;
+    let window2D;
+    let statusNode;
+
+    function syncDoorPosition(x, z) {
+      door.doorPosition = { x, y: 0, z };
+      door.position.set(x, 0, z);
+    }
+
+    function syncWindowPosition(x, z) {
+      window2D.windowPosition = { x, y: 0, z };
+      window2D.position.set(x, 0, z);
+    }
+
+    async function init() {
+      statusNode = document.getElementById("status");
+      const container = document.getElementById("app");
+
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry(wasmUrl);
+      openPlans.CameraMode = CameraMode.Plan;
+      openPlans.openThree.toggleTheme("darkBlue");
+      openPlans.showGrid = false;
+
+      openPlans.createPlanDocument({
+        projectName: "OpenPlans Semantic Export Demo",
+        siteName: "OpenPlans Demo Site",
+        buildingName: "OpenPlans Demo Building",
+        storeyName: "Ground Floor",
+      });
+
+      wall = openPlans.wall2D({
+        labelName: "North Wall",
+        points: [
+          { x: -5, y: 0, z: 0 },
+          { x: 5, y: 0, z: 0 },
+        ],
+        wallThickness: 0.35,
+        wallHeight: 3.2,
+        wallColor: 0xa7c957,
+      });
+
+      door = openPlans.door2D({
+        labelName: "Entry Door",
+        doorDimensions: { width: 1.1, height: 2.1, thickness: 0.18 },
+        frameDimensions: { width: 0.18, height: 2.1, thickness: 0.3 },
+        doorColor: 0xbc6c25,
+        frameColor: 0x1b4332,
+      });
+      syncDoorPosition(-1.4, 0);
+
+      window2D = openPlans.singleWindow2D({
+        labelName: "Living Window",
+        windowDimensions: { width: 1.8, thickness: 0.18 },
+        frameDimensions: { width: 0.18, thickness: 0.25 },
+        frameColor: 0x14213d,
+        glassColor: 0x8ecae6,
+      });
+      syncWindowPosition(2.2, 0);
+
+      await openPlans.fit(wall.id);
+      statusNode.textContent = "Semantic wall, door, and window ready. Use the panel to edit colors, sizes, and export IFC.";
+    }
+
+    function downloadIfc(text) {
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "openplans-semantic-export.ifc";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function setupGui() {
+      const gui = new GUI();
+
+      const wallFolder = gui.addFolder("Wall");
+      const wallState = {
+        wallThickness: wall.wallThickness,
+        wallHeight: wall.wallHeight,
+        wallColor: wall.propertySet.wallColor,
+      };
+      wallFolder.add(wallState, "wallThickness", 0.15, 0.6, 0.01).name("Thickness").onChange((value) => {
+        wall.wallThickness = value;
+      });
+      wallFolder.add(wallState, "wallHeight", 2.2, 4.5, 0.1).name("Height").onChange((value) => {
+        wall.wallHeight = value;
+      });
+      wallFolder.addColor(wallState, "wallColor").name("Wall Color").onChange((value) => {
+        wall.wallColor = value;
+      });
+      wallFolder.open();
+
+      const doorFolder = gui.addFolder("Door");
+      const doorState = {
+        doorWidth: door.doorDimensions.width,
+        doorColor: door.doorColor,
+        frameColor: door.frameColor,
+        doorX: door.position.x,
+      };
+      doorFolder.add(doorState, "doorWidth", 0.8, 1.8, 0.05).name("Width").onChange((value) => {
+        door.doorDimensions = { ...door.doorDimensions, width: value };
+      });
+      doorFolder.add(doorState, "doorX", -3.5, 0.5, 0.1).name("Position X").onChange((value) => {
+        syncDoorPosition(value, 0);
+      });
+      doorFolder.addColor(doorState, "doorColor").name("Door Color").onChange((value) => {
+        door.doorColor = value;
+      });
+      doorFolder.addColor(doorState, "frameColor").name("Frame Color").onChange((value) => {
+        door.frameColor = value;
+      });
+
+      const windowFolder = gui.addFolder("Window");
+      const windowState = {
+        windowWidth: window2D.windowDimensions.width,
+        frameColor: window2D.frameColor,
+        glassColor: window2D.glassColor,
+        windowX: window2D.position.x,
+      };
+      windowFolder.add(windowState, "windowWidth", 1.0, 2.8, 0.05).name("Width").onChange((value) => {
+        window2D.windowDimensions = { ...window2D.windowDimensions, width: value };
+      });
+      windowFolder.add(windowState, "windowX", 0.5, 4.0, 0.1).name("Position X").onChange((value) => {
+        syncWindowPosition(value, 0);
+      });
+      windowFolder.addColor(windowState, "frameColor").name("Frame Color").onChange((value) => {
+        window2D.frameColor = value;
+      });
+      windowFolder.addColor(windowState, "glassColor").name("Glass Color").onChange((value) => {
+        window2D.glassColor = value;
+      });
+
+      gui.add(
+        {
+          inspectDocument() {
+            const generated = openPlans.generateDocument();
+            console.groupCollapsed("[openplans] semantic document");
+            console.log("document", openPlans.document.toJSON());
+            console.log("generated", generated);
+            console.groupEnd();
+            statusNode.textContent = "Semantic document generated. Inspect the browser console for normalized IFC payload details.";
+          },
+        },
+        "inspectDocument",
+      ).name("Inspect Semantic Doc");
+
+      gui.add(
+        {
+          async exportIfc() {
+            try {
+              statusNode.textContent = "Exporting IFC from semantic document...";
+              const result = await openPlans.exportIfc();
+              downloadIfc(result.text);
+              const report = JSON.parse(result.reportJson);
+              statusNode.textContent = `IFC export complete: ${report.exported_elements} elements, ${report.property_sets_written} property sets, ${report.quantity_sets_written} quantity sets.`;
+            } catch (error) {
+              console.error("[openplans] IFC export failed", error);
+              statusNode.textContent = `IFC export failed: ${error instanceof Error ? error.message : error}`;
+            }
+          },
+        },
+        "exportIfc",
+      ).name("Export IFC");
+    }
+
+    (async function run() {
+      await init();
+      setupGui();
+    })();
+  </script>
+</body>
+
+</html>

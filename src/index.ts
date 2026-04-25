@@ -1,575 +1,409 @@
-/**
- * OpenPlans - A 2D and 3D Library for Architectural, Engineering and Mechanical Design
- * Copyright (c) 2025 OpenGeometry
- * All rights reserved.
- *
- * Author: OpenGeometry Team | Vishwajeet Mane
- * Contact: info@opengeometry.io
- * License: MIT
- */
-
-// External Packages
-import { IArcOptions, ICuboidOptions, ICylinderOptions, ILineOptions, IPolylineOptions, IRectangleOptions, OpenGeometry } from './kernel/';
+import { OpenGeometry } from 'opengeometry';
 import * as THREE from 'three';
-import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { GlyphNode, Glyphs } from '@opengeometry/openglyph';
+import { OpenThree } from './packages/openplans-three/src/three';
+import { CameraMode, PlanCamera } from './packages/openplans-three/src/plancamera';
 
-// Generic Services
-import { OpenThree } from './service/three';
-import { PlanCamera } from './service/plancamera';
-import convertToOGFormat from './parser/ImpleniaConverter';
+import { RectanglePrimitive, RectangleOptions, ArcPrimitive, ArcOptions, PolylinePrimitive, PolylineOptions, LineOptions, LinePrimitive  } from './packages/openplans-core/src/primitives';
+import { CuboidOptions, CuboidShape, CylinderOptions, CylinderShape } from './packages/openplans-core/src/shapes';
+import {
+  Bathtub,
+  Bed,
+  Bench,
+  Bidet,
+  Board,
+  Cabinet,
+  Chair,
+  Counter,
+  Desk,
+  DiningTable,
+  Dishwasher,
+  Door,
+  DoubleDoor,
+  DoubleWindow,
+  Fountain,
+  Island,
+  KitchenSink,
+  Planter,
+  Refrigerator,
+  Sink,
+  Shower,
+  Slab,
+  Sofa,
+  Space,
+  Stair,
+  Stove,
+  Shrub,
+  Toilet,
+  Tree,
+  Urinal,
+  SingleWall,
+  PolyWall,
+  // WallSystem,
+  WallOpening,
+  Washer,
+  Window,
+  Wardrobe,
+} from './packages/openplans-core/src/elements';
 
-// Primitives, 2D Elements and Shapes
-import { ArcPrimitive } from './primitives/arc';
-import { DimensionTool } from './dimensions';
-import { PolylinePrimitive, RectanglePrimitive } from './primitives/index';
-import { LinePrimitive } from './primitives/line';
-import { CuboidShape } from './shapes/cuboid';
-import { CylinderShape } from './shapes/cylinder';
-import { BaseDoor, OPDoor } from './elements/base-door';
-import { BaseSingleWindow, OPSingleWindow } from './elements/base-single-window';
-import { BaseDoubleWindow, OPDoubleWindow } from './elements/base-double-window';
-import { BaseSlab, OPSlab } from './elements/base-slab';
-import { BaseStair, OPStair } from './elements/base-stair';
+import { ViewManager } from './packages/openplans-core/src/view-manager';
 
-// Drawing and Layout
-import { PaperFrame, PaperFrameOptions } from './layouts/';
+import {
+  DatumTool,
+  Level,
+  LevelOptions,
+  Grid,
+  GridOptions,
+  ReferencePlane,
+  ReferencePlaneOptions,
+  ProjectOrigin,
+  ProjectOriginOptions,
+  SectionLine,
+  SectionLineOptions,
+  ElevationMarker,
+  ElevationMarkerOptions,
+} from './packages/openplans-core/src/datums';
 
-// Utils
 import { Event } from './utils/event';
+import { Opening } from './packages/openplans-core/src/elements/openings/opening';
 
-// Elements
-import { Board, BoardOptions } from './elements/board';
+// Camera Modes
+export { CameraMode } from './packages/openplans-three/src/plancamera';
+export * from './packages/openplans-core/src';
+export { Door, Window, SingleWall, PolyWall, WallOpening, /* WallSystem */  };
 
-// Shapes
-export * from "./primitives/index";
-
-// Shape Builders
-export * from "./shape-builder/index";
-export * from './kernel/';
+export type Theme = 'light' | 'dark' | 'darkBlue';
 
 export class OpenPlans {
-  private container: HTMLElement
-  private openThree: OpenThree
-  static sOThree: OpenThree;
- 
-  // private pencil: Pencil | undefined;
+  // private container: HTMLElement;
+  private openThree: OpenThree;
+  private planCamera: PlanCamera;
+  // private wallSystem: WallSystem;
+
+  private elements: Array<THREE.Object3D> = [];
   
-  private planCamera: PlanCamera
+  // TODO: Make this optional later and lazy load when needed
+  // Views and Layouts
+  viewManager: ViewManager = new ViewManager();
 
-  private og: OpenGeometry | undefined
-  private ogElements: any[] = [];
+  // Events
+  onRender: Event<any> = new Event<any>();
 
-  private labelRenderer: CSS2DRenderer | undefined;
+  set CameraMode(mode: CameraMode) {
+    this.planCamera.CameraMode = mode;
+  }
 
-  private onRender: Event<void> = new Event<void>();
-
-
-  // 2D Views and Profile Views
-  private profileViews: Map<string, { camera: THREE.Camera; renderer: THREE.WebGLRenderer; container: HTMLElement }> = new Map();
+  get CameraMode() {
+    return this.planCamera.CameraMode;
+  }
 
   constructor(container: HTMLElement) {
-    // this.renderCallback = this.renderCallback.bind(this)
-
-    this.container = container
+    // this.container = container
     this.openThree = new OpenThree(container, this.renderCallback)
-    OpenPlans.sOThree = this.openThree;
-
+    // OpenPlans.sOThree = this.openThree;
     this.planCamera = this.openThree.planCamera
-    
-    this.openThree.planCamera.controls.addEventListener("update", () => {
-      Glyphs.updateManager(this.openThree.threeCamera)
-    });
+    // this.wallSystem = new WallSystem();
 
-    this.setuplabelRenderer();
-    this.setupEvent();
+    // this.openThree.planCamera.controls.addEventListener("update", () => {
+    //   Glyphs.updateManager(this.openThree.threeCamera)
+    // });
+
+    // this.setuplabelRenderer();
+    // this.setupEvent();
   }
-
-
-  // 2D Views and Profile Views
-  // TODO: Create proper 2D view management system, where user can create multiple 2D views at different heights and that view will be rendered accordingly in given container
-  // TODO: Using this system, we can create section views as well and get reference to those views which can be used to generate 2D drawings later
-  // TODO: These views can be also saved as part of the Element Views
-  
-  /**
-   * Create a 2D view in the given container.
-   * @param container The HTML container element where the 2D view will be rendered.
-   */
-  create2DView(container: HTMLElement, sectionHeight: number = 0): { camera: THREE.Camera; renderer: THREE.WebGLRenderer } {
-    const aspect = container.clientWidth / container.clientHeight;
-    const camera = new THREE.OrthographicCamera(-aspect * 1.5 / 2, aspect * 1.5 / 2, 1.5 / 2, -1.5 / 2, 0.01, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
-
-    // rotate camera to look down
-    camera.position.set(0, 20, 0);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-    const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionHeight);
-    renderer.clippingPlanes = [clippingPlane];
-    renderer.localClippingEnabled = true;
-
-    this.profileViews.set(container.id, { camera, renderer, container });
-
-    return { camera, renderer  };
-  }
-  
-  /**
-   * Show or hide the 2D view.
-   * @param show Whether to show or hide the 2D view
-   * @param orthographic Whether to use orthographic projection
-   * @param height The height of the 2D view
-   */
-  // toggle2DView(show: boolean, orthographic: boolean = true, height: number = 0) { 
-
-  // set enablePencil(value: boolean) {
-  //   if (value && !this.pencil) {
-  //     if (!this.container || !this.scene) {
-  //       throw new Error("Container or Scene is not defined");
-  //     }
-  //     this.pencil = new Pencil(this.container, this.scene, this.camera);
-  //   } else if (!value && this.pencil) {
-  //     // TODO: Disable The Pencil Usage and Dispose it
-  //   }
-  // }
-
-  // TODO: Can this be handled inside the OpenGeometry class itself?
-  /**
-   * Updates the label renderer to render the scene with the given camera.
-   * This method should be called in the animation loop or render loop of your application.
-   * @param scene - The Three.js scene containing the objects to be rendered.
-   * @param camera - The Three.js camera used for rendering the scene.
-   */
-  update(scene: THREE.Scene, camera: THREE.Camera) {
-    this.labelRenderer?.render(scene, camera);
-  }
-
-  private setuplabelRenderer() {
-    if (!this.container || !this.openThree.scene) {
-      throw new Error("Container or Scene is not defined");
-    }
-
-    const labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    labelRenderer.domElement.style.position = "absolute";
-    labelRenderer.domElement.style.top = "0";
-    this.container.appendChild(labelRenderer.domElement);
-    this.labelRenderer = labelRenderer;
-  }
-
-  private setupEvent() {
-    // NOTE: The responsibility to resize normal rendererer lies with the user
-    // but the label renderer should be resized automatically
-    window.addEventListener("resize", () => {
-      if (!this.container) return;
-      this.labelRenderer?.setSize(this.container?.clientWidth, this.container?.clientHeight);
-    });
-  }
-
-  // This function is called on each animation frame, called from OpenThree class using callback
-  private renderCallback = () => {
-    if (this.openThree && this.labelRenderer) {
-      // console.log('Rendering labels');
-      this.labelRenderer.render(this.openThree.scene, this.openThree.threeCamera);
-    }
-
-    if (this.profileViews.size > 0) {
-      // console.log('Rendering 2D/Profile Views');
-      this.profileViews.forEach(({ camera: profileCamera, renderer: profileRenderer, container }) => {
-        profileRenderer.render(this.openThree.scene, profileCamera);
-      });
-    }
-  }
-
-  //   for (const element of this.ogElements) {
-  //     if (
-  //       element.ogType === 'polyline' || 
-  //       element.ogType === 'polygon' ||
-  //       element.ogType === 'baseWall' ||
-  //       element.ogType === 'baseDoor' ||
-  //       element.ogType === 'baseWindow'
-  //     ) {
-  //       element.calulateAnchorEdges(true);
-  //     }
-
-  //     if (
-  //       element.ogType === 'genericBuilder'
-  //     ) {
-  //       element.recalculateOverlay();
-  //     }
-  //   }
-
-  //   this.onRender.trigger();
-  // }
 
   async setupOpenGeometry(wasmURL?: string) {
-    this.og = await OpenGeometry.create({ wasmURL });
+    await OpenGeometry.create({
+      wasmURL: wasmURL
+    });
 
-    await Glyphs.loadFaces('Source_Code_Pro_Regular');
-    Glyphs.scene = this.openThree.scene
-    Glyphs.camera = this.openThree.threeCamera
+    // await Glyphs.loadFaces('Edu_NSW_ACT_Foundation_Regular');
+    // Glyphs.scene = this.openThree.scene
+    // Glyphs.camera = this.openThree.threeCamera
 
-    const dimensionTool = DimensionTool;
-    dimensionTool.sceneRef = this.openThree.scene;
+    // const dimensionTool = DimensionTool;
+    // dimensionTool.sceneRef = this.openThree.scene;
+
+    DatumTool.sceneRef = this.openThree.scene;
 
     // this.pencil?.onCursorDown.add((coords) => {
     //   console.log('Cursor Down', coords)
     // });
-    
+
     // if (this.pencil) {
     //   ShapeSelector.pencil = this.pencil;
     //   // ShapeEditor.pencil = this.pencil;
     // }
   }
 
-  disposeElement(ogid: string) {
-    const element = this.ogElements.find((el) => el.ogid === ogid);
-    if (element) {
-      element.dispose();
-      this.openThree.scene.remove(element);
-      this.ogElements.splice(this.ogElements.indexOf(element), 1);
-    } else {
-      console.warn(`Element with ogid ${ogid} not found`);
-    }
-  }
-
-  // Primitives
-  line(config?: ILineOptions) {
-    const line = new LinePrimitive(config);
-    this.openThree.scene.add(line);
-    this.ogElements.push(line);
-    return line;
-  }
-
-  arc(config?: IArcOptions) {
-    // if (!this.pencil) {
-    //   throw new Error('Pencil not initialized')
+  private renderCallback = () => {
+    this.onRender.trigger();
+    // if (this.openThree && this.labelRenderer) {
+    //   // console.log('Rendering labels');
+    //   this.labelRenderer.render(this.openThree.scene, this.openThree.threeCamera);
     // }
-    const arc = new ArcPrimitive(config);
-    // arc.pencil = this.pencil;
-    this.openThree.scene.add(arc);
-    this.ogElements.push(arc);
-    return arc;
-  }
 
-  rectangle(config?: IRectangleOptions) {
-    const rectangle = new RectanglePrimitive(config);
-    this.openThree.scene.add(rectangle);
-    this.ogElements.push(rectangle);
-    return rectangle;
-  }
-
-  polyline(config?: IPolylineOptions) {
-    const polyline = new PolylinePrimitive(config);
-    this.openThree.scene.add(polyline);
-    this.ogElements.push(polyline);
-    return polyline;
-  }
-
-  // Shapes
-  cuboid(config?: ICuboidOptions) {
-    const cuboid = new CuboidShape(config);
-    this.openThree.scene.add(cuboid);
-    this.ogElements.push(cuboid);
-    return cuboid;
-  }
-
-  cylinder(config?: ICylinderOptions) {
-    const cylinder = new CylinderShape(config);
-    this.openThree.scene.add(cylinder);
-    this.ogElements.push(cylinder);
-    return cylinder;
-  }
-
-  // baseWall(config: IBaseWall): BaseWall {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const wall = new BaseWall(config);
-  //   wall.pencil = this.pencil;
-  //   // this.openThree.scene.add(wall)
-  //   this.ogElements.push(wall)
-  //   return wall
-  // }
-
-  baseSingleWindow(config?: OPSingleWindow): BaseSingleWindow {
-    const window = new BaseSingleWindow(config);
-    this.openThree.scene.add(window)
-    this.ogElements.push(window)
-    return window
-  }
-
-  baseDoubleWindow(config?: OPDoubleWindow): BaseDoubleWindow {
-    const window = new BaseDoubleWindow(config);
-    this.openThree.scene.add(window)
-    this.ogElements.push(window)
-    return window
-  }
-
-  baseDoor(config?: OPDoor): BaseDoor {
-    const door = new BaseDoor(config);
-    this.openThree.scene.add(door)
-    this.ogElements.push(door)
-    return door
-  }
-
-  baseSlab(config?: OPSlab): BaseSlab {
-    const slab = new BaseSlab(config);
-    this.openThree.scene.add(slab)
-    this.ogElements.push(slab)
-    return slab
-  }
-
-  baseStair(config?: OPStair): BaseStair {
-    const stair = new BaseStair(config);
-    this.openThree.scene.add(stair)
-    this.ogElements.push(stair)
-    return stair
-  }
-
-  // space(): BaseSpace {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const space = new BaseSpace(this.pencil)
-  //   this.openThree.scene.add(space)
-  //   this.ogElements.push(space)
-  //   return space
-  // }
-
-  // doubleWindow(): DoubleWindow {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const window = new DoubleWindow(this.pencil)
-  //   // this.openThree.scene.add(window)
-  //   this.ogElements.push(window)
-  //   return window
-  // }
-
-  board(boardConfig?: BoardOptions): Board {
-    // if (!this.pencil) {
-    //   throw new Error('Pencil not initialized')
+    // if (this.profileViews.size > 0) {
+    //   // console.log('Rendering 2D/Profile Views');
+    //   this.profileViews.forEach(({ camera: profileCamera, renderer: profileRenderer }) => {
+    //     profileRenderer.render(this.openThree.scene, profileCamera);
+    //   });
     // }
-    const board = new Board(boardConfig)
-    this.openThree.scene.add(board)
-    this.ogElements.push(board)
-    return board
+
+    // const viewportBlocks = this.getEntitiesByType('VIEWPORT_BLOCK');
+    // viewportBlocks.forEach((viewportBlock: ViewportBlock) => {
+    //   viewportBlock.render(this.openThree.renderer, this.openThree.scene);
+    // });
   }
 
-  /***** Shape Builders *****/
-
-  /**
-   * Create Polyline using Interactive Builder
-   * @param polyLineConfig 
-   * @returns 
-   */
-  // polylineBuilder(polyLineConfig?: IPolylineBuilder): PolylineBuilder {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const polylineBuilder = new PolylineBuilder(polyLineConfig)
-  //   polylineBuilder.pencil = this.pencil;
-  //   // this.openThree.scene.add(polylineBuilder)
-  //   this.ogElements.push(polylineBuilder)
-  //   return polylineBuilder
+  // /**
+  //  * 
+  //  * @param theme 
+  //  */
+  // theme(theme: Theme) {
+  //   this.openThree.applyTheme(theme);
   // }
 
-  // polygonBuilder(polygonConfig?: IPolygonBuilder): PolygonBuilder {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized')
-  //   }
-  //   const polygonBuilder = new PolygonBuilder(polygonConfig)
-  //   polygonBuilder.pencil = this.pencil;
-  //   this.openThree.scene.add(polygonBuilder)
-  //   this.ogElements.push(polygonBuilder)
-  //   return polygonBuilder
-  // }
-
-  /***** Utilities *****/
-
-  getEntitiesByType(type: string) {
-    return this.ogElements.filter((el) => el.ogType === type)
+  fitToView(elements: THREE.Object3D[]) {
+    const controls = this.planCamera.controls;
+    const boundingBox = new THREE.Box3();
+    elements.forEach((element) => {
+      boundingBox.expandByObject(element);
+    });
+    controls.fitToSphere(boundingBox.getBoundingSphere(new THREE.Sphere()), true);
   }
 
-  fit(element: string) {
-    if (!element) return
-    const entities = this.getEntitiesByType(element)
-    if (entities.length === 0) return
-    this.planCamera.fitToElement(entities)
-  }
-
-  glyph(text: string, size: number, color: number, staticZoom: boolean = true) {
-    const glyph = Glyphs.addGlyph(text, size, color, staticZoom)
-    return glyph
-  }
-
-  getGlyph(id: string): GlyphNode {
-    const glyph = Glyphs.getGlyph(id)
-    if (!glyph) throw new Error('Glyph not found')
-    return glyph
-  }
-
-  selectGlyph(id: string) {
-    if (!id) throw new Error('ID not provided')
-    Glyphs.selectGlyph(id)
-  }
-
-  rotateGlyph(id: string, angle: number) {
-    if (!id) throw new Error('ID not provided')
-    Glyphs.rotateGlyph(id, angle)
-  }
-
-  get glyphNodes() {
-    return Glyphs.glyphNodes
-  }
-
-  clearGlyphSelection() {
-    Glyphs.clearSelection()
-  }
-
-  updateGlyphText(id: string, text: string) {
-    Glyphs.updateGlyphText(id, text)
-  }
-
-  convertImpleniaToOGFormat(sourceJson: any) {
-    const ogJSON = convertToOGFormat(sourceJson);
-    // this.generateGeometry(ogJSON);
-  }
-
-  public startEditingSpaces() {
-    const spaces = this.getEntitiesByType('space');
-    for (let i = 0; i < spaces.length; i++) {
-      // change material to white
-      const baseMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-      spaces[i].material = baseMaterial;
-
-      spaces[i].isEditing = true;
-    }
-  }
-
-  public stopEditingSpaces() {
-    const spaces = this.getEntitiesByType('space');
-    for (let i = 0; i < spaces.length; i++) {
-      spaces[i].isEditing = false;
-      spaces[i].material = new THREE.MeshBasicMaterial({ color: spaces[i].spaceSet.color, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-    }
-  }
-
-  public fitToSpace(spaceId: string) {
-    const space = this.getEntitiesByType('space').find((s) => s.name === spaceId);
-    if (!space) return;
-    this.planCamera.fitToElement([space]);
-  }
-
-  public fitToAllSpaces() {
-    const spaces = this.getEntitiesByType('space');
-    this.planCamera.fitToElement(spaces);
-  }
-
-  public getSpaceData(spaceId: string) {
-    const space = this.getEntitiesByType('space').find((s) => s.name === spaceId);
-    if (!space) return;
-    return space.spaceSet;
-  }
-
-  public getSpaceArea(spaceId: string) {
-    const space = this.getEntitiesByType('space').find((s) => s.name === spaceId);
-    if (!space) return;
-    const spaceArea = space.area;
-    return spaceArea;
-  }
-
-  public getElementArea(elementId: string) {
-    const element = this.ogElements.find((el) => el.id === elementId);
-    if (!element) return;
-    const elementArea = element.area;
-    return elementArea;
-  }
-
-  /**
-   * Paper Creation and Frames
-   */
-  paperFrame(config: PaperFrameOptions) {
-    // if (!this.pencil) {
-    //   throw new Error('Pencil not initialized')
-    // }
-    const paperFrame = new PaperFrame(config)
-    this.openThree.scene.add(paperFrame)
-    this.ogElements.push(paperFrame)
-    return paperFrame
-  }
-
-  // logoInfoBlock(options:LogoInfoBlockOptions) {
-  //   const logoBlock = new LogoInfoBlock(options);
-  //   this.openThree.scene.add(logoBlock);
-  //   return logoBlock
-  // }
-
-  // rowInfoBlock(options: RowInfoBlockOptions) {
-  //   const rowInfoBlock = new RowInfoBlock(options);
-  //   this.openThree.scene.add(rowInfoBlock);
-  //   return rowInfoBlock;
-  // }
-
-  static toScreenPosition(pos: THREE.Vector3): { x: number; y: number } {
-    const vector = pos.clone().project(OpenPlans.sOThree.threeCamera);
-  
-    const halfWidth = OpenPlans.sOThree.renderer.domElement.clientWidth / 2;
-    const halfHeight = OpenPlans.sOThree.renderer.domElement.clientHeight / 2;
-  
-    return {
-      x: vector.x * halfWidth + halfWidth,
-      y: -vector.y * halfHeight + halfHeight
-    };
-  }
-
-  // THREE METHODS
-  set showGrid(show: boolean) {
+  toggleGrid(show: boolean) {
     this.openThree.toggleGrid(show);
   }
 
-  // addCustomObject(genericObject: GenericBuilder) {
-  //   if (!this.pencil) {
-  //     throw new Error('Pencil not initialized');
-  //   }
+  getWallSystem() {
+    // return this.wallSystem;
+  }
 
-  //   this.openThree.scene.add(genericObject);
-  //   genericObject.pencil = this.pencil;
-  //   this.ogElements.push(genericObject);
+  private addElement<T extends THREE.Object3D>(element: T) {
+    this.openThree.scene.add(element);
+    this.elements.push(element);
+    // if (element instanceof Wall) {
+    //   this.wallSystem.register(element);
+    // }
+    return element;
+  }
+
+  getElementById(id: string) {
+    return this.elements.find(el => el.userData.ogid === id);
+  }
+
+  getElementsByType<T extends THREE.Object3D>(type: new (...args: any[]) => T): T[] {
+    return this.elements.filter(el => el instanceof type) as T[];
+  }
+
+  arc(config?: ArcOptions) {
+    const arc = new ArcPrimitive(config);
+    return this.addElement(arc);
+  }
+
+  rectangle(config?: RectangleOptions) {
+    const rectangle = new RectanglePrimitive(config);
+    return this.addElement(rectangle);
+  }
+
+  polyline(config?: PolylineOptions) {
+    const polyline = new PolylinePrimitive(config);
+    return this.addElement(polyline);
+  }
+
+  line(config?: LineOptions) {
+    const line = new LinePrimitive(config);
+    return this.addElement(line);
+  }
+
+  // Shapes
+  cuboid(config?: CuboidOptions) {
+    const cuboid = new CuboidShape(config);
+    return this.addElement(cuboid);
+  }
+
+  cylinder(config?: CylinderOptions) {
+    const cylinder = new CylinderShape(config);
+    return this.addElement(cylinder);
+  }
+
+  // Elements
+  opening(config?: ConstructorParameters<typeof Opening>[0]) {
+    return this.addElement(new Opening(config));
+  }
+
+  singleWall(config?: ConstructorParameters<typeof SingleWall>[0]) {
+    const singleWall = new SingleWall(config);
+    return this.addElement(singleWall);
+  }
+
+  polyWall(config?: ConstructorParameters<typeof PolyWall>[0]) {
+    return this.addElement(new PolyWall(config));
+  }
+
+  wallOpening(config?: ConstructorParameters<typeof WallOpening>[0]) {
+    return this.addElement(new WallOpening(config));
+  }
+
+  door(config?: ConstructorParameters<typeof Door>[0]) {
+    return this.addElement(new Door(config));
+  }
+
+  window(config?: ConstructorParameters<typeof Window>[0]) {
+    return this.addElement(new Window(config));
+  }
+
+  // doubleDoor(config?: ConstructorParameters<typeof DoubleDoor>[0]) {
+  //   return this.addElement(new DoubleDoor(config));
   // }
 
-  addImagePlane(dataURL: string) {
-    // if (!this.pencil) {
-    //   throw new Error('Pencil not initialized');
-    // }
-    
-    // const link = document.createElement('a');
-    // link.href = dataURL;
-    // link.download = 'image.png'; // You can change the file name/format
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
+  // doubleWindow(config?: ConstructorParameters<typeof DoubleWindow>[0]) {
+  //   return this.addElement(new DoubleWindow(config));
+  // }
 
-    const texture = new THREE.TextureLoader().load(dataURL, (texture) => {
-      const geometry = new THREE.PlaneGeometry(
-        texture.image.width,
-        texture.image.height
-      );
-      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-      const mesh = new THREE.Mesh(geometry, material);
-      
-      // Set position and scale as needed
-      mesh.position.set(0, -0.1, 0);
-      mesh.scale.set(0.239, 0.239, 0.239); // Adjust scale as needed
+  // slab(config?: ConstructorParameters<typeof Slab>[0]) {
+  //   return this.addElement(new Slab(config));
+  // }
 
-      mesh.rotateX(-Math.PI / 2); // Rotate to face upwards
+  // stair(config?: ConstructorParameters<typeof Stair>[0]) {
+  //   return this.addElement(new Stair(config));
+  // }
 
-      this.openThree.scene.add(mesh);
-      this.ogElements.push(mesh);
-    });
+  // board(config?: ConstructorParameters<typeof Board>[0]) {
+  //   return this.addElement(new Board(config));
+  // }
+
+  // space(config?: ConstructorParameters<typeof Space>[0]) {
+  //   return this.addElement(new Space(config));
+  // }
+
+  // chair(config?: ConstructorParameters<typeof Chair>[0]) {
+  //   return this.addElement(new Chair(config));
+  // }
+
+  // sofa(config?: ConstructorParameters<typeof Sofa>[0]) {
+  //   return this.addElement(new Sofa(config));
+  // }
+
+  // bed(config?: ConstructorParameters<typeof Bed>[0]) {
+  //   return this.addElement(new Bed(config));
+  // }
+
+  // wardrobe(config?: ConstructorParameters<typeof Wardrobe>[0]) {
+  //   return this.addElement(new Wardrobe(config));
+  // }
+
+  // desk(config?: ConstructorParameters<typeof Desk>[0]) {
+  //   return this.addElement(new Desk(config));
+  // }
+
+  // diningTable(config?: ConstructorParameters<typeof DiningTable>[0]) {
+  //   return this.addElement(new DiningTable(config));
+  // }
+
+  // toilet(config?: ConstructorParameters<typeof Toilet>[0]) {
+  //   return this.addElement(new Toilet(config));
+  // }
+
+  // sink(config?: ConstructorParameters<typeof Sink>[0]) {
+  //   return this.addElement(new Sink(config));
+  // }
+
+  // shower(config?: ConstructorParameters<typeof Shower>[0]) {
+  //   return this.addElement(new Shower(config));
+  // }
+
+  // bathtub(config?: ConstructorParameters<typeof Bathtub>[0]) {
+  //   return this.addElement(new Bathtub(config));
+  // }
+
+  // bidet(config?: ConstructorParameters<typeof Bidet>[0]) {
+  //   return this.addElement(new Bidet(config));
+  // }
+
+  // urinal(config?: ConstructorParameters<typeof Urinal>[0]) {
+  //   return this.addElement(new Urinal(config));
+  // }
+
+  // refrigerator(config?: ConstructorParameters<typeof Refrigerator>[0]) {
+  //   return this.addElement(new Refrigerator(config));
+  // }
+
+  // stove(config?: ConstructorParameters<typeof Stove>[0]) {
+  //   return this.addElement(new Stove(config));
+  // }
+
+  // washer(config?: ConstructorParameters<typeof Washer>[0]) {
+  //   return this.addElement(new Washer(config));
+  // }
+
+  // dishwasher(config?: ConstructorParameters<typeof Dishwasher>[0]) {
+  //   return this.addElement(new Dishwasher(config));
+  // }
+
+  // kitchenSink(config?: ConstructorParameters<typeof KitchenSink>[0]) {
+  //   return this.addElement(new KitchenSink(config));
+  // }
+
+  // counter(config?: ConstructorParameters<typeof Counter>[0]) {
+  //   return this.addElement(new Counter(config));
+  // }
+
+  // cabinet(config?: ConstructorParameters<typeof Cabinet>[0]) {
+  //   return this.addElement(new Cabinet(config));
+  // }
+
+  // island(config?: ConstructorParameters<typeof Island>[0]) {
+  //   return this.addElement(new Island(config));
+  // }
+
+  // tree(config?: ConstructorParameters<typeof Tree>[0]) {
+  //   return this.addElement(new Tree(config));
+  // }
+
+  // shrub(config?: ConstructorParameters<typeof Shrub>[0]) {
+  //   return this.addElement(new Shrub(config));
+  // }
+
+  // planter(config?: ConstructorParameters<typeof Planter>[0]) {
+  //   return this.addElement(new Planter(config));
+  // }
+
+  // fountain(config?: ConstructorParameters<typeof Fountain>[0]) {
+  //   return this.addElement(new Fountain(config));
+  // }
+
+  // bench(config?: ConstructorParameters<typeof Bench>[0]) {
+  //   return this.addElement(new Bench(config));
+  // }
+
+  // Datums — reference geometry (levels, grids, reference planes, origin,
+  // section lines, elevation markers). Match the element factory style:
+  // direct instantiation inside the method, then register with the scene
+  // via addElement.
+
+  level(config?: Partial<LevelOptions>) {
+    return this.addElement(new Level(config));
+  }
+
+  grid(config?: Partial<GridOptions>) {
+    return this.addElement(new Grid(config));
+  }
+
+  referencePlane(config?: Partial<ReferencePlaneOptions>) {
+    return this.addElement(new ReferencePlane(config));
+  }
+
+  projectOrigin(config?: Partial<ProjectOriginOptions>) {
+    return this.addElement(new ProjectOrigin(config));
+  }
+
+  sectionLine(config?: Partial<SectionLineOptions>) {
+    return this.addElement(new SectionLine(config));
+  }
+
+  elevationMarker(config?: Partial<ElevationMarkerOptions>) {
+    return this.addElement(new ElevationMarker(config));
   }
 }
-
-

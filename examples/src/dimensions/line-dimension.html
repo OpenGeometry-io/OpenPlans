@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlan Line Dimensions</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+      cursor: unset !important;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Line Dimension</div>
+  <div id="app">
+  </div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let lengthDim;
+
+    // GUI parameters object
+    const params = {
+      startX: 1.5,
+      startY: 0,
+      startZ: 1,
+      endX: -3.5,
+      endY: 0,
+      endZ: 0,
+      spacing: 3.5,
+      lineColor: '#000000',
+      lineWidth: 2,
+      fontColor: '#000000',
+      fontSize: 3,
+      label: 'Dimension Label',
+    };
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.CameraMode = CameraMode.Model;
+
+      lengthDim = openPlans.createDimension("length");
+      console.log(lengthDim);
+      lengthDim.startPoint = [params.startX, params.startY, params.startZ];
+      lengthDim.endPoint = [params.endX, params.endY, params.endZ];
+    }
+
+    function hexToNumber(hex) {
+      return parseInt(hex.replace('#', ''), 16);
+    }
+
+    function numberToHex(num) {
+      return '#' + num.toString(16).padStart(6, '0');
+    }
+
+    function setUI() {
+      const gui = new GUI();
+
+      // Start Point folder
+      const startFolder = gui.addFolder('Start Point');
+      startFolder.add(params, 'startX', -10, 10, 0.1).name('X').onChange(() => {
+        lengthDim.startPoint = [params.startX, params.startY, params.startZ];
+      });
+      startFolder.add(params, 'startY', -10, 10, 0.1).name('Y').onChange(() => {
+        lengthDim.startPoint = [params.startX, params.startY, params.startZ];
+      });
+      startFolder.add(params, 'startZ', -10, 10, 0.1).name('Z').onChange(() => {
+        lengthDim.startPoint = [params.startX, params.startY, params.startZ];
+      });
+      startFolder.open();
+
+      // End Point folder
+      const endFolder = gui.addFolder('End Point');
+      endFolder.add(params, 'endX', -10, 10, 0.1).name('X').onChange(() => {
+        lengthDim.endPoint = [params.endX, params.endY, params.endZ];
+      });
+      endFolder.add(params, 'endY', -10, 10, 0.1).name('Y').onChange(() => {
+        lengthDim.endPoint = [params.endX, params.endY, params.endZ];
+      });
+      endFolder.add(params, 'endZ', -10, 10, 0.1).name('Z').onChange(() => {
+        lengthDim.endPoint = [params.endX, params.endY, params.endZ];
+      });
+      endFolder.open();
+
+      // Spacing
+      gui.add(params, 'spacing', -10, 10, 0.1).name('Spacing').onChange(() => {
+        lengthDim.spacing = params.spacing;
+      });
+
+      // Line Color
+      gui.addColor(params, 'lineColor').name('Line Color').onChange(() => {
+        lengthDim.lineColor = hexToNumber(params.lineColor);
+      });
+
+      // Line Width
+      gui.add(params, 'lineWidth', 1, 10, 0.5).name('Line Width').onChange(() => {
+        lengthDim.lineWidth = params.lineWidth;
+      });
+
+      // Label folder
+      const labelFolder = gui.addFolder('Label');
+      labelFolder.add(params, 'label').name('Text').onChange(() => {
+        lengthDim.label = params.label;
+      });
+      labelFolder.add(params, 'fontSize', 1, 10, 0.5).name('Font Size').onChange(() => {
+        lengthDim.fontSize = params.fontSize;
+      });
+      labelFolder.addColor(params, 'fontColor').name('Font Color').onChange(() => {
+        lengthDim.fontColor = hexToNumber(params.fontColor);
+      });
+      labelFolder.open();
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

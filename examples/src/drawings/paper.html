@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlan Paper Frame</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenGeometry Demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .example-title {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(26, 26, 26, 0.8);
+      padding: 12px 24px;
+      z-index: 1000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="example-title">Paper Frame</div>
+  <div id="app" style="width: 100%; height: 100vh;">
+  </div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from './../../src/index.ts';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    let openPlans;
+    let titleBlock, revBlock, dateBlock;
+    let paperFrame;
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.CameraMode = CameraMode.Plan;
+
+      openPlans.showGrid = false;
+      openPlans.openThree.toggleTheme('darkBlue');
+
+      // openPlans.pencil.mode = "select";
+
+      paperFrame = openPlans.paperFrame();
+      console.log(paperFrame);
+      // paperFrame.format = 'A4';
+      // paperFrame.margin = 10;
+      // paperFrame.paperName = 'VerticalPaper';
+
+      // Door
+      // const door = openPlans.baseDoor();
+      // door.position.set(0, 0, 0);
+
+      // // Paper Frame with Config
+      // paperFrame = openPlans.paperFrame({
+      //   ogid: 'fb844b7a-9306-408a-bd2d-1b78ec2402f4',
+      //   format: 'A2',
+      //   orientation: 'landscape',
+      //   margin: 2,
+      //   backgroundColor: 0xffffff,
+      //   borderColor: 0x000000,
+      // });
+      // paperFrame.position.set(50, 0, 0);
+
+      // infoBlock = openPlans.infoBlock();
+
+      // const logoInfoBlock = openPlans.logoInfoBlock(
+      //   {
+      //     type: 'logo',
+      //     width: 6,
+      //     height: 1.5,
+      //     url: 'https://raw.githubusercontent.com/OpenGeometry-io/.github/refs/heads/main/profile/opengeometryTextLogo.png',
+      //     name: 'OpenGeometry Logo',
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // logoInfoBlock.position.set(0, 0, 2.5);
+
+      // titleBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 6,
+      //     height: 1.5,
+      //     title: 'Studio Name',
+      //     description: 'Company Description',
+      //     fontSize: 3,
+      //     fontColor: 0x44460FF,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // titleBlock.position.set(0, 0, 4);
+
+      // revBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 3,
+      //     height: 1.5,
+      //     title: 'Revision',
+      //     description: 'Rev A',
+      //     fontSize: 2,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // revBlock.position.set(-1.5, 0, 5.5);
+
+      // dateBlock = openPlans.rowInfoBlock(
+      //   {
+      //     type: 'text',
+      //     width: 3,
+      //     height: 1.5,
+      //     title: 'Date',
+      //     description: '2023-10-01',
+      //     fontSize: 2,
+      //     borderColor: 0x44460FF,
+      //   }
+      // );
+      // dateBlock.position.set(1.5, 0, 5.5);
+    }
+
+    function setUI() {
+      const gui = new GUI();
+      const frameFolder = gui.addFolder('Paper Frame');
+      const frameControls = {
+        'format': 'A4',
+        'orientation': 'portrait',
+        'margin': 10,
+      };
+
+      const paperFrames = openPlans.getEntitiesByType('paperFrame');
+      paperFrames.forEach((paperFrame) => {
+        const subPaperFrame = frameFolder.addFolder(paperFrame.propertySet.labelName);
+
+        subPaperFrame.add(frameControls, 'format', ['A4', 'A3', 'A2']).name('Format').onChange((value) => {
+          paperFrame.format = value;
+        });
+        subPaperFrame.add(frameControls, 'orientation', ['portrait', 'landscape']).name('Orientation').onChange((value) => {
+          paperFrame.orientation = value;
+        });
+        subPaperFrame.add(frameControls, 'margin', 0, 50).name('Margin').onChange((value) => {
+          paperFrame.margin = value;
+        });
+        subPaperFrame.add({
+          'Get Config': () => {
+            console.log(paperFrame.getOPConfig());
+          }
+        }, 'Get Config').name('Get Config');
+        subPaperFrame.add({
+          'Export to PDF': () => {
+            paperFrame.exportToPDF();
+          }
+        }, 'Export to PDF').name('Export to PDF');
+      });
+
+      const studioFolder = gui.addFolder('Studio Info');
+      const studioControls = {
+        'title': 'Studio Name',
+        'description': 'Company Description',
+      };
+      studioFolder.add(studioControls, 'description').name('Studio Name').onChange((value) => {
+        titleBlock.description = value;
+      });
+
+      const revFolder = gui.addFolder('Revision Info');
+      const revControls = {
+        'title': 'Revision',
+        'description': 'Rev A',
+      };
+      revFolder.add(revControls, 'description').name('Revision').onChange((value) => {
+        revBlock.description = value;
+      });
+
+      const dateFolder = gui.addFolder('Date Info');
+      const dateControls = {
+        'title': 'Date',
+        'description': '2023-10-01',
+      };
+      dateFolder.add(dateControls, 'description').name('Date').onChange((value) => {
+        dateBlock.description = value;
+      });
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

@@ -1,58 +1,57 @@
-Openplans uses OpenGeometry Kernel for creating and managing geometry data.
-More information about OpenGeometry Kernel can be found [here](https://docs.opengeometry.io/opengeometry/intro)
+OpenPlans uses `opengeometry` as a real package dependency for geometry generation and IFC export.
 
-## Developer Guide
+## Local development with sibling OpenGeometry package
 
-Clone the Openplans repository
+### 1. Build OpenGeometry first
+OpenPlans depends on the published OpenGeometry package, so you need to build OpenGeometry if you want to use the latest local changes.
+You can use OpenGeometry npm package as well directly from npm registry, but for local development, you need to build it from source.
+To build OpenGeometry, clone [OpenGeometry Kernel](https://github.com/opengeometry/OpenGeometry-Kernel) and run the following commands from the OpenPlans directory
+
 ```bash
-git clone https://github.com/OpenGeometry-io/OpenPlans
+cd ../OpenGeometry-Kernel
+npm install
+npm run build
 ```
 
-### Setting up the development environment
+This produces a proper package artifact under `../OpenGeometry-Kernel/dist/opengeometry-X.tgz`.
+OpenPlans installs that tarball directly, so local development uses package installation semantics instead of a linked directory.
 
-OpenGeometry Kernel is needed to run OpenPlans locally as it provides the Kernel Code, we are planning to use the OpenGeometry Kernel as a dependancy. In the meantime, you can set up the OpenGeometry Kernel locally by following these steps.
+### 2. Install OpenPlans dependencies
 
-### Prerequisites
-1. Clone the OpenGeometry repository
 ```bash
-git clone https://github.com/OpenGeometry-io/OpenGeometry
-```
-
-2. Install the required dependencies
-```bash
-cd OpenGeometry
+cd ../OpenPlans
 npm install
 ```
 
-3. Build the OpenGeometry Kernel locally and link it to the Openplans project
-```bash
-npm run build-local
-```
-This command will copy the build files inside the `openplans/kernel` directory.
-You should now have the OpenGeometry Kernel set up locally, you can verify this by checking the `openplans/kernel` directory for the build files.
+### 3. Run OpenPlans
 
-### Running OpenPlans locally
-1. Navigate to the OpenPlans directory
-
-2. Install the required dependencies
-```bash
-npm install
-```
-
-3. Start the development server
 ```bash
 npm run dev
 ```
 
-This will start the development server and you should be able to access OpenPlans at `http://localhost:5555`.
+### 4. Validate OpenPlans
 
-- Note: If you make changes to the OpenGeometry Kernel, you will need to rebuild it.
-- We use vite as the build tool, so you can use the vite commands to build and run the project.
-- Server port can be changed by modifying the `vite.config.js` file in the root directory of the OpenPlans project.
+```bash
+npm run build
+npm test
+```
 
+## Package layout
 
-## Documentation
+The public package is still `@opengeometry/openplans`, but the repo has internal workspaces:
 
-- Docusaurus is being used for documentation
-- `cd docs`
-- `npm run start` to make any changes
+- `packages/openplans-core`
+- `packages/openplans-three`
+
+The root `src/index.ts` file is entry point for the public package and re-exports from the internal workspaces. This allows us to maintain a clean public API while organizing code internally.
+
+## Architecture rules
+
+- `opengeometry` stays domain-neutral.
+- `openplans-core` owns semantic BIM data and IFC mapping.
+- `openplans-three` owns runtime rendering and compatibility wrappers.
+- Appearance fields such as wall, door, frame, and glass colors belong to semantic data and are exported as IFC metadata.
+
+## Examples and Distribution
+- All example code is under `examples/src` and is built into `examples/dist/` for distribution.
+- Distribution of examples are published at `https://demo.openplans.io/` and are built with the same codebase as the main package, ensuring consistency and ease of maintenance.

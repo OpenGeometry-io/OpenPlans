@@ -13,7 +13,7 @@ export default defineConfig({
       entryFileNames: '[name].js'
     }
   ],
-  external: ['three'],
+  external: ['three', 'opengeometry', 'camera-controls', 'jspdf'],
   plugins: [
     resolve(),
     commonjs(),
@@ -22,7 +22,8 @@ export default defineConfig({
       declaration: true,                // Enable type declaration files
       declarationDir: 'dist/types',     // Place declaration files in dist/types
       outDir: 'dist',                   // Place all JS files in dist
-      rootDir: 'src',                   // Ensure TypeScript files are compiled from src
+      rootDir: '.',                     // Compile facade and internal workspace sources together
+      include: ['src/**/*', 'packages/**/*'],
     })
   ]
 });

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Wall Openings</title>
+  <!-- MIXPANEL_TRACKING -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans hosted wall openings demo">
+  <meta name="author" content="Vishwajeet Mane">
+  <style>
+    :root {
+      --panel: rgba(17, 17, 17, 0.85);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text: #f5f2ea;
+      --muted: rgba(245, 242, 234, 0.72);
+      --accent: #8fbf5c;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 25% 15%, rgba(143, 191, 92, 0.18), transparent 30%),
+        linear-gradient(135deg, #151515 0%, #1f1f1f 55%, #0f0f0f 100%);
+      font-family: "Space Mono", monospace;
+    }
+
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .banner {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 18px;
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      color: var(--text);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      min-width: 340px;
+      text-align: center;
+    }
+
+    .banner-title {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .banner-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .hint {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      z-index: 30;
+      max-width: 400px;
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+      backdrop-filter: blur(14px);
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="banner">
+    <div class="banner-title">Wall Openings</div>
+    <div class="banner-subtitle">Plain opening, hosted door, and hosted window on one wall</div>
+  </div>
+  <div class="hint">
+    Adjust the offsets to verify that the wall host owns the cut geometry while the door and window remain attached as
+    separate hosted elements. Plan view shows the wall break; model view shows the cut-through opening.
+  </div>
+  <div id="app"></div>
+
+  <script type="module">
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import { CameraMode, OpenPlans, WallOpening } from './../src/index.ts';
+
+    const state = {
+      viewMode: 'plan',
+      wallThickness: 0.28,
+      wallHeight: 3,
+      plainOffset: 3.5,
+      doorOffset: 6.1,
+      windowOffset: 8.9,
+      windowSill: 1.05,
+    };
+
+    let openPlans;
+    let wall;
+    let plainOpening;
+    let door;
+    let windowElement;
+
+    function setViewMode(mode) {
+      const planMode = mode === 'plan';
+      openPlans.CameraMode = planMode ? CameraMode.Plan : CameraMode.Model;
+
+      wall.profileView = planMode;
+      wall.modelView = !planMode;
+      door.profileView = planMode;
+      door.modelView = !planMode;
+      windowElement.profileView = planMode;
+      windowElement.modelView = !planMode;
+    }
+
+    function syncHostedOpenings() {
+      wall.detachOpening(plainOpening.ogid);
+      wall.detachOpening(door.ogid);
+      wall.detachOpening(windowElement.ogid);
+
+      wall.wallThickness = state.wallThickness;
+      wall.wallHeight = state.wallHeight;
+
+      plainOpening.width = 1.1;
+      plainOpening.height = 2.2;
+      plainOpening.baseHeight = 0.15;
+      wall.attachOpening(plainOpening, {
+        offset: state.plainOffset,
+        baseHeight: plainOpening.baseHeight,
+        clearanceDepth: state.wallThickness,
+      });
+
+      door.panelWidth = 0.96;
+      door.panelThickness = 0.1;
+      door.doorHeight = 2.1;
+      door.frameWidth = 0.12;
+      door.frameThickness = 0.12;
+      wall.attachOpening(door, {
+        offset: state.doorOffset,
+        baseHeight: 0,
+        clearanceDepth: state.wallThickness,
+      });
+
+      windowElement.windowWidth = 1.2;
+      windowElement.windowThickness = 0.1;
+      windowElement.windowHeight = 1.0;
+      windowElement.sillHeight = state.windowSill;
+      windowElement.frameWidth = 0.12;
+      windowElement.frameThickness = 0.12;
+      wall.attachOpening(windowElement, {
+        offset: state.windowOffset,
+        baseHeight: state.windowSill,
+        clearanceDepth: state.wallThickness,
+      });
+
+      setViewMode(state.viewMode);
+    }
+
+    async function init() {
+      openPlans = new OpenPlans(document.getElementById('app'));
+      await openPlans.setupOpenGeometry();
+      openPlans.toggleGrid(true);
+
+      wall = openPlans.wall({
+        labelName: 'Host Wall',
+        path: [
+          { x: -6, y: 0, z: 0 },
+          { x: 6, y: 0, z: 0 },
+        ],
+        section: {
+          layers: [{
+            role: 'core',
+            thickness: state.wallThickness,
+            material: 'BRICK',
+            color: 0xf3efe6,
+          }],
+        },
+        height: state.wallHeight,
+        placement: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+        },
+      });
+
+      plainOpening = new WallOpening({
+        labelName: 'Plain Opening',
+        width: 1.1,
+        height: 2.2,
+        baseHeight: 0.15,
+      });
+
+      door = openPlans.door({
+        labelName: 'Hosted Door',
+        panelDimensions: {
+          width: 0.96,
+          thickness: 0.1,
+        },
+        frameDimensions: {
+          width: 0.12,
+          thickness: 0.12,
+        },
+        doorType: 'WOOD',
+        doorHeight: 2.1,
+        doorColor: 0xaa6f39,
+        frameColor: 0x2f2f2f,
+        panelMaterial: 'WOOD',
+        doorRotation: 1.5,
+        doorQuadrant: 1,
+        placement: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+        },
+      });
+
+      windowElement = openPlans.window({
+        labelName: 'Hosted Window',
+        windowDimensions: {
+          width: 1.2,
+          thickness: 0.1,
+        },
+        frameDimensions: {
+          width: 0.12,
+          thickness: 0.12,
+        },
+        windowType: 'CASEMENT',
+        windowHeight: 1,
+        sillHeight: state.windowSill,
+        frameColor: 0x2f2f2f,
+        glassColor: 0x8fbfdf,
+        placement: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+        },
+      });
+
+      syncHostedOpenings();
+      openPlans.fitToView([wall]);
+    }
+
+    function setUI() {
+      const gui = new GUI({ width: 330 });
+
+      gui.add(state, 'viewMode', { Plan: 'plan', Model: 'model' }).name('View Mode').onChange((value) => {
+        state.viewMode = value;
+        setViewMode(value);
+      });
+
+      const hostFolder = gui.addFolder('Host Wall');
+      hostFolder.add(state, 'wallThickness', 0.12, 0.45, 0.01).name('Thickness').onChange(() => {
+        syncHostedOpenings();
+      });
+      hostFolder.add(state, 'wallHeight', 2.2, 4.2, 0.05).name('Height').onChange(() => {
+        syncHostedOpenings();
+      });
+
+      const openingFolder = gui.addFolder('Plain Opening');
+      openingFolder.add(state, 'plainOffset', 0.6, 11.4, 0.05).name('Offset').onChange(() => {
+        syncHostedOpenings();
+      });
+
+      const doorFolder = gui.addFolder('Hosted Door');
+      doorFolder.add(state, 'doorOffset', 0.6, 11.4, 0.05).name('Offset').onChange(() => {
+        syncHostedOpenings();
+      });
+
+      const windowFolder = gui.addFolder('Hosted Window');
+      windowFolder.add(state, 'windowOffset', 0.6, 11.4, 0.05).name('Offset').onChange(() => {
+        syncHostedOpenings();
+      });
+      windowFolder.add(state, 'windowSill', 0.4, 1.8, 0.05).name('Sill Height').onChange(() => {
+        syncHostedOpenings();
+      });
+
+      const actions = {
+        fit: () => openPlans.fitToView([wall]),
+        refresh: () => syncHostedOpenings(),
+      };
+      gui.add(actions, 'fit').name('Fit To View');
+      gui.add(actions, 'refresh').name('Refresh Cuts');
+    }
+
+    (async function run() {
+      await init();
+      setViewMode(state.viewMode);
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>
