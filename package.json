@@ -38,12 +38,18 @@
     "three": "^0.168.0"
   },
   "overrides": {
-    "three": "$three"
+    "three": "$three",
+    "dompurify": "^3.4.1",
+    "basic-ftp": "^5.3.0",
+    "serialize-javascript": "^7.0.5",
+    "postcss": "^8.5.10",
+    "esbuild": "^0.25.0",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/blob-stream": "^0.1.33",
     "@types/dat.gui": "^0.7.7",
@@ -51,13 +57,13 @@
     "@types/pdfkit": "^0.17.4",
     "@types/three": "^0.168.0",
     "glob": "^13.0.6",
-    "puppeteer": "^24.36.1",
+    "puppeteer": "^24.42.0",
     "rimraf": "^6.0.1",
     "rollup": "^4.34.8",
     "stats.js": "^0.17.0",
     "three": "^0.168.0",
     "tslib": "^2.8.1",
-    "vite": "^5.4.7"
+    "vite": "^6.4.2"
   },
   "publishConfig": {
     "directory": "dist"
