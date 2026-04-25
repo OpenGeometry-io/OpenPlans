@@ -4,6 +4,7 @@ kernel/
 dist/
 examples/dist/
 .DS_Store
+.firebase/
 
 # Scripts
 scripts/
