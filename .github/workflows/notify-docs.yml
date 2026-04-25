@@ -1,0 +1,115 @@
+# Tells the central docs repo (opengeometry-io/auto-docs) to regenerate the
+# OpenPlans Mintlify documentation whenever the public source surface in this
+# repo changes.
+#
+# The dispatch is consumed by .github/workflows/generate-docs.yml in auto-docs
+# (event_type: docs:generate). That workflow checks out this repo at the SHA
+# we send, extracts the public API surface, runs the docs-author agent, and
+# opens a PR titled `docs(OpenPlans): regenerate API reference`.
+#
+# Setup (one-time):
+#   Repo Settings -> Secrets and variables -> Actions -> New repository secret
+#   Name : AUTO_DOCS_DISPATCH_TOKEN
+#   Value: a fine-grained PAT or GitHub App installation token scoped to
+#          opengeometry-io/auto-docs with `contents: read` and
+#          `actions: write` (the latter is what authorises repository_dispatch).
+#
+#   The same secret is reused by the equivalent workflow in
+#   opengeometry-io/opengeometry, so create it once at the org level if you
+#   prefer.
+
+name: Notify auto-docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only the public surface should retrigger docs. Tests, examples, build
+      # config, and docs of this repo itself are intentionally excluded.
+      - 'src/**'
+      - 'package.json'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: SHA or ref to send to auto-docs (defaults to current HEAD).
+        required: false
+        type: string
+
+concurrency:
+  group: notify-docs-OpenPlans
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    name: Dispatch docs:generate to auto-docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout (shallow, for changed-file list)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Collect changed source files
+        id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          MANUAL_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          # workflow_dispatch has no before/after, so we just send an empty
+          # files_changed list and let the agent revisit broadly.
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo 'files=[]'         >> "$GITHUB_OUTPUT"
+            echo "ref=${MANUAL_REF:-$AFTER}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # On the very first push to a branch BEFORE is all-zeros; fall back
+          # to comparing against the previous commit on the same ref.
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE="$(git rev-parse "$AFTER^" 2>/dev/null || echo "$AFTER")"
+          fi
+
+          mapfile -t FILES < <(git diff --name-only "$BEFORE" "$AFTER" -- 'src/**' 'package.json' || true)
+          # Build a JSON array of the changed paths.
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            JSON='[]'
+          else
+            JSON="$(printf '%s\n' "${FILES[@]}" | jq -R . | jq -s -c .)"
+          fi
+          echo "files=$JSON" >> "$GITHUB_OUTPUT"
+          echo "ref=$AFTER"  >> "$GITHUB_OUTPUT"
+
+      - name: Send repository_dispatch to auto-docs
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_DOCS_DISPATCH_TOKEN }}
+          PRODUCT: OpenPlans
+          REF: ${{ steps.changed.outputs.ref }}
+          FILES: ${{ steps.changed.outputs.files }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::Missing AUTO_DOCS_DISPATCH_TOKEN secret. See file header for setup."
+            exit 1
+          fi
+
+          PAYLOAD="$(jq -n \
+            --arg product "$PRODUCT" \
+            --arg ref     "$REF" \
+            --argjson files "$FILES" \
+            '{event_type:"docs:generate", client_payload:{product:$product, ref:$ref, files_changed:$files}}')"
+
+          echo "Dispatching docs:generate for $PRODUCT @ $REF (${FILES})"
+
+          curl --fail-with-body -sS -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/opengeometry-io/auto-docs/dispatches \
+            -d "$PAYLOAD"
