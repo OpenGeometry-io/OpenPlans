@@ -1,0 +1,269 @@
+---
+title: Stair
+description: API reference for the BaseStair class and OPStair configuration
+---
+
+## BaseStair
+
+The `BaseStair` class represents a staircase element in OpenPlans. It extends `THREE.Group` and provides functionality for creating customizable staircases with various types, including straight, L-shaped, U-shaped, spiral, and winder configurations.
+
+### Constructor
+
+```typescript
+new BaseStair(baseStairConfig?: OPStair)
+```
+
+<ParamField path="baseStairConfig" type="OPStair" optional>
+  Optional configuration object for the staircase. If not provided, default values will be used.
+</ParamField>
+
+### Properties
+
+<ParamField path="ogType" type="string">
+  The element type identifier. Always set to `ElementType.STAIR`.
+</ParamField>
+
+<ParamField path="propertySet" type="OPStair">
+  The current configuration of the staircase including dimensions, step counts, and materials.
+</ParamField>
+
+<ParamField path="subElements" type="Map<SubElementType, THREE.Object3D>">
+  Map containing sub-elements of the staircase (steps, landing).
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Indicates whether the staircase is currently selected.
+</ParamField>
+
+<ParamField path="edit" type="boolean">
+  Indicates whether the staircase is in edit mode.
+</ParamField>
+
+### Getters & Setters
+
+<ParamField path="labelName" type="string">
+  The display name of the staircase element.
+</ParamField>
+
+<ParamField path="stairPosition" type="[number, number, number]">
+  The 3D position of the staircase in the scene as [x, y, z].
+</ParamField>
+
+<ParamField path="stairWidth" type="number">
+  The width of the staircase in meters.
+</ParamField>
+
+<ParamField path="totalHeight" type="number">
+  The total vertical rise of the staircase in meters.
+</ParamField>
+
+<ParamField path="riserHeight" type="number">
+  The desired height of each step (rise) in meters. Actual height is calculated to distribute evenly.
+</ParamField>
+
+<ParamField path="treadDepth" type="number">
+  The depth of each step (run) in meters.
+</ParamField>
+
+<ParamField path="stairColor" type="number">
+  The hexadecimal color value for the staircase.
+</ParamField>
+
+<ParamField path="stairMaterial" type="string">
+  The material type of the staircase (e.g., 'wood', 'concrete', 'steel').
+</ParamField>
+
+### Methods
+
+#### setOPConfig
+
+```typescript
+setOPConfig(config: OPStair): void
+```
+
+Updates the staircase configuration and rebuilds the geometry.
+
+<ParamField path="config" type="OPStair">
+  New configuration object for the staircase.
+</ParamField>
+
+#### getOPConfig
+
+```typescript
+getOPConfig(): OPStair
+```
+
+Returns the current staircase configuration.
+
+**Returns:** `OPStair` - The current staircase configuration object.
+
+#### setOPGeometry
+
+```typescript
+setOPGeometry(): void
+```
+
+Rebuilds the staircase geometry based on the current configuration, creating all steps and risers.
+
+#### setOPMaterial
+
+```typescript
+setOPMaterial(): void
+```
+
+Updates the material properties and colors of all steps.
+
+#### showProfileView
+
+```typescript
+showProfileView(status: boolean): void
+```
+
+Toggles the profile view mode for technical drawings.
+
+<ParamField path="status" type="boolean">
+  True to show profile view (outline only), false to show normal view.
+</ParamField>
+
+#### dispose
+
+```typescript
+dispose(): void
+```
+
+Cleans up geometry, materials, and removes the staircase from the scene.
+
+---
+
+## OPStair
+
+The configuration interface for staircase elements.
+
+### Properties
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the staircase element.
+</ParamField>
+
+<ParamField path="labelName" type="string" required>
+  Display name for the staircase.
+</ParamField>
+
+<ParamField path="type" type="ElementType.STAIR" required>
+  Element type identifier.
+</ParamField>
+
+<ParamField path="stairType" type="StairType" required>
+  Type of staircase (STRAIGHT, LSHAPED, USHAPED, SPIRAL, WINDER).
+</ParamField>
+
+<ParamField path="dimensions" type="object" required>
+  Dimensions configuration for the staircase.
+  <Expandable title="properties">
+    <ParamField path="width" type="number">
+      Width of the staircase in meters.
+    </ParamField>
+    <ParamField path="totalHeight" type="number">
+      Total vertical rise in meters.
+    </ParamField>
+    <ParamField path="totalLength" type="number">
+      Total horizontal run in meters (calculated automatically).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="stairPosition" type="[number, number, number]" required>
+  3D position of the staircase as [x, y, z].
+</ParamField>
+
+<ParamField path="riserHeight" type="number" required>
+  Desired height of each step (rise) in meters. Standard is ~0.17m (17cm).
+</ParamField>
+
+<ParamField path="treadDepth" type="number" required>
+  Depth of each step (run) in meters. Standard is ~0.28m (28cm).
+</ParamField>
+
+<ParamField path="numberOfSteps" type="number" required>
+  Total number of steps. Calculated automatically based on totalHeight and riserHeight.
+</ParamField>
+
+<ParamField path="stairColor" type="number" required>
+  Hexadecimal color value for the staircase (e.g., 0x8B7355 for wood brown).
+</ParamField>
+
+<ParamField path="stairMaterial" type="string" required>
+  Material type of the staircase (e.g., 'wood', 'concrete', 'steel').
+</ParamField>
+
+<ParamField path="coordinates" type="Array<[number, number, number]>" required>
+  Array of 4 corner coordinate points defining the staircase footprint. Calculated automatically.
+</ParamField>
+
+---
+
+## StairType
+
+Enum defining available staircase types:
+
+- `STRAIGHT` - Straight run staircase
+- `LSHAPED` - L-shaped staircase with landing
+- `USHAPED` - U-shaped staircase with landing
+- `SPIRAL` - Spiral staircase
+- `WINDER` - Winder staircase with wedge-shaped steps
+
+---
+
+## Example
+
+```typescript
+import { BaseStair, StairType, ElementType } from 'openplans';
+
+// Create a straight staircase with default configuration
+const stair = new BaseStair();
+
+// Create a custom wooden staircase
+const woodenStair = new BaseStair({
+  labelName: 'Main Staircase',
+  type: ElementType.STAIR,
+  stairType: StairType.STRAIGHT,
+  dimensions: {
+    width: 1.2,
+    totalHeight: 3.0,
+    totalLength: 4.5, // Calculated automatically
+  },
+  stairPosition: [0, 0, 0],
+  riserHeight: 0.17,      // 17cm standard riser
+  treadDepth: 0.28,       // 28cm standard tread
+  numberOfSteps: 18,      // Calculated automatically
+  stairColor: 0x8B7355,   // Wood brown
+  stairMaterial: 'wood',
+  coordinates: [],
+});
+
+// Update staircase properties
+woodenStair.totalHeight = 3.5;
+woodenStair.stairWidth = 1.5;
+woodenStair.riserHeight = 0.18;
+woodenStair.stairColor = 0x654321;
+
+// Get current configuration
+const config = woodenStair.getOPConfig();
+console.log(`Staircase has ${config.numberOfSteps} steps`);
+console.log(`Total run: ${config.dimensions.totalLength.toFixed(2)}m`);
+
+// Show profile view for technical drawings
+woodenStair.showProfileView(true);
+
+// Clean up when done
+woodenStair.dispose();
+```
+
+## Building Code Notes
+
+- **Standard riser height**: 17-18cm (0.17-0.18m) for residential buildings
+- **Standard tread depth**: 25-30cm (0.25-0.30m) for comfortable stairs
+- **Minimum width**: 90cm (0.9m) for residential, 120cm (1.2m) for commercial
+- **Rule of thumb**: Riser (cm) + Tread (cm) should equal 45-48cm for comfort
+
+The `BaseStair` class automatically calculates the number of steps based on the total height and desired riser height, ensuring even distribution across all steps.

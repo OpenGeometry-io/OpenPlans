@@ -1,0 +1,458 @@
+---
+title: Dimensions and Glyphs
+description: Add measurements, labels, and text annotations to your floor plans
+---
+
+## Overview
+
+OpenPlans provides two systems for adding annotations to your drawings:
+
+- **Dimensions**: Measurement tools for showing distances, angles, and other metrics
+- **Glyphs**: Text labels and annotations that can be positioned anywhere in the scene
+
+## Dimension System
+
+The dimension system uses the `DimensionTool` singleton to create and manage dimension objects.
+
+### Setting Up Dimensions
+
+The dimension tool is automatically initialized when you set up OpenGeometry:
+
+```typescript
+import { OpenPlans, DimensionTool } from 'openplans';
+
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+// The DimensionTool.sceneRef is automatically set
+// You can now create dimensions
+```
+
+### Creating Line Dimensions
+
+```typescript
+import { DimensionTool } from 'openplans';
+
+// Create a length dimension
+const lengthDim = DimensionTool.createDimension(
+  'wall-length-1',  // Unique identifier
+  'length'          // Dimension type
+);
+
+// The dimension is automatically added to the scene
+```
+
+### Dimension Types
+
+Available dimension types:
+
+- `'length'` - Linear distance measurements
+- `'angle'` - Angular measurements (coming soon)
+- `'area'` - Area measurements (coming soon)  
+- `'radius'` - Radial measurements (coming soon)
+- `'diameter'` - Diameter measurements (coming soon)
+- `'volume'` - Volume measurements (coming soon)
+- `'custom'` - Custom dimension types
+
+### Working with Line Dimensions
+
+```typescript
+import { LineDimension, Vector3 } from 'openplans';
+
+// Create a line dimension directly
+const dimension = new LineDimension({
+  start: new Vector3(0, 0, 0),
+  end: new Vector3(5, 0, 0),
+  color: 0x000000
+});
+
+// Add to scene manually
+openPlans.openThree.scene.add(dimension);
+```
+
+### Updating Dimension Data
+
+```typescript
+import { Vector3 } from 'openplans';
+
+// Update dimension endpoints and label
+const newStart = new Vector3(0, 0, 0);
+const newEnd = new Vector3(10, 0, 0);
+const length = 10; // Length in meters
+
+dimension.setDimensionData(
+  { start: newStart, end: newEnd },
+  length
+);
+
+// The label automatically updates to show "10"
+```
+
+### Customizing Dimension Labels
+
+```typescript
+// Set custom label text
+dimension.setDimensionLabel('10.5m');
+
+// Get current label
+const label = dimension.getDimensionLabel();
+console.log(label); // "10.5m"
+```
+
+### Dimension Appearance
+
+Dimensions consist of:
+- A line between start and end points
+- Cross marks at both ends
+- A centered label with the measurement
+
+```typescript
+// The dimension automatically creates:
+// 1. Main dimension line
+// 2. Start cross line (perpendicular)
+// 3. End cross line (perpendicular)
+// 4. Center label (CSS2DObject)
+
+// Access the dimension mesh
+const labelMesh = dimension.dimensionMesh;
+```
+
+### Retrieving Dimensions
+
+```typescript
+// Get dimension by ID
+const storedDim = DimensionTool.getDimensionsById('wall-length-1');
+
+// Update it
+storedDim.setDimensionLabel('Updated: 12.5m');
+```
+
+## Glyph System
+
+Glyphs are text labels that can be placed anywhere in your scene. They use the OpenGlyph library for rendering.
+
+### Creating Glyphs
+
+```typescript
+// Create a basic glyph
+const glyph = openPlans.glyph(
+  'Room 101',     // Text content
+  5,              // Size
+  0x5D0E41,      // Color (hex)
+  false           // Static zoom (false = scales with camera)
+);
+
+// Position the glyph
+glyph.position.set(5, 0, 5);
+```
+
+### Glyph Parameters
+
+- **text**: `string` - The text to display
+- **size**: `number` - Font size  
+- **color**: `number` - Text color as hex (e.g., 0xFF0000)
+- **staticZoom**: `boolean` - If true, text stays same size regardless of zoom
+
+### Working with Glyphs
+
+```typescript
+// Create multiple glyphs
+const titleGlyph = openPlans.glyph(
+  'Floor Plan',
+  10,
+  0xFF204E,
+  true  // Static zoom
+);
+titleGlyph.position.set(0, 0, -2);
+
+const labelGlyph = openPlans.glyph(
+  'Scale: 1:100',
+  5,
+  0x000000,
+  true
+);
+labelGlyph.position.set(10, 0, -2);
+```
+
+### Getting Glyph References
+
+```typescript
+// Get glyph by UUID
+const glyphNode = openPlans.getGlyph(glyph.uuid);
+
+// Access all glyphs
+const allGlyphs = openPlans.glyphNodes;
+console.log(`Total glyphs: ${allGlyphs.length}`);
+```
+
+### Selecting Glyphs
+
+```typescript
+// Select a glyph
+openPlans.selectGlyph(glyph.uuid);
+
+// Clear selection
+openPlans.clearGlyphSelection();
+
+// Select different glyph
+const anotherGlyph = openPlans.glyph('Another Label', 5, 0x0000FF);
+openPlans.selectGlyph(anotherGlyph.uuid);
+```
+
+### Rotating Glyphs
+
+```typescript
+// Rotate glyph by angle in degrees
+openPlans.rotateGlyph(glyph.uuid, 45);
+
+// Rotate to different angle
+openPlans.rotateGlyph(glyph.uuid, 90);
+
+// Rotate back to horizontal
+openPlans.rotateGlyph(glyph.uuid, 0);
+```
+
+### Updating Glyph Text
+
+```typescript
+// Update text content
+openPlans.updateGlyphText(glyph.uuid, 'Updated Room Name');
+
+// Update to show dimensions
+openPlans.updateGlyphText(glyph.uuid, 'Area: 25.5 m²');
+```
+
+## Complete Dimension Example
+
+```typescript
+import { OpenPlans, Vector3, DimensionTool } from 'openplans';
+
+async function createAnnotatedFloorPlan() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create a room
+  const room = openPlans.rectangle({
+    center: [5, 0, 4],
+    width: 10,
+    breadth: 8,
+    color: 0x000000
+  });
+  
+  // Add dimension for width
+  const widthDim = DimensionTool.createDimension('room-width', 'length');
+  if (widthDim) {
+    widthDim.setDimensionData(
+      {
+        start: new Vector3(0, 0, -0.5),
+        end: new Vector3(10, 0, -0.5)
+      },
+      10
+    );
+    widthDim.setDimensionLabel('10.0m');
+  }
+  
+  // Add dimension for depth
+  const depthDim = DimensionTool.createDimension('room-depth', 'length');
+  if (depthDim) {
+    depthDim.setDimensionData(
+      {
+        start: new Vector3(-0.5, 0, 0),
+        end: new Vector3(-0.5, 0, 8)
+      },
+      8
+    );
+    depthDim.setDimensionLabel('8.0m');
+  }
+  
+  // Add room label
+  const roomLabel = openPlans.glyph('Living Room', 8, 0x000000);
+  roomLabel.position.set(5, 0, 4);
+  
+  // Add area label
+  const areaLabel = openPlans.glyph('Area: 80 m²', 5, 0x666666);
+  areaLabel.position.set(5, 0, 5);
+}
+
+createAnnotatedFloorPlan();
+```
+
+## Complete Glyph Example
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+async function createLabeledPlan() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create rooms
+  const bedroom = openPlans.rectangle({
+    center: [2, 0, 2],
+    width: 4,
+    breadth: 3.5,
+    color: 0x000000
+  });
+  
+  const livingRoom = openPlans.rectangle({
+    center: [7, 0, 2.5],
+    width: 6,
+    breadth: 5,
+    color: 0x000000
+  });
+  
+  // Add room labels
+  const bedroomLabel = openPlans.glyph(
+    'Bedroom',
+    7,
+    0x5D0E41,
+    false
+  );
+  bedroomLabel.position.set(2, 0, 2);
+  
+  const livingRoomLabel = openPlans.glyph(
+    'Living Room',
+    8,
+    0xFF204E,
+    false
+  );
+  livingRoomLabel.position.set(7, 0, 2.5);
+  
+  // Add title
+  const title = openPlans.glyph(
+    'Apartment Floor Plan',
+    12,
+    0x000000,
+    true
+  );
+  title.position.set(5, 0, -2);
+  
+  // Add scale indicator
+  const scale = openPlans.glyph(
+    'Scale 1:50',
+    6,
+    0x666666,
+    true
+  );
+  scale.position.set(5, 0, 7);
+  
+  // List all glyphs
+  const allGlyphs = openPlans.glyphNodes;
+  console.log('Created glyphs:');
+  allGlyphs.forEach(node => {
+    console.log(`- ${node.text} at ${node.uuid}`);
+  });
+}
+
+createLabeledPlan();
+```
+
+## Advanced Glyph Management
+
+### Working with GlyphNode
+
+```typescript
+// Create glyph and get its node
+const glyph = openPlans.glyph('Test Label', 5, 0x000000);
+const glyphNode = openPlans.getGlyph(glyph.uuid);
+
+// Access node properties
+console.log(glyphNode.text);   // "Test Label"
+console.log(glyphNode.uuid);   // UUID string
+console.log(glyphNode.size);   // 5
+console.log(glyphNode.color);  // 0x000000
+```
+
+### Interactive Glyph Example
+
+```typescript
+import { GUI } from 'lil-gui';
+
+const glyph = openPlans.glyph('Interactive Label', 8, 0x000000);
+glyph.position.set(0, 0, 0);
+
+const gui = new GUI();
+const glyphControls = {
+  rotation: 0,
+  text: 'Interactive Label',
+  select: false
+};
+
+gui.add(glyphControls, 'rotation', 0, 360).onChange(value => {
+  openPlans.rotateGlyph(glyph.uuid, value);
+});
+
+gui.add(glyphControls, 'select').onChange(value => {
+  if (value) {
+    openPlans.selectGlyph(glyph.uuid);
+  } else {
+    openPlans.clearGlyphSelection();
+  }
+});
+
+gui.add(glyphControls, 'text').onChange(value => {
+  openPlans.updateGlyphText(glyph.uuid, value);
+});
+```
+
+## Label Renderer
+
+Glyphs and dimension labels use CSS2DRenderer for sharp, resolution-independent text:
+
+```typescript
+// The label renderer is automatically set up
+// Labels are rendered on top of the WebGL canvas
+// They resize automatically with the window
+
+// Update labels manually (usually not needed)
+openPlans.update(scene, camera);
+```
+
+## Best Practices
+
+### Dimension Placement
+
+```typescript
+// Place dimensions outside the object being measured
+// Offset by at least 0.5 units for clarity
+
+const wallLength = 10;
+const dim = DimensionTool.createDimension('wall', 'length');
+if (dim) {
+  dim.setDimensionData(
+    {
+      start: new Vector3(0, 0, -0.5),  // Offset from wall
+      end: new Vector3(wallLength, 0, -0.5)
+    },
+    wallLength
+  );
+}
+```
+
+### Glyph Sizing
+
+```typescript
+// Use different sizes for hierarchy
+const title = openPlans.glyph('Title', 12, 0x000000, true);
+const heading = openPlans.glyph('Heading', 8, 0x000000, false);
+const label = openPlans.glyph('Label', 5, 0x000000, false);
+const note = openPlans.glyph('Note', 3, 0x666666, false);
+```
+
+### Color Coding
+
+```typescript
+// Use colors to categorize information
+const roomName = openPlans.glyph('Living Room', 8, 0x000000);  // Black
+const dimension = openPlans.glyph('10.5m', 5, 0x0000FF);       // Blue
+const note = openPlans.glyph('Note', 4, 0xFF0000);             // Red
+const area = openPlans.glyph('80 m²', 5, 0x008000);           // Green
+```
+
+## Next Steps
+
+- Learn about [JSON Generation](/guides/json-generation) to save annotated floor plans
+- Explore [Creating Floor Plans](/guides/creating-floor-plans) for complete examples
+- Create [2D Views](/guides/2d-views) to display annotations in section cuts

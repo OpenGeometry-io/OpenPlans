@@ -1,0 +1,255 @@
+---
+title: Creating Floor Plans
+description: Learn how to create complete 2D floor plans with OpenPlans
+---
+
+## Overview
+
+OpenPlans provides a comprehensive toolkit for creating architectural floor plans using Three.js and WebGL. This guide walks you through creating a complete floor plan from scratch.
+
+## Setting Up OpenPlans
+
+First, initialize OpenPlans with a container element and set up the OpenGeometry kernel:
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+const container = document.getElementById('app');
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+// Optional: Hide the grid
+openPlans.showGrid = false;
+```
+
+The `setupOpenGeometry()` method initializes the WebAssembly-based geometry kernel and loads required resources like fonts for text rendering.
+
+## Building a Simple Room
+
+Let's create a basic room using primitives:
+
+```typescript
+// Create the room outline using a rectangle
+const roomOutline = openPlans.rectangle({
+  center: [5, 0, 5],
+  width: 10,
+  breadth: 8,
+  color: 0x000000
+});
+
+// Add a door
+const door = openPlans.baseDoor({
+  labelName: 'Main Door',
+  doorPosition: [5, 0, 1],
+  doorLength: 2,
+  doorHeight: 2.1,
+  doorThickness: 0.1,
+  doorColor: 0x8B4513,
+  frameColor: 0x000000,
+  doorRotation: 1.5,
+  doorQuadrant: 1
+});
+
+// Add a window
+const window = openPlans.baseSingleWindow({
+  labelName: 'Window 1',
+  windowPosition: [0, 0, 5],
+  windowLength: 1.5,
+  windowHeight: 1.2
+});
+```
+
+## Creating Multi-Room Floor Plans
+
+For more complex layouts, use polylines to define room boundaries:
+
+```typescript
+// Define the first room
+const room1 = openPlans.polyline({
+  points: [
+    [0, 0, 0],
+    [4, 0, 0],
+    [4, 0, 3.5],
+    [0, 0, 3.5],
+    [0, 0, 0]
+  ],
+  color: 0x000000
+});
+
+// Define the second room
+const room2 = openPlans.polyline({
+  points: [
+    [4, 0, 0],
+    [10, 0, 0],
+    [10, 0, 4],
+    [4, 0, 4],
+    [4, 0, 0]
+  ],
+  color: 0x000000
+});
+```
+
+## Adding Floor Slabs
+
+Create floor slabs to represent the actual floor surface:
+
+```typescript
+const floorSlab = openPlans.baseSlab({
+  labelName: 'Ground Floor',
+  slabPosition: [5, -0.1, 5],
+  slabWidth: 10,
+  slabDepth: 10,
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC
+});
+```
+
+## Adding Stairs
+
+Include stairs to connect different levels:
+
+```typescript
+const stairs = openPlans.baseStair({
+  labelName: 'Main Stairs',
+  stairPosition: [8, 0, 6],
+  stairWidth: 1.2,
+  stairLength: 3,
+  numberOfSteps: 12,
+  stairHeight: 3,
+  stairColor: 0x888888
+});
+```
+
+## Working with Configuration Objects
+
+All elements support getting and setting configurations:
+
+```typescript
+// Get the current configuration
+const doorConfig = door.getOPConfig();
+console.log(doorConfig);
+
+// Modify properties
+door.doorRotation = 1.8;
+door.doorColor = 0xFF0000;
+
+// Preload elements from saved configurations
+const savedDoorConfig = {
+  labelName: 'Saved Door',
+  doorPosition: [3, 0, 3],
+  doorLength: 2,
+  doorHeight: 2.1,
+  doorThickness: 0.2,
+  doorColor: 0x8B4513,
+  doorRotation: 1.5,
+  doorQuadrant: 2
+};
+
+const newDoor = openPlans.baseDoor(savedDoorConfig);
+```
+
+## Camera Controls
+
+Fit the camera to view specific elements:
+
+```typescript
+// Fit to all rectangles
+openPlans.fit('RectanglePrimitive');
+
+// Or get entities by type and manipulate them
+const allDoors = openPlans.getEntitiesByType('baseDoor');
+console.log(`Found ${allDoors.length} doors`);
+```
+
+## Disposing Elements
+
+Remove elements when no longer needed:
+
+```typescript
+// Get the element's unique ID
+const elementId = door.ogid;
+
+// Dispose it
+openPlans.disposeElement(elementId);
+```
+
+## Complete Example
+
+Here's a complete example creating a simple apartment:
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+async function createApartment() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  openPlans.showGrid = false;
+  
+  // Create bedroom
+  const bedroom = openPlans.rectangle({
+    center: [2, 0, 1.75],
+    width: 4,
+    breadth: 3.5,
+    color: 0x000000
+  });
+  
+  // Create living room
+  const livingRoom = openPlans.rectangle({
+    center: [7, 0, 2],
+    width: 6,
+    breadth: 4,
+    color: 0x000000
+  });
+  
+  // Add entrance door
+  const entranceDoor = openPlans.baseDoor({
+    labelName: 'Entrance',
+    doorPosition: [0, 0, 1],
+    doorLength: 2,
+    doorHeight: 2.1,
+    doorThickness: 0.1,
+    doorColor: 0x8B4513,
+    doorQuadrant: 1
+  });
+  
+  // Add bedroom door
+  const bedroomDoor = openPlans.baseDoor({
+    labelName: 'Bedroom',
+    doorPosition: [4, 0, 2],
+    doorLength: 1.8,
+    doorHeight: 2.1,
+    doorThickness: 0.1,
+    doorColor: 0x8B4513,
+    doorQuadrant: 2
+  });
+  
+  // Add windows
+  const bedroomWindow = openPlans.baseSingleWindow({
+    labelName: 'Bedroom Window',
+    windowPosition: [2, 0, 3.5],
+    windowLength: 1.5,
+    windowHeight: 1.2
+  });
+  
+  const livingRoomWindow = openPlans.baseDoubleWindow({
+    labelName: 'Living Room Windows',
+    windowPosition: [7, 0, 4],
+    windowLength: 2.5,
+    windowHeight: 1.5
+  });
+  
+  // Fit camera to view all elements
+  openPlans.fit('RectanglePrimitive');
+}
+
+createApartment();
+```
+
+## Next Steps
+
+- Learn about [Working with Primitives](/guides/working-with-primitives) for detailed primitive operations
+- Explore [Architectural Elements](/guides/architectural-elements) for doors, windows, and more
+- Add [Dimensions and Glyphs](/guides/dimensions-and-glyphs) to annotate your floor plans
+- Create [2D Views](/guides/2d-views) for section cuts and orthographic projections

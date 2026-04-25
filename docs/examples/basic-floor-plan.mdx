@@ -1,0 +1,233 @@
+---
+title: Basic floor plan
+description: Create a simple room with walls, floor, and basic elements
+---
+
+This example shows how to create a basic floor plan using OpenPlans primitives and shapes. You'll learn how to create walls, a floor, and position elements to form a simple room.
+
+## Complete example
+
+Here's a complete working example that creates a rectangular room with a polyline for walls and a rectangle for the floor:
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+import * as THREE from 'three';
+
+// Initialize OpenPlans
+const container = document.getElementById('app');
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+// Create floor using rectangle
+const floor = openPlans.rectangle({
+  center: { x: 0, y: 0, z: 0 },
+  width: 5,
+  breadth: 4,
+  rectangleColor: 0xE8E8E8
+});
+
+// Create walls using polyline
+const walls = openPlans.polyline({
+  lineColor: 0x000000
+});
+
+// Define wall coordinates (rectangular room)
+const wallCoords = [
+  [-2.5, 0, -2],  // Bottom-left corner
+  [2.5, 0, -2],   // Bottom-right corner
+  [2.5, 0, 2],    // Top-right corner
+  [-2.5, 0, 2],   // Top-left corner
+  [-2.5, 0, -2]   // Close the loop
+];
+
+// Add points to create walls
+wallCoords.forEach(coord => {
+  walls.attachPoint(coord[0], coord[1], coord[2]);
+});
+
+// Fit camera to view the room
+openPlans.fit('polyline');
+```
+
+## Step-by-step breakdown
+
+<Steps>
+  <Step title="Initialize OpenPlans">
+    First, create an instance of OpenPlans and set up the OpenGeometry kernel:
+
+    ```typescript
+    const container = document.getElementById('app');
+    const openPlans = new OpenPlans(container);
+    await openPlans.setupOpenGeometry();
+    ```
+
+    <Info>
+      The `setupOpenGeometry()` method is asynchronous and loads the WASM-based geometry kernel.
+    </Info>
+  </Step>
+
+  <Step title="Create the floor">
+    Use a rectangle primitive to create the floor surface:
+
+    ```typescript
+    const floor = openPlans.rectangle({
+      center: { x: 0, y: 0, z: 0 },
+      width: 5,
+      breadth: 4,
+      rectangleColor: 0xE8E8E8  // Light gray
+    });
+    ```
+
+    The rectangle is positioned at the origin (0, 0, 0) with dimensions 5m × 4m.
+  </Step>
+
+  <Step title="Create walls with polyline">
+    Use a polyline to create connected wall segments:
+
+    ```typescript
+    const walls = openPlans.polyline({
+      lineColor: 0x000000  // Black
+    });
+
+    // Add points to form a closed rectangular path
+    const wallCoords = [
+      [-2.5, 0, -2],
+      [2.5, 0, -2],
+      [2.5, 0, 2],
+      [-2.5, 0, 2],
+      [-2.5, 0, -2]  // Return to start
+    ];
+
+    wallCoords.forEach(coord => {
+      walls.attachPoint(coord[0], coord[1], coord[2]);
+    });
+    ```
+
+    <Tip>
+      Always close the polyline by returning to the starting point to create a complete enclosure.
+    </Tip>
+  </Step>
+
+  <Step title="Adjust the camera view">
+    Use the `fit()` method to automatically frame the created elements:
+
+    ```typescript
+    openPlans.fit('polyline');
+    ```
+
+    This centers the camera on all polyline elements in the scene.
+  </Step>
+</Steps>
+
+## Adding a 3D floor slab
+
+For a more realistic floor, use a slab element instead of a flat rectangle:
+
+```typescript
+const floorSlab = openPlans.baseSlab({
+  labelName: 'Ground Floor',
+  dimensions: {
+    start: { x: -2.5, y: 0, z: -2 },
+    end: { x: 2.5, y: 0, z: 2 },
+    width: 5,
+    length: 4
+  },
+  slabPosition: [0, 0, 0],
+  slabType: 'CONCRETE',
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC,
+  coordinates: [
+    [-2.5, 0, -2],
+    [2.5, 0, -2],
+    [2.5, 0, 2],
+    [-2.5, 0, 2]
+  ]
+});
+```
+
+## HTML setup
+
+Here's the complete HTML structure needed:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Basic Floor Plan - OpenPlans</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
+```
+
+## Understanding coordinates
+
+OpenPlans uses a right-handed coordinate system:
+
+- **X-axis**: Left (-) to Right (+)
+- **Y-axis**: Down (-) to Up (+)  
+- **Z-axis**: Back (-) to Front (+)
+
+For floor plans, you typically work on the XZ plane (Y = 0).
+
+<CardGroup cols={2}>
+  <Card title="Next: Doors and windows" icon="door-open" href="/examples/doors-and-windows">
+    Learn how to add doors and windows to your floor plan
+  </Card>
+  <Card title="Architectural elements guide" icon="building" href="/guides/architectural-elements">
+    Detailed guide on working with doors, windows, slabs, and stairs
+  </Card>
+</CardGroup>
+
+## Common patterns
+
+<Accordion title="How do I change wall thickness?">
+  Walls created with polylines are infinitely thin lines. For thick walls, you need to create two parallel polylines or use custom shape builders.
+
+  ```typescript
+  // Outer walls
+  const outerWalls = openPlans.polyline({ lineColor: 0x000000 });
+  // Inner walls (offset by wall thickness)
+  const innerWalls = openPlans.polyline({ lineColor: 0x000000 });
+  ```
+</Accordion>
+
+<Accordion title="Can I create L-shaped or complex rooms?">
+  Yes! Simply add more points to the polyline to create any shape:
+
+  ```typescript
+  const lShapedRoom = openPlans.polyline();
+  const coords = [
+    [0, 0, 0],
+    [5, 0, 0],
+    [5, 0, 3],
+    [3, 0, 3],
+    [3, 0, 5],
+    [0, 0, 5],
+    [0, 0, 0]
+  ];
+  coords.forEach(c => lShapedRoom.attachPoint(c[0], c[1], c[2]));
+  ```
+</Accordion>
+
+<Accordion title="How do I change colors dynamically?">
+  Access the primitive's properties and update them:
+
+  ```typescript
+  floor.rectangleColor = 0xFF0000;  // Change to red
+  walls.lineColor = 0x0000FF;       // Change to blue
+  ```
+</Accordion>

@@ -1,0 +1,138 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "OpenPlans",
+  "projectDescription": "A TypeScript library for creating 2D floor plans and architectural drawings with Three.js",
+  "theme": "aspen",
+  "primaryColor": "#4460FF",
+  "lightColor": "#6B8CFF",
+  "darkColor": "#2040CC",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/primitives",
+              "concepts/elements",
+              "concepts/shapes",
+              "concepts/layouts"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-floor-plans",
+              "guides/working-with-primitives",
+              "guides/architectural-elements",
+              "guides/3d-shapes",
+              "guides/2d-views",
+              "guides/dimensions-and-glyphs",
+              "guides/json-generation"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/basic-floor-plan",
+              "examples/doors-and-windows",
+              "examples/custom-elements"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "api/openplans",
+              "api/open-geometry"
+            ]
+          },
+          {
+            "group": "Primitives",
+            "pages": [
+              "api/primitives/line",
+              "api/primitives/arc",
+              "api/primitives/rectangle",
+              "api/primitives/polyline"
+            ]
+          },
+          {
+            "group": "Elements",
+            "pages": [
+              "api/elements/door",
+              "api/elements/window",
+              "api/elements/slab",
+              "api/elements/stair",
+              "api/elements/board"
+            ]
+          },
+          {
+            "group": "Shapes",
+            "pages": [
+              "api/shapes/cuboid",
+              "api/shapes/cylinder"
+            ]
+          },
+          {
+            "group": "Layouts",
+            "pages": [
+              "api/layouts/paper-frame"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/dimensions",
+              "api/utilities/glyphs",
+              "api/utilities/camera"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "2D primitives (lines, arcs, rectangles, polylines)",
+    "Architectural elements (doors, windows, slabs, stairs)",
+    "3D shapes (cuboids, cylinders)",
+    "Multiple view rendering (plan, profile, section)",
+    "Dimension tools and text annotations",
+    "Headless floor plan generation from JSON",
+    "Layout and paper frame generation",
+    "Integration with Three.js and OpenGeometry kernel"
+  ],
+  "publicApiSurface": [
+    "OpenPlans",
+    "line()",
+    "arc()",
+    "rectangle()",
+    "polyline()",
+    "cuboid()",
+    "cylinder()",
+    "baseDoor()",
+    "baseSingleWindow()",
+    "baseDoubleWindow()",
+    "baseSlab()",
+    "baseStair()",
+    "board()",
+    "paperFrame()",
+    "create2DView()",
+    "setupOpenGeometry()",
+    "glyph()",
+    "DimensionTool"
+  ]
+}

@@ -1,66 +1,55 @@
-# OpenPlans Docs Site
+# Mintlify Starter Kit
 
-This directory contains the Docusaurus site for OpenPlans product documentation.
+Use the starter kit to get your docs deployed and ready to customize.
 
-## Prerequisites
+Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
 
-- Node.js 18 or newer
-- npm
+- Guide pages
+- Navigation
+- Customizations
+- API reference pages
+- Use of popular components
 
-## Install
+**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
 
-```bash
-cd docs
-npm install
-```
+## AI-assisted writing
 
-The docs package has its own `package-lock.json`, so use npm here as well.
-
-## Commands
-
-Run these from `docs/`:
-
-| Command | Purpose |
-| --- | --- |
-| `npm run start` | Start the local Docusaurus dev server |
-| `npm run build` | Build the static docs site |
-| `npm run serve` | Serve the built docs site locally |
-| `npm run clear` | Clear the Docusaurus cache |
-| `npm run swizzle` | Eject a Docusaurus component for customization |
-| `npm run deploy` | Run the configured Docusaurus deploy step |
-| `npm run typecheck` | Run TypeScript checks for the docs app |
-
-## Docs Structure
-
-```text
-docs/
-  docs/                 Markdown and MDX content
-  src/                  React components, CSS, and custom pages
-  static/               Static assets
-  docusaurus.config.ts  Site configuration
-  sidebars.ts           Sidebar configuration
-  package.json          Docs scripts and dependencies
-```
-
-## Writing Docs
-
-- Add or update product documentation pages under `docs/docs/`
-- Keep repository workflow docs in the repo root: `README.md`, `CONTRIBUTING.md`, and `AGENTS.md`
-- If a public API or user workflow changes, update the relevant docs page in the same change
-- Prefer linking to real examples under `../examples/src/` when a browser demo helps explain the feature
-
-## Review And Verification
-
-Local preview:
+Set up your AI coding tool to work with Mintlify:
 
 ```bash
-cd docs
-npm run start
+npx skills add https://mintlify.com/docs
 ```
 
-Build verification:
+This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
 
-```bash
-cd docs
-npm run build
+See the [AI tools guides](/ai-tools) for tool-specific setup.
+
+## Development
+
+Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+
 ```
+npm i -g mint
+```
+
+Run the following command at the root of your documentation, where your `docs.json` is located:
+
+```
+mint dev
+```
+
+View your local preview at `http://localhost:3000`.
+
+## Publishing changes
+
+Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+
+## Need help?
+
+### Troubleshooting
+
+- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
+- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
+
+### Resources
+- [Mintlify documentation](https://mintlify.com/docs)

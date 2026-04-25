@@ -1,0 +1,390 @@
+---
+title: 2D Views and Section Cuts
+description: Create orthographic 2D views and section cuts from your 3D models
+---
+
+## Overview
+
+OpenPlans allows you to create 2D orthographic views from your 3D models using the `create2DView` method. This is essential for generating floor plans, section cuts, and elevation views from your architectural models.
+
+## Creating a 2D View
+
+The `create2DView` method creates an orthographic camera and renderer for a separate container.
+
+### Basic 2D View
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+// Create a container for the 2D view
+const viewContainer = document.getElementById('2d-view');
+
+// Create the 2D view
+const { camera, renderer } = openPlans.create2DView(viewContainer);
+```
+
+### 2D View with Section Height
+
+You can specify a section height to create horizontal section cuts:
+
+```typescript
+// Create a section cut at height 2 meters
+const { camera, renderer } = openPlans.create2DView(
+  viewContainer,
+  2  // Section height in meters
+);
+```
+
+## Understanding Section Heights
+
+The `sectionHeight` parameter creates a clipping plane that cuts through your 3D model:
+
+- **sectionHeight = 0**: View from directly above (plan view at ground level)
+- **sectionHeight = 1.2**: Typical floor plan section (cuts through doors/windows)
+- **sectionHeight = 2.5**: Section above door height
+
+```typescript
+// Ground level plan
+const groundPlan = openPlans.create2DView(groundContainer, 0);
+
+// Standard floor plan (1.2m high)
+const floorPlan = openPlans.create2DView(floorPlanContainer, 1.2);
+
+// Upper section
+const upperSection = openPlans.create2DView(upperContainer, 2.5);
+```
+
+## 2D View Camera Setup
+
+The 2D view uses an orthographic camera positioned to look down on the scene:
+
+```typescript
+// The camera is automatically configured:
+// - Position: (0, 20, 0) - 20 units above origin
+// - Looking at: (0, 0, 0) - center of scene
+// - Orthographic projection for true-to-scale views
+
+const { camera, renderer } = openPlans.create2DView(container, 2);
+
+// Camera is THREE.OrthographicCamera
+console.log(camera.position); // Vector3(0, 20, 0)
+console.log(camera.isOrthographicCamera); // true
+```
+
+## Clipping Planes
+
+The section height creates a clipping plane that removes geometry below it:
+
+```typescript
+const { camera, renderer } = openPlans.create2DView(container, 2);
+
+// The renderer has clipping enabled:
+// renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionHeight)]
+// renderer.localClippingEnabled = true
+
+// This clips geometry below the section height
+```
+
+## HTML Setup for 2D Views
+
+Set up your HTML to display both 3D and 2D views:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+    #profile-view {
+      width: 300px;
+      height: 300px;
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main 3D view -->
+  <div id="app"></div>
+  
+  <!-- 2D profile view -->
+  <div id="profile-view"></div>
+  
+  <script type="module">
+    import { OpenPlans } from 'openplans';
+    
+    const container = document.getElementById('app');
+    const openPlans = new OpenPlans(container);
+    await openPlans.setupOpenGeometry();
+    
+    // Add some geometry
+    const door = openPlans.baseDoor();
+    
+    // Create 2D view
+    const profileContainer = document.getElementById('profile-view');
+    const { camera, renderer } = openPlans.create2DView(profileContainer, 2);
+  </script>
+</body>
+</html>
+```
+
+## Complete Example with Door and 2D View
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+async function setupWithProfileView() {
+  // Main 3D view
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create a room with door
+  const room = openPlans.rectangle({
+    center: [5, 0, 5],
+    width: 10,
+    breadth: 8,
+    color: 0x000000
+  });
+  
+  const door = openPlans.baseDoor({
+    labelName: 'Main Door',
+    doorPosition: [5, 0, 1],
+    doorLength: 2,
+    doorHeight: 2.1,
+    doorThickness: 0.1,
+    doorQuadrant: 1
+  });
+  
+  // Create 2D section view at door height
+  const profileContainer = document.getElementById('profile-view');
+  const { camera, renderer } = openPlans.create2DView(
+    profileContainer,
+    1.2  // Section at typical door height
+  );
+  
+  console.log('2D view created at height 1.2m');
+}
+
+setupWithProfileView();
+```
+
+## Managing Multiple 2D Views
+
+OpenPlans can manage multiple 2D views simultaneously:
+
+```typescript
+// Create multiple views at different heights
+const groundView = openPlans.create2DView(
+  document.getElementById('ground-view'),
+  0
+);
+
+const floorPlanView = openPlans.create2DView(
+  document.getElementById('floor-plan-view'),
+  1.2
+);
+
+const ceilingView = openPlans.create2DView(
+  document.getElementById('ceiling-view'),
+  2.8
+);
+
+// All views are automatically rendered in the render loop
+```
+
+## Internal View Management
+
+OpenPlans stores 2D views internally:
+
+```typescript
+// Views are stored in a Map by container ID
+// this.profileViews.set(container.id, { camera, renderer, container });
+
+// Important: Your container must have an ID
+const container = document.createElement('div');
+container.id = 'my-2d-view';  // Required!
+const view = openPlans.create2DView(container, 2);
+```
+
+## Automatic Rendering
+
+All 2D views are automatically rendered in the main render loop:
+
+```typescript
+// From OpenPlans source (index.ts:177-182):
+// private renderCallback = () => {
+//   if (this.profileViews.size > 0) {
+//     this.profileViews.forEach(({ camera, renderer, container }) => {
+//       renderer.render(this.openThree.scene, camera);
+//     });
+//   }
+// }
+
+// You don't need to manually render 2D views
+```
+
+## Responsive 2D Views
+
+Handle window resizing for 2D views:
+
+```typescript
+const { camera, renderer } = openPlans.create2DView(container, 2);
+
+window.addEventListener('resize', () => {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  const aspect = width / height;
+  
+  // Update orthographic camera
+  if (camera.isOrthographicCamera) {
+    camera.left = -aspect * 1.5 / 2;
+    camera.right = aspect * 1.5 / 2;
+    camera.top = 1.5 / 2;
+    camera.bottom = -1.5 / 2;
+    camera.updateProjectionMatrix();
+  }
+  
+  // Update renderer
+  renderer.setSize(width, height);
+});
+```
+
+## Showing Profile Views on Elements
+
+Some elements have built-in profile view support:
+
+```typescript
+const door = openPlans.baseDoor();
+
+// Toggle profile view (outline only)
+door.showProfileView(true);
+
+// Show full 3D view
+door.showProfileView(false);
+
+// This affects how the element appears in 2D views
+```
+
+## Advanced: Custom View Configuration
+
+You can access and modify the camera and renderer:
+
+```typescript
+const { camera, renderer } = openPlans.create2DView(container, 2);
+
+// Customize camera position
+camera.position.set(10, 20, 10);
+camera.lookAt(5, 0, 5);
+
+// Adjust zoom (orthographic)
+camera.zoom = 2;
+camera.updateProjectionMatrix();
+
+// Configure renderer
+renderer.setClearColor(0xFFFFFF);
+renderer.shadowMap.enabled = true;
+```
+
+## Complete Multi-View Example
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+async function createMultiViewFloorPlan() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create a multi-story building
+  const ground = openPlans.cuboid({
+    center: new Vector3(5, 0, 5),
+    width: 10,
+    height: 0.2,
+    depth: 10,
+    color: 0xCCCCCC
+  });
+  
+  const firstFloor = openPlans.cuboid({
+    center: new Vector3(5, 1.5, 5),
+    width: 10,
+    height: 3,
+    depth: 10,
+    color: 0xEEEEEE
+  });
+  
+  const secondFloor = openPlans.cuboid({
+    center: new Vector3(5, 5, 5),
+    width: 10,
+    height: 3,
+    depth: 10,
+    color: 0xDDDDDD
+  });
+  
+  // Create views at different heights
+  const groundPlan = openPlans.create2DView(
+    document.getElementById('ground-plan'),
+    0.5  // Just above ground floor
+  );
+  
+  const firstFloorPlan = openPlans.create2DView(
+    document.getElementById('first-floor-plan'),
+    1.2  // Standard floor plan height
+  );
+  
+  const secondFloorPlan = openPlans.create2DView(
+    document.getElementById('second-floor-plan'),
+    4.5  // Second floor plan height
+  );
+  
+  console.log('Multi-view floor plan created');
+}
+
+createMultiViewFloorPlan();
+```
+
+## Use Cases
+
+### Floor Plan Generation
+
+```typescript
+// Create a floor plan view at standard section height
+const floorPlanView = openPlans.create2DView(
+  floorPlanContainer,
+  1.2  // Standard 1.2m section height
+);
+```
+
+### Ceiling Plan
+
+```typescript
+// View from below the ceiling
+const ceilingPlanView = openPlans.create2DView(
+  ceilingContainer,
+  2.9  // Just below ceiling height
+);
+```
+
+### Foundation Plan
+
+```typescript
+// View at foundation level
+const foundationView = openPlans.create2DView(
+  foundationContainer,
+  -0.5  // Below ground level
+);
+```
+
+## Next Steps
+
+- Learn about [Dimensions and Glyphs](/guides/dimensions-and-glyphs) to annotate your 2D views
+- Explore [JSON Generation](/guides/json-generation) to save view configurations
+- Create complete floor plans in [Creating Floor Plans](/guides/creating-floor-plans)

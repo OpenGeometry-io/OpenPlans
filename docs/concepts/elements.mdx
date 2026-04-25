@@ -1,0 +1,498 @@
+---
+title: 'Elements'
+description: 'Architectural components for building detailed floor plans'
+---
+
+## Overview
+
+Elements are high-level architectural components that represent real-world building objects. They are composed of multiple geometric primitives and shapes, providing parametric control over complex architectural features.
+
+<Info>
+Elements automatically manage their internal geometry and sub-components. When you modify element properties, all related geometry updates automatically.
+</Info>
+
+## Available Elements
+
+### Doors
+
+Parametric door elements with frames, panels, and configurable swing directions.
+
+**Source:** `src/elements/base-door.ts:50`
+
+```typescript
+const door = openPlans.baseDoor({
+  labelName: 'Main Entry Door',
+  type: ElementType.DOOR,
+  dimensions: {
+    start: { x: -0.45, y: 0, z: 0 },
+    end: { x: 0.45, y: 0, z: 0 },
+    length: 0.9
+  },
+  doorPosition: [5, 0, 2],
+  doorType: DoorType.WOOD,
+  doorHeight: 2.1,
+  doorThickness: 0.05,
+  frameThickness: 0.15,
+  frameColor: 0x8B4513,
+  doorColor: 0xD2691E,
+  doorRotation: 1.5,    // Controls swing angle (1-2)
+  doorQuadrant: 1       // Controls swing direction (1-4)
+});
+
+// Modify door properties
+door.doorLength = 1.0;
+door.doorHeight = 2.2;
+door.doorRotation = 1.8;
+door.doorQuadrant = 2;
+```
+
+#### Properties
+
+<ParamField path="labelName" type="string" required>
+  Display name for the door
+</ParamField>
+
+<ParamField path="dimensions.length" type="number" required>
+  Width of the door opening (use `doorLength` setter)
+</ParamField>
+
+<ParamField path="doorPosition" type="[number, number, number]" required>
+  Position of the door in 3D space
+</ParamField>
+
+<ParamField path="doorHeight" type="number" required>
+  Height of the door panel (default: 2.1m)
+</ParamField>
+
+<ParamField path="doorThickness" type="number" required>
+  Thickness of the door panel (default: 0.05m)
+</ParamField>
+
+<ParamField path="frameThickness" type="number" required>
+  Thickness of the door frame (default: 0.15m)
+</ParamField>
+
+<ParamField path="doorRotation" type="number" required>
+  Door swing rotation factor (1-2, where 1 = 90°, 2 = 45°)
+</ParamField>
+
+<ParamField path="doorQuadrant" type="number" required>
+  Swing direction quadrant (1-4)
+  - 1: Opens outward-right
+  - 2: Opens outward-left
+  - 3: Opens inward-left
+  - 4: Opens inward-right
+</ParamField>
+
+#### Door Components
+
+Doors consist of multiple sub-elements:
+
+**Source:** `src/elements/base-door.ts:280`
+
+```typescript
+// Frame creation (left, right, and top frames)
+private createFrame() {
+  const leftFrame = new Cuboid({ /* ... */ });
+  const rightFrame = new Cuboid({ /* ... */ });
+  const topFrame = new Cuboid({ /* ... */ });
+  
+  const frameGroup = new THREE.Group();
+  frameGroup.add(leftFrame, rightFrame, topFrame);
+  this.subElements.set('frame', frameGroup);
+}
+
+// Door panel creation
+private createDoor() {
+  const doorPanel = new Cuboid({
+    width: this.propertySet.dimensions.length - 0.1,
+    height: this.propertySet.doorHeight - 0.1,
+    depth: this.propertySet.doorThickness
+  });
+  this.subElements.set('panel', doorPanel);
+}
+```
+
+### Windows
+
+#### Single Window
+
+Parametric window elements with frames, sills, and glass panels.
+
+**Source:** `src/elements/base-single-window.ts:39`
+
+```typescript
+const window = openPlans.baseSingleWindow({
+  labelName: 'Living Room Window',
+  type: ElementType.WINDOW,
+  dimensions: {
+    start: { x: -0.6, y: 0, z: 0 },
+    end: { x: 0.6, y: 0, z: 0 },
+    length: 1.2
+  },
+  windowPosition: [0, 0, 5],
+  windowType: WindowType.CASEMENT,
+  windowHeight: 1.4,
+  windowThickness: 0.05,
+  frameThickness: 0.15,
+  windowColor: 0x87CEEB,
+  frameColor: 0x000000,
+  sillHeight: 0.9
+});
+
+// Modify window properties
+window.windowLength = 1.5;
+window.windowThickness = 0.08;
+window.frameThickness = 0.2;
+```
+
+#### Properties
+
+<ParamField path="windowHeight" type="number" required>
+  Height of the window panel (default: 1.2m)
+</ParamField>
+
+<ParamField path="sillHeight" type="number" required>
+  Height from floor to window bottom (default: 0.9m)
+</ParamField>
+
+<ParamField path="windowThickness" type="number" required>
+  Thickness of the window glass (default: 0.05m)
+</ParamField>
+
+<ParamField path="frameThickness" type="number" required>
+  Thickness of the window frame (default: 0.15m)
+</ParamField>
+
+#### Window Components
+
+**Source:** `src/elements/base-single-window.ts:156`
+
+```typescript
+// Frame includes left, right, top, and sill
+private createFrame() {
+  const leftFrame = new Cuboid({ /* ... */ });
+  const rightFrame = new Cuboid({ /* ... */ });
+  const topFrame = new Cuboid({ /* ... */ });
+  const sillFrame = new Cuboid({ /* ... */ });
+  
+  const frameGroup = new THREE.Group();
+  frameGroup.add(leftFrame, rightFrame, topFrame, sillFrame);
+  this.subElements.set('frame', frameGroup);
+}
+```
+
+#### Double Window
+
+Similar to single windows but with dual panels:
+
+```typescript
+const doubleWindow = openPlans.baseDoubleWindow({
+  labelName: 'Master Bedroom Window',
+  dimensions: { length: 2.0 },
+  windowPosition: [10, 0, 5],
+  windowHeight: 1.5,
+  sillHeight: 0.9
+});
+```
+
+### Slabs
+
+Horizontal structural elements like floors and ceilings.
+
+**Source:** `src/elements/base-slab.ts:34`
+
+```typescript
+const slab = openPlans.baseSlab({
+  labelName: 'Ground Floor Slab',
+  type: ElementType.SLAB,
+  dimensions: {
+    start: { x: -5, y: 0, z: -5 },
+    end: { x: 5, y: 0, z: 5 },
+    width: 10,
+    length: 10
+  },
+  slabPosition: [0, 0, 0],
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC,
+  slabMaterial: 'concrete'
+});
+
+// Modify slab dimensions
+slab.slabWidth = 12;
+slab.slabLength = 15;
+slab.slabThickness = 0.25;
+slab.slabColor = 0xA9A9A9;
+```
+
+#### Properties
+
+<ParamField path="dimensions.width" type="number" required>
+  Width of the slab (X-axis dimension)
+</ParamField>
+
+<ParamField path="dimensions.length" type="number" required>
+  Length of the slab (Z-axis dimension)
+</ParamField>
+
+<ParamField path="slabThickness" type="number" required>
+  Thickness of the slab (Y-axis dimension, default: 0.2m)
+</ParamField>
+
+<ParamField path="slabColor" type="number" required>
+  Color of the slab in hexadecimal format
+</ParamField>
+
+<ParamField path="slabMaterial" type="string" required>
+  Material type (e.g., 'concrete', 'wood')
+</ParamField>
+
+#### Slab Coordinates
+
+**Source:** `src/elements/base-slab.ts:153`
+
+Slabs automatically calculate corner coordinates:
+
+```typescript
+private calculateCoordinatesByConfig() {
+  this.propertySet.coordinates = [
+    [startX, y, startZ],  // Bottom-left
+    [endX, y, startZ],    // Bottom-right
+    [endX, y, endZ],      // Top-right
+    [startX, y, endZ],    // Top-left
+  ];
+}
+```
+
+### Stairs
+
+Parametric staircase elements with automatic step calculation.
+
+**Source:** `src/elements/base-stair.ts:36`
+
+```typescript
+const stair = openPlans.baseStair({
+  labelName: 'Main Staircase',
+  type: ElementType.STAIR,
+  stairType: StairType.STRAIGHT,
+  dimensions: {
+    width: 1.2,
+    totalHeight: 3.0,
+    totalLength: 4.5
+  },
+  stairPosition: [0, 0, 0],
+  riserHeight: 0.17,      // Desired riser height
+  treadDepth: 0.28,       // Depth of each step
+  numberOfSteps: 15,      // Auto-calculated
+  stairColor: 0x8B7355,
+  stairMaterial: 'wood'
+});
+
+// Modify stair properties
+stair.stairWidth = 1.5;
+stair.totalHeight = 3.2;
+stair.riserHeight = 0.18;
+stair.stairColor = 0xA0522D;
+```
+
+#### Properties
+
+<ParamField path="dimensions.width" type="number" required>
+  Width of the staircase (default: 1.2m)
+</ParamField>
+
+<ParamField path="dimensions.totalHeight" type="number" required>
+  Total vertical rise (default: 3.0m)
+</ParamField>
+
+<ParamField path="riserHeight" type="number" required>
+  Target height of each step (default: 0.17m)
+</ParamField>
+
+<ParamField path="treadDepth" type="number" required>
+  Depth of each step tread (default: 0.28m)
+</ParamField>
+
+<ParamField path="stairType" type="StairType" required>
+  Type of staircase: STRAIGHT, LSHAPED, USHAPED, SPIRAL, or WINDER
+</ParamField>
+
+#### Automatic Step Calculation
+
+**Source:** `src/elements/base-stair.ts:127`
+
+Stairs automatically calculate the optimal number of steps:
+
+```typescript
+private calculateSteps() {
+  // Calculate steps based on total height and desired riser
+  const calculatedSteps = Math.ceil(
+    this.propertySet.dimensions.totalHeight / this.propertySet.riserHeight
+  );
+  
+  this.propertySet.numberOfSteps = Math.max(2, calculatedSteps);
+  
+  // Calculate actual riser height for even distribution
+  this.actualRiserHeight = 
+    this.propertySet.dimensions.totalHeight / this.propertySet.numberOfSteps;
+}
+```
+
+## Element Architecture
+
+### Sub-Elements System
+
+All elements use a `subElements` map to manage their components:
+
+```typescript
+subElements: Map<SubElementType, THREE.Object3D> = new Map();
+
+// Example: Door sub-elements
+this.subElements.set('frame', frameGroup);
+this.subElements.set('panel', doorPanel);
+
+// Example: Window sub-elements
+this.subElements.set('frame', frameGroup);
+this.subElements.set('panel', windowPanel);
+```
+
+### Geometry Management
+
+**Source:** `src/elements/base-door.ts:335`
+
+Elements automatically recreate geometry when properties change:
+
+```typescript
+setOPGeometry(): void {
+  // Remove old geometry
+  if (this.children.length > 1) {
+    this.remove(...this.children.slice(1));
+  }
+
+  // Create fresh geometry
+  this.createFrame();
+  this.createDoor();
+}
+```
+
+### Opening Elements
+
+Doors and windows extend the `Opening` class from the kernel, which provides:
+
+- Automatic opening geometry
+- Wall integration
+- Visibility management
+
+**Source:** `src/elements/base-door.ts:50`
+
+```typescript
+export class BaseDoor extends Opening implements IShape {
+  // Extends kernel Opening class
+}
+```
+
+## Profile Views
+
+Elements support profile view rendering for technical drawings:
+
+**Source:** `src/elements/base-door.ts:353`
+
+```typescript
+// Toggle profile view mode
+door.showProfileView(true);   // Show outline only
+door.showProfileView(false);  // Show full 3D
+```
+
+This feature:
+- Hides filled geometry
+- Shows only outlines
+- Useful for creating 2D technical drawings
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use semantic naming">
+    Give elements meaningful labels for easier project management:
+    
+    ```typescript
+    const door = openPlans.baseDoor({
+      labelName: 'Master Bedroom Entry',
+      // ...
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Set positions carefully">
+    Element positions are in 3D space coordinates:
+    
+    ```typescript
+    // Position at wall location
+    door.doorPosition = [5, 0, 2];  // [x, y, z]
+    ```
+  </Accordion>
+  
+  <Accordion title="Respect building codes">
+    Use realistic dimensions following building standards:
+    
+    ```typescript
+    // Standard door
+    doorHeight: 2.1,      // 2.1m standard height
+    doorLength: 0.9,      // 0.9m standard width
+    
+    // Standard stair
+    riserHeight: 0.17,    // 17cm max riser
+    treadDepth: 0.28,     // 28cm min tread
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Example: Complete Room
+
+```typescript
+// Create a floor slab
+const floor = openPlans.baseSlab({
+  labelName: 'Living Room Floor',
+  dimensions: { width: 8, length: 10 },
+  slabPosition: [0, 0, 0],
+  slabThickness: 0.2,
+  slabColor: 0xE0E0E0
+});
+
+// Add entry door
+const entryDoor = openPlans.baseDoor({
+  labelName: 'Main Entry',
+  dimensions: { length: 0.9 },
+  doorPosition: [0, 0, 5],
+  doorHeight: 2.1,
+  doorQuadrant: 1
+});
+
+// Add windows
+const window1 = openPlans.baseSingleWindow({
+  labelName: 'Window 1',
+  dimensions: { length: 1.5 },
+  windowPosition: [4, 0, 0],
+  windowHeight: 1.4,
+  sillHeight: 0.9
+});
+
+const window2 = openPlans.baseSingleWindow({
+  labelName: 'Window 2',
+  dimensions: { length: 1.5 },
+  windowPosition: [-4, 0, 0],
+  windowHeight: 1.4,
+  sillHeight: 0.9
+});
+
+// Add stairs to upper floor
+const stairs = openPlans.baseStair({
+  labelName: 'Main Stairs',
+  stairPosition: [2, 0, 2],
+  dimensions: {
+    width: 1.2,
+    totalHeight: 3.0
+  },
+  riserHeight: 0.17,
+  treadDepth: 0.28
+});
+```

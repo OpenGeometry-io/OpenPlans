@@ -1,0 +1,179 @@
+---
+title: 'ArcPrimitive'
+description: 'Create circular arc segments in 3D space'
+---
+
+## Overview
+
+The `ArcPrimitive` class creates a circular arc segment defined by a center point, radius, and start/end angles. It extends the kernel `Arc` class and implements the `IPrimitive` interface for selection and editing capabilities.
+
+## Constructor
+
+```typescript
+new ArcPrimitive(arcConfig?: ArcOptions)
+```
+
+<ParamField path="arcConfig" type="ArcOptions" optional>
+  Configuration object for the arc primitive
+</ParamField>
+
+### ArcOptions
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the arc object. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="center" type="Array<number>" required>
+  Center point coordinates as `[x, y, z]`
+</ParamField>
+
+<ParamField path="radius" type="number" required>
+  Radius of the arc
+</ParamField>
+
+<ParamField path="startAngle" type="number" required>
+  Starting angle in radians
+</ParamField>
+
+<ParamField path="endAngle" type="number" required>
+  Ending angle in radians
+</ParamField>
+
+<ParamField path="segments" type="number" required>
+  Number of segments to approximate the arc curve. Higher values create smoother arcs.
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  Arc color as hexadecimal number (e.g., `0xFF0000` for red)
+</ParamField>
+
+## Properties
+
+<ParamField path="arcCenter" type="Vector3">
+  Sets the center point of the arc. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="arcRadius" type="number">
+  Gets or sets the arc radius. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="arcStartAngle" type="number">
+  Gets or sets the starting angle in radians. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="arcEndAngle" type="number">
+  Gets or sets the ending angle in radians. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="arcSegments" type="number">
+  Gets or sets the number of segments. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="arcColor" type="number">
+  Gets or sets the arc color. Updates appearance automatically.
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Indicates whether the arc is currently selected
+</ParamField>
+
+<ParamField path="edit" type="boolean">
+  Indicates whether the arc is in edit mode
+</ParamField>
+
+<ParamField path="ogType" type="string">
+  Returns `'ArcPrimitive'` - the type identifier
+</ParamField>
+
+## Methods
+
+### getOPConfig()
+
+Returns the current configuration of the arc.
+
+```typescript
+getOPConfig(): ArcOptions
+```
+
+**Returns:** `ArcOptions` - Current arc configuration
+
+### setOPGeometry()
+
+Updates the arc geometry based on current property values. Called automatically when properties change.
+
+```typescript
+setOPGeometry(): void
+```
+
+## Examples
+
+### Create a Semicircle
+
+```typescript
+import { ArcPrimitive } from 'openplans';
+
+const semicircle = new ArcPrimitive({
+  center: [0, 0, 0],
+  radius: 5,
+  startAngle: 0,
+  endAngle: Math.PI, // 180 degrees
+  segments: 16,
+  color: 0x000000
+});
+```
+
+### Create a Full Circle
+
+```typescript
+const circle = new ArcPrimitive({
+  center: [10, 0, 0],
+  radius: 3,
+  startAngle: 0,
+  endAngle: Math.PI * 2, // 360 degrees
+  segments: 32,
+  color: 0x0000FF // Blue
+});
+```
+
+### Create a Quarter Arc
+
+```typescript
+const quarterArc = new ArcPrimitive({
+  center: [0, 0, 0],
+  radius: 10,
+  startAngle: 0,
+  endAngle: Math.PI / 2, // 90 degrees
+  segments: 16,
+  color: 0xFF0000 // Red
+});
+```
+
+### Update Arc Properties
+
+```typescript
+// Increase radius
+quarterArc.arcRadius = 15;
+
+// Make it smoother
+quarterArc.arcSegments = 32;
+
+// Change color to green
+quarterArc.arcColor = 0x00FF00;
+```
+
+### Get Arc Configuration
+
+```typescript
+const config = semicircle.getOPConfig();
+console.log(config);
+// Output:
+// {
+//   ogid: 'auto-generated-id',
+//   center: [0, 0, 0],
+//   radius: 5,
+//   startAngle: 0,
+//   endAngle: 3.14159...,
+//   segments: 16,
+//   color: 0x000000
+// }
+```

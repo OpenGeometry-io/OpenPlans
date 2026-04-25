@@ -1,0 +1,242 @@
+---
+title: Slab
+description: API reference for the BaseSlab class and OPSlab configuration
+---
+
+## BaseSlab
+
+The `BaseSlab` class represents a horizontal concrete or floor slab element. It extends the `Cuboid` class and provides functionality for creating customizable floor slabs with various materials and dimensions.
+
+### Constructor
+
+```typescript
+new BaseSlab(baseSlabConfig?: OPSlab)
+```
+
+<ParamField path="baseSlabConfig" type="OPSlab" optional>
+  Optional configuration object for the slab. If not provided, default values will be used.
+</ParamField>
+
+### Properties
+
+<ParamField path="ogType" type="string">
+  The element type identifier. Always set to `ElementType.SLAB`.
+</ParamField>
+
+<ParamField path="propertySet" type="OPSlab">
+  The current configuration of the slab including dimensions, color, and material.
+</ParamField>
+
+<ParamField path="subElements" type="Map<SubElementType, THREE.Object3D>">
+  Map containing sub-elements of the slab (body, finish, reinforcement).
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Indicates whether the slab is currently selected.
+</ParamField>
+
+<ParamField path="edit" type="boolean">
+  Indicates whether the slab is in edit mode.
+</ParamField>
+
+### Getters & Setters
+
+<ParamField path="labelName" type="string">
+  The display name of the slab element.
+</ParamField>
+
+<ParamField path="slabPosition" type="[number, number, number]">
+  The 3D position of the slab in the scene as [x, y, z].
+</ParamField>
+
+<ParamField path="slabWidth" type="number">
+  The width of the slab in meters (X-axis).
+</ParamField>
+
+<ParamField path="slabLength" type="number">
+  The length of the slab in meters (Z-axis).
+</ParamField>
+
+<ParamField path="slabThickness" type="number">
+  The thickness of the slab in meters (Y-axis).
+</ParamField>
+
+<ParamField path="slabColor" type="number">
+  The hexadecimal color value for the slab.
+</ParamField>
+
+<ParamField path="slabMaterial" type="string">
+  The material type of the slab (e.g., 'concrete', 'wood').
+</ParamField>
+
+### Methods
+
+#### setOPConfig
+
+```typescript
+setOPConfig(config: OPSlab): void
+```
+
+Updates the slab configuration and rebuilds the geometry.
+
+<ParamField path="config" type="OPSlab">
+  New configuration object for the slab.
+</ParamField>
+
+#### getOPConfig
+
+```typescript
+getOPConfig(): OPSlab
+```
+
+Returns the current slab configuration.
+
+**Returns:** `OPSlab` - The current slab configuration object.
+
+#### setOPGeometry
+
+```typescript
+setOPGeometry(): void
+```
+
+Rebuilds the slab geometry based on the current configuration.
+
+#### setOPMaterial
+
+```typescript
+setOPMaterial(): void
+```
+
+Updates the material properties of the slab.
+
+#### showProfileView
+
+```typescript
+showProfileView(status: boolean): void
+```
+
+Toggles the profile view mode for technical drawings.
+
+<ParamField path="status" type="boolean">
+  True to show profile view (outline only), false to show normal view.
+</ParamField>
+
+#### dispose
+
+```typescript
+dispose(): void
+```
+
+Cleans up geometry, materials, and removes the slab from the scene.
+
+---
+
+## OPSlab
+
+The configuration interface for slab elements.
+
+### Properties
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the slab element.
+</ParamField>
+
+<ParamField path="labelName" type="string" required>
+  Display name for the slab.
+</ParamField>
+
+<ParamField path="type" type="ElementType.SLAB" required>
+  Element type identifier.
+</ParamField>
+
+<ParamField path="dimensions" type="object" required>
+  Dimensions configuration for the slab.
+  <Expandable title="properties">
+    <ParamField path="start" type="{ x: number, y: number, z: number }">
+      Start corner point of the slab.
+    </ParamField>
+    <ParamField path="end" type="{ x: number, y: number, z: number }">
+      End corner point of the slab.
+    </ParamField>
+    <ParamField path="width" type="number">
+      Width of the slab in meters (X-axis).
+    </ParamField>
+    <ParamField path="length" type="number">
+      Length of the slab in meters (Z-axis).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="slabPosition" type="[number, number, number]" required>
+  3D position of the slab as [x, y, z].
+</ParamField>
+
+<ParamField path="slabThickness" type="number" required>
+  Thickness of the slab in meters.
+</ParamField>
+
+<ParamField path="slabColor" type="number" required>
+  Hexadecimal color value for the slab (e.g., 0xCCCCCC for gray).
+</ParamField>
+
+<ParamField path="slabMaterial" type="string" required>
+  Material type of the slab (e.g., 'concrete', 'wood', 'steel').
+</ParamField>
+
+<ParamField path="coordinates" type="Array<[number, number, number]>" required>
+  Array of 4 corner coordinate points defining the slab geometry. Calculated automatically.
+</ParamField>
+
+---
+
+## Example
+
+```typescript
+import { BaseSlab, ElementType } from 'openplans';
+
+// Create a slab with default configuration
+const slab = new BaseSlab();
+
+// Create a custom concrete floor slab
+const floorSlab = new BaseSlab({
+  labelName: 'Ground Floor Slab',
+  type: ElementType.SLAB,
+  dimensions: {
+    start: { x: -5, y: 0, z: -5 },
+    end: { x: 5, y: 0, z: 5 },
+    width: 10,
+    length: 10,
+  },
+  slabPosition: [0, 0, 0],
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC,
+  slabMaterial: 'concrete',
+  coordinates: [],
+});
+
+// Update slab properties
+floorSlab.slabThickness = 0.25;
+floorSlab.slabWidth = 12;
+floorSlab.slabLength = 15;
+floorSlab.slabColor = 0xAAAAAA;
+
+// Change material type
+floorSlab.slabMaterial = 'reinforced-concrete';
+
+// Get current configuration
+const config = floorSlab.getOPConfig();
+console.log(`Slab area: ${config.dimensions.width * config.dimensions.length} m²`);
+
+// Show profile view for technical drawings
+floorSlab.showProfileView(true);
+
+// Clean up when done
+floorSlab.dispose();
+```
+
+## Notes
+
+- The slab is positioned with its top surface at the Y position specified in `slabPosition`
+- The slab extends downward by its thickness value
+- Coordinates are automatically calculated based on the dimensions and represent the four corners
+- The default color (0xCCCCCC) represents a typical concrete gray color

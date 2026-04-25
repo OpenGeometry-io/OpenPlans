@@ -1,0 +1,120 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "OpenPlans",
+  "theme": "almond",
+  "colors": {
+    "primary": "#4460FF",
+    "light": "#6B8CFF",
+    "dark": "#2040CC"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/openGeometry-io/OpenPlans"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/openGeometry-io/OpenPlans"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/primitives",
+              "concepts/elements",
+              "concepts/shapes",
+              "concepts/layouts"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-floor-plans",
+              "guides/working-with-primitives",
+              "guides/architectural-elements",
+              "guides/3d-shapes",
+              "guides/2d-views",
+              "guides/dimensions-and-glyphs",
+              "guides/json-generation"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/basic-floor-plan",
+              "examples/doors-and-windows",
+              "examples/custom-elements"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "api/openplans",
+              "api/open-geometry"
+            ]
+          },
+          {
+            "group": "Primitives",
+            "pages": [
+              "api/primitives/line",
+              "api/primitives/arc",
+              "api/primitives/rectangle",
+              "api/primitives/polyline"
+            ]
+          },
+          {
+            "group": "Elements",
+            "pages": [
+              "api/elements/door",
+              "api/elements/window",
+              "api/elements/slab",
+              "api/elements/stair",
+              "api/elements/board"
+            ]
+          },
+          {
+            "group": "Shapes",
+            "pages": [
+              "api/shapes/cuboid",
+              "api/shapes/cylinder"
+            ]
+          },
+          {
+            "group": "Layouts",
+            "pages": [
+              "api/layouts/paper-frame"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/dimensions",
+              "api/utilities/glyphs",
+              "api/utilities/camera"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

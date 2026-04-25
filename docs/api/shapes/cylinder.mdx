@@ -1,0 +1,242 @@
+---
+title: "CylinderShape"
+description: "Create and manage 3D cylinder shapes in OpenPlans"
+---
+
+## Overview
+
+`CylinderShape` is a 3D cylinder shape class that extends the base `Cylinder` class from the OpenGeometry kernel. It provides methods for creating, configuring, and managing cylindrical shapes in your 3D scene.
+
+## Constructor
+
+<ParamField path="properties" type="ICylinderOptions" optional>
+  Configuration options for the cylinder shape
+</ParamField>
+
+### Example
+
+```typescript
+import { OpenPlans, ICylinderOptions } from '@opengeometry/openplans';
+
+const openplans = new OpenPlans(container);
+
+// Create a cylinder with default options
+const cylinder1 = openplans.cylinder();
+
+// Create a cylinder with custom options
+const cylinder2 = openplans.cylinder({
+  radius: 5,
+  height: 10,
+  color: 0xff6b6b
+});
+```
+
+## ICylinderOptions Interface
+
+Configuration options for creating a cylinder shape.
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the shape. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="radius" type="number" optional>
+  Radius of the cylinder. Default: `1`
+</ParamField>
+
+<ParamField path="radiusTop" type="number" optional>
+  Radius of the cylinder at the top. Allows creating cone shapes. Default: same as `radius`
+</ParamField>
+
+<ParamField path="radiusBottom" type="number" optional>
+  Radius of the cylinder at the bottom. Default: same as `radius`
+</ParamField>
+
+<ParamField path="height" type="number" optional>
+  Height of the cylinder along the Y-axis. Default: `1`
+</ParamField>
+
+<ParamField path="radialSegments" type="number" optional>
+  Number of segmented faces around the circumference. Default: `32`
+</ParamField>
+
+<ParamField path="color" type="number" optional>
+  Hexadecimal color value for the cylinder. Default: `0xffffff`
+</ParamField>
+
+<ParamField path="position" type="{ x: number, y: number, z: number }" optional>
+  Position of the cylinder in 3D space
+</ParamField>
+
+<ParamField path="rotation" type="{ x: number, y: number, z: number }" optional>
+  Rotation of the cylinder in radians
+</ParamField>
+
+## Properties
+
+### ogType
+
+```typescript
+readonly ogType: string = 'CylinderShape'
+```
+
+Type identifier for the shape.
+
+### subNodes
+
+```typescript
+subNodes: Map<string, THREE.Object3D>
+```
+
+Map of child objects attached to this cylinder.
+
+### selected
+
+```typescript
+selected: boolean
+```
+
+Indicates whether the cylinder is currently selected.
+
+### edit
+
+```typescript
+edit: boolean
+```
+
+Indicates whether the cylinder is in edit mode.
+
+### propertySet
+
+```typescript
+propertySet: ICylinderOptions
+```
+
+Current configuration properties of the cylinder.
+
+## Methods
+
+### setOPConfig
+
+Update the cylinder's configuration.
+
+<ParamField path="config" type="ICylinderOptions" required>
+  New configuration options to apply
+</ParamField>
+
+```typescript
+cylinder.setOPConfig({
+  radius: 8,
+  height: 15,
+  color: 0x00ff00
+});
+```
+
+<Warning>
+Calling `setOPConfig` will discard the current geometry and rebuild it with the new configuration.
+</Warning>
+
+### getOPConfig
+
+Retrieve the current configuration of the cylinder.
+
+**Returns:** `ICylinderOptions`
+
+```typescript
+const config = cylinder.getOPConfig();
+console.log(config.radius, config.height);
+```
+
+### setOPGeometry
+
+Update the geometry of the cylinder. This method is called internally when configuration changes.
+
+```typescript
+cylinder.setOPGeometry();
+```
+
+### setOPMaterial
+
+Update the material properties of the cylinder.
+
+```typescript
+cylinder.setOPMaterial();
+```
+
+## Complete Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+
+// Initialize OpenPlans
+const container = document.getElementById('canvas');
+const openplans = new OpenPlans(container);
+
+await openplans.setupOpenGeometry();
+
+// Create a standard cylinder
+const cylinder = openplans.cylinder({
+  radius: 5,
+  height: 12,
+  radialSegments: 64,
+  color: 0xe74c3c
+});
+
+// Position the cylinder
+cylinder.position.set(10, 6, 0);
+
+// Create a cone by using different radii
+const cone = openplans.cylinder({
+  radiusTop: 0,
+  radiusBottom: 5,
+  height: 10,
+  color: 0xf39c12
+});
+
+cone.position.set(-10, 5, 0);
+
+// Update cylinder configuration
+cylinder.setOPConfig({
+  radius: 6,
+  height: 15,
+  color: 0x9b59b6
+});
+
+// Get current properties
+const properties = cylinder.getOPConfig();
+console.log('Cylinder properties:', properties);
+
+// Mark as selected
+cylinder.selected = true;
+```
+
+## Creating Cone Shapes
+
+You can create cone shapes by setting different radii for the top and bottom:
+
+```typescript
+// Standard cone (point at top)
+const cone = openplans.cylinder({
+  radiusTop: 0,
+  radiusBottom: 5,
+  height: 10
+});
+
+// Inverted cone (point at bottom)
+const invertedCone = openplans.cylinder({
+  radiusTop: 5,
+  radiusBottom: 0,
+  height: 10
+});
+
+// Truncated cone
+const truncatedCone = openplans.cylinder({
+  radiusTop: 3,
+  radiusBottom: 6,
+  height: 8
+});
+```
+
+## Related
+
+- [CuboidShape](/api/shapes/cuboid) - Create cuboid shapes
+- [Shapes Overview](/api/shapes) - Overview of all shape types
