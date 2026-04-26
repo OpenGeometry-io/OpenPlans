@@ -127,14 +127,16 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   get outline() { return this._windowOutlineEnabled; }
   set outline(value: boolean) {
     this._windowOutlineEnabled = value;
-    for (const obj of this.subElements2D.values()) {
-      // @ts-ignore
-      obj.outline = value;
-    }
-    for (const obj of this.subElements3D.values()) {
-      // @ts-ignore
-      obj.outline = value;
-    }
+    const applyOutline = (obj: THREE.Object3D) => {
+      if (obj instanceof THREE.Group) {
+        for (const child of obj.children) applyOutline(child);
+      } else {
+        // @ts-ignore
+        obj.outline = value;
+      }
+    };
+    for (const obj of this.subElements2D.values()) applyOutline(obj);
+    for (const obj of this.subElements3D.values()) applyOutline(obj);
   }
 
   get hostObject() { return this.propertySet.hostWallId || null; }
@@ -416,14 +418,14 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   }
 
   private build2D(): void {
-    const { windowDimensions, frameDimensions, sillHeight, stationLocal } = this.propertySet;
+    const { windowDimensions, frameDimensions, stationLocal } = this.propertySet;
     const halfWindowWidth   = windowDimensions.width / 2;
     const frameVisibleWidth = frameDimensions.width;
     const halfWallThickness = this.resolveWallThickness() / 2;
     const u = stationLocal.alongWall;
-    const h = sillHeight;
+    const h = 0; // 2D plan elements live at floor level (Y = 0), coincident with wall polygon
 
-    // Plan view: two jamb cross-sections (left and right lining) at sill height.
+    // Plan view: two jamb cross-sections (left and right lining).
     const frameLeftPolygon = new Polygon({
       vertices: [
         this.worldFromLocal(u - halfWindowWidth - frameVisibleWidth, -halfWallThickness, h),
@@ -449,19 +451,29 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     this.subElements2D.set('frame', frameGroup);
     this.add(frameGroup);
 
-    // Glass cross-section: rectangle spanning glass thickness across the wall.
-    const halfGlassThick = windowDimensions.thickness / 2;
-    const glassPolygon = new Polygon({
-      vertices: [
-        this.worldFromLocal(u - halfWindowWidth, -halfGlassThick, h),
-        this.worldFromLocal(u - halfWindowWidth, +halfGlassThick, h),
-        this.worldFromLocal(u + halfWindowWidth, +halfGlassThick, h),
-        this.worldFromLocal(u + halfWindowWidth, -halfGlassThick, h),
-      ],
-      color: this.propertySet.glassColor,
-    });
-    this.subElements2D.set('glass', glassPolygon);
-    this.add(glassPolygon);
+    // Architectural floor-plan glass symbol: two slit lines spanning the opening
+    // width, positioned symmetrically at ±¼ of wall thickness from centre — the
+    // standard double-line convention indicating a glazed unit in a wall opening.
+    const slitThick  = 0.015; // 15 mm per slit — visible but not overweight
+    const slitOffset = halfWallThickness * 0.5; // places each slit at ±¼ full thickness
+    const glassColor = this.propertySet.glassColor;
+
+    const makeSlit = (vCentre: number): Polygon =>
+      new Polygon({
+        vertices: [
+          this.worldFromLocal(u - halfWindowWidth, vCentre - slitThick / 2, h),
+          this.worldFromLocal(u - halfWindowWidth, vCentre + slitThick / 2, h),
+          this.worldFromLocal(u + halfWindowWidth, vCentre + slitThick / 2, h),
+          this.worldFromLocal(u + halfWindowWidth, vCentre - slitThick / 2, h),
+        ],
+        color: glassColor,
+      });
+
+    const glassGroup = new THREE.Group();
+    glassGroup.add(makeSlit(-slitOffset));
+    glassGroup.add(makeSlit(+slitOffset));
+    this.subElements2D.set('glass', glassGroup);
+    this.add(glassGroup);
   }
 
   setOPMaterial(): void {
@@ -475,8 +487,12 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
       if (rightFrame) rightFrame.color = frameColor;
     }
 
-    const glass2D = this.subElements2D.get('glass') as Polygon | undefined;
-    if (glass2D) glass2D.color = glassColor;
+    const glassGroup2D = this.subElements2D.get('glass') as THREE.Group | undefined;
+    if (glassGroup2D) {
+      for (const child of glassGroup2D.children) {
+        (child as Polygon).color = glassColor;
+      }
+    }
 
     const frame3D = this.subElements3D.get('frame') as Sweep | undefined;
     if (frame3D) frame3D.color = frameColor;
