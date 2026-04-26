@@ -320,11 +320,16 @@ export class SingleWall extends Line implements IShape {
       return;
     }
 
-    // Pass the wall's color through to the boolean result so the resolved
-    // (cut) wall mesh inherits the wall's color. Note: the kernel still
-    // returns a translucent material (transparent: true, opacity: 0.82
-    // hardcoded inside BooleanResult) — see OPENGEOMETRY_KERNEL_DEBT.md #1.
-    const result = wall2D.subtract(all2DOpenings, { color: this.propertySet.color });
+    // Pass the wall's color and force opaque material — opengeometry's
+    // BooleanResult defaults to `transparent: true, opacity: 0.82`, which
+    // makes a cut wall render translucent. The kernel exposes overrides
+    // since 2.0.8; we use them to match a regular Solid (opaque, double-
+    // sided so the cut interior renders correctly).
+    const result = wall2D.subtract(all2DOpenings, {
+      color:       this.propertySet.color,
+      transparent: false,
+      opacity:     1,
+    });
 
     wall2D.visible = false;
     all2DOpenings.forEach((opening2D) => {
@@ -354,7 +359,11 @@ export class SingleWall extends Line implements IShape {
       return;
     }
 
-    const result3D = wall3D.subtract(all3DOpenings, { color: this.propertySet.color });
+    const result3D = wall3D.subtract(all3DOpenings, {
+      color:       this.propertySet.color,
+      transparent: false,
+      opacity:     1,
+    });
 
     wall3D.visible = false;
     all3DOpenings.forEach((opening3D) => {

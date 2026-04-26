@@ -41,7 +41,6 @@ const DEFAULT_POINTS: WallPoint[] = [
 
 const GEOMETRY_EPSILON = 1e-6;
 const FOOTPRINT_AREA_EPSILON = 1e-6;
-const PLAN_RENDER_ORDER = 20;
 
 function clonePoint(point: WallPoint): WallPoint {
   return [point[0], point[1], point[2]];
@@ -691,11 +690,15 @@ export class PolyWall extends Polyline implements IShape {
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
 
+    // BooleanResult defaults to translucent (`transparent: true, opacity: 0.82`).
+    // Override since opengeometry 2.0.8 so the cut wall matches a regular Solid.
     if (wall2D && all2DOpenings.length > 0) {
       try {
         const result2D = wall2D.subtract(all2DOpenings, {
-          color: this.propertySet.color,
-          outline: this._outlineEnabled,
+          color:       this.propertySet.color,
+          outline:     this._outlineEnabled,
+          transparent: false,
+          opacity:     1,
         }) as BooleanResult;
 
         this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
@@ -713,8 +716,10 @@ export class PolyWall extends Polyline implements IShape {
     if (wall3D && all3DOpenings.length > 0) {
       try {
         const result3D = wall3D.subtract(all3DOpenings, {
-          color: this.propertySet.color,
-          outline: this._outlineEnabled,
+          color:       this.propertySet.color,
+          outline:     this._outlineEnabled,
+          transparent: false,
+          opacity:     1,
         }) as BooleanResult;
 
         this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
@@ -845,12 +850,16 @@ export class PolyWall extends Polyline implements IShape {
       (obj as Polygon | BooleanResult).outline = this._outlineEnabled;
     }
 
-    obj.renderOrder = PLAN_RENDER_ORDER;
+    // Use default depth behavior so the 2D plan polygon is correctly
+    // occluded by the 3D wall when both views are on (matches SingleWall).
+    // The earlier `depthTest: false` + high renderOrder forced the 2D plan
+    // to draw OVER the 3D wall, making solid walls look see-through.
+    obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
-      material.depthWrite = false;
-      material.depthTest = false;
-      material.transparent = true;
+      material.depthWrite = true;
+      material.depthTest = true;
+      material.transparent = false;
       material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.DoubleSide;
@@ -867,10 +876,13 @@ export class PolyWall extends Polyline implements IShape {
     obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
+      // Render fully opaque in the wall color, matching a regular Solid (and
+      // SingleWall). The earlier `transparent: true, opacity: 0.6` made every
+      // PolyWall — even one with no openings — render at 60% alpha.
       material.depthWrite = true;
       material.depthTest = true;
-      material.transparent = true;
-      material.opacity = 0.6;
+      material.transparent = false;
+      material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.FrontSide;
       }

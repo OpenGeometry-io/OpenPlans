@@ -204,9 +204,16 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   }
   get modelView() { return this._windowModelView; }
 
-  /** Window IS the opening — return self. Kept for back-compat with wall attachers. */
+  /**
+   * Window IS the opening — return self. Kept for back-compat with wall attachers.
+   *
+   * The cast bypasses TS's structural check on `propertySet` (WindowOptions
+   * does not extend OpeningOptions because the `type` literal differs:
+   * `WINDOW` vs `OPENING`). At runtime, a Window instance is a real Opening
+   * subclass and exposes every accessor a wall expects, so the cast is sound.
+   */
   get opening(): Opening {
-    return this;
+    return this as unknown as Opening;
   }
 
   // @ts-ignore — returning WindowOptions where Opening returns OpeningOptions.
