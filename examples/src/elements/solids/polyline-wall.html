@@ -44,6 +44,7 @@
     let pointFolder;
     let demoOpening = null;
     let demoDoor = null;
+    let demoWindow = null;
     let wallControllers = [];
     let selectedPointControllers = [];
     let selectedIndexController = null;
@@ -245,6 +246,24 @@
       polyWall.attachDoor(demoDoor, { offset: 2.7, baseHeight: 0 });
     }
 
+    function attachDemoWindow() {
+      if (demoWindow) {
+        return;
+      }
+
+      demoWindow = openPlans.window({
+        windowDimensions: { width: 1.2, thickness: 0.04 },
+        frameDimensions: { width: 0.05, thickness: polyWall.wallThickness },
+        windowHeight: 1.2,
+        sillHeight: 0.9,
+        frameColor: 0xD4D0CB,
+        glassColor: 0x87ceeb,
+      });
+      demoWindow.outline = true;
+      // offset = 1.2 m along the polyline — on the first segment, clear of the door.
+      polyWall.attachWindow(demoWindow, { offset: 1.2 });
+    }
+
     function setUI() {
       gui = new GUI();
 
@@ -338,6 +357,7 @@
       hostingFolder.open();
       hostingFolder.add({ attachDemoOpening }, 'attachDemoOpening').name('Attach Opening');
       hostingFolder.add({ attachDemoDoor }, 'attachDemoDoor').name('Attach Door');
+      hostingFolder.add({ attachDemoWindow }, 'attachDemoWindow').name('Attach Window');
 
       rebuildPointFolder();
     }

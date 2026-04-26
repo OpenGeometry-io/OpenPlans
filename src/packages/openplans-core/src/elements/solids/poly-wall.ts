@@ -628,6 +628,29 @@ export class PolyWall extends Polyline implements IShape {
     this.resolveOpenings();
   }
 
+  /**
+   * Detach a previously attached window. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG. Mirrors detachDoor and SingleWall.detachWindow.
+   */
+  detachWindow(windowElement: Window) {
+    const openingFromWindow = windowElement.opening as Opening;
+    const openingOgid = openingFromWindow?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromWindow);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    windowElement.hostWallId = undefined;
+    windowElement.bindHostFrame(null);
+
+    this.resolveOpenings();
+  }
+
   attachWindow(windowElement: Window, placement?: PolyWallHostPlacement) {
     windowElement.hostWallId = this.ogid;
     this.applyHostPlacement(windowElement, placement);
