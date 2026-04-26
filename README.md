@@ -2,7 +2,7 @@
 
 Floor-planning, drawing, and export toolkit for the web, built on top of OpenGeometry and Three.js.
 
-[OpenGeometry](https://opengeometry.io) · [OpenGeometry Docs](https://docs.opengeometry.io) · [Contributor Guide](./CONTRIBUTING.md) · [Agent Guide](./AGENTS.md) · [Docs Site Guide](./docs/README.md)
+[OpenGeometry](https://opengeometry.io) · [OpenGeometry Docs](https://docs.opengeometry.io) · [Contributor Guide](./CONTRIBUTING.md) · [Agent Guide](./AGENTS.md) · [Visual Verification](./CONTRIBUTING.md#visual-verification-harness) · [Docs Site Guide](./docs/README.md)
 
 > **Actively under development.** OpenPlans is evolving in the open, so APIs, examples, and docs may change as the library matures.
 
