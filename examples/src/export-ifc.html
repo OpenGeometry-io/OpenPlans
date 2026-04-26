@@ -3,23 +3,17 @@
 
 <head>
   <title>OpenPlans Semantic IFC Export</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="./shared/example.css">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenPlans semantic IFC export example">
   <meta name="author" content="OpenGeometry">
   <style>
     body {
-      margin: 0;
-      overflow: hidden;
       background: #0d1b2a;
       color: #e0e1dd;
       font-family: "Space Mono", monospace;
-    }
-
-    #app {
-      width: 100%;
-      height: 100vh;
     }
 
     .example-title,
@@ -34,13 +28,6 @@
       letter-spacing: 1px;
     }
 
-    .example-title {
-      top: 20px;
-      text-transform: uppercase;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
     .example-status {
       bottom: 20px;
       font-size: 12px;
@@ -48,7 +35,6 @@
       text-align: center;
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -57,7 +43,7 @@
   <div class="example-status" id="status">Initializing semantic document...</div>
 
   <script type="module">
-    import { OpenPlans, CameraMode } from "./../src/index.ts";
+    import { OpenPlans, CameraMode } from "/openplans";
     import wasmUrl from "opengeometry/opengeometry_bg.wasm?url";
     import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 

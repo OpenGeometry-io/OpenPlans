@@ -3,7 +3,8 @@
 
 <head>
   <title>OpenPlans View Creation</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="../shared/example.css">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -14,14 +15,9 @@
     rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      overflow: hidden;
       font-family: "JetBrains Mono", monospace;
     }
-
     #app {
-      width: 100%;
-      height: 100vh;
       display: flex;
     }
 
@@ -31,36 +27,19 @@
       border: 4px solid #000;
       box-sizing: border-box;
     }
-
-    .example-title {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
-      z-index: 1000;
-    }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="example-title">View Creation</div>
   
-  <div id="app" style="width: 100%; height: 100vh; display: flex;">
+  <div id="app">
     <div id="main-view" style="width: 50%; height: 100%; border: 4px solid #000;"></div>
     <div id="view-dynamic" style="width: 50%; height: 100%; border: 4px solid red;"></div>
   </div>
 
   <script type="module">
-    import { OpenPlans, CameraMode } from './../../../src/index.ts';
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
     import Stats from 'stats.js';
     const stats = new Stats();

@@ -3,38 +3,24 @@
 
 <head>
   <title>OpenPlans — All Datums</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="../shared/example.css">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenPlans — combined datum showcase">
   <meta name="author" content="OpenPlans">
   <style>
-    body { margin: 0; overflow: hidden; }
-    #app { width: 100%; height: 100vh; cursor: unset !important; }
-    .example-title {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
-      z-index: 1000;
+    #app {
+      cursor: unset !important;
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="example-title">All Datums</div>
   <div id="app"></div>
   <script type="module">
-    import { OpenPlans, CameraMode, Grid } from './../../../src/index.ts';
+    import { OpenPlans, CameraMode, Grid } from '@opengeometry/openplans';
 
     async function init() {
       const container = document.getElementById('app');

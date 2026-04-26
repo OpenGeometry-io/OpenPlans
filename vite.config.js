@@ -29,7 +29,7 @@ export default defineConfig({
   resolve: {
     dedupe: ['three'],
     alias: {
-      '@src': resolve(__dirname, 'src'),
+      '@opengeometry/openplans': resolve(__dirname, 'src/index.ts'),
     },
   },
   optimizeDeps: {
