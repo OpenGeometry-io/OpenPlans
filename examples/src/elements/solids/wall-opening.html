@@ -47,17 +47,24 @@
     const wallHeight    = 5;
     const wallThickness = 0.3;
 
+    // Layout along the wall (length DIAG ≈ 7.07 m). Openings are placed so
+    // their full footprints stay strictly inside the wall and never overlap
+    // each other — overlapping or out-of-bounds CSG cutters produce
+    // non-manifold geometry under the current kernel.
+    //
+    //  alongWall:   0 ── 1 ── 2.5 ── 3.0 ── 4.0 ── 4.7 ── 6.3 ── 7.07
+    //  occupancy:        [opening ]  ╴ [door ]  ╴  [window ]
     const openingPoints = [
-      [1, 0, 0],   // wall-local (alongWall, acrossWall, elevation)
-      [4, 0, 0],
+      [1.0, 0, 0],   // wall-local (alongWall, acrossWall, elevation)
+      [2.5, 0, 0],
     ];
     const openingThickness  = 1;
     const openingHeightVal  = 3;
     const openingBaseHeight = 0.5;
 
     const doorInitial = {
-      stationLocal:    { alongWall: 4.5, elevation: 0 },
-      panelDimensions: { width: 1,    thickness: 0.04 },  // 40 mm panel
+      stationLocal:    { alongWall: 3.5, elevation: 0 },
+      panelDimensions: { width: 0.9,  thickness: 0.04 },  // 40 mm panel
       frameDimensions: { width: 0.05, thickness: 0.3  },  // 50 mm casing; depth = wall thickness when hosted
       doorHeight:        2.1,
       doorQuadrant:      1,
@@ -67,9 +74,9 @@
     };
 
     const windowInitial = {
-      stationLocal:     { alongWall: 7.5 },
-      windowDimensions: { width: 1.6,  thickness: 0.2  },
-      frameDimensions:  { width: 0.14, thickness: 0.2  },
+      stationLocal:     { alongWall: 5.5 },
+      windowDimensions: { width: 1.4,  thickness: 0.2  },
+      frameDimensions:  { width: 0.12, thickness: 0.2  },
       windowHeight:     1.2,
       sillHeight:       1.0,
       glassColor:       '#8fbfdf',
@@ -192,22 +199,25 @@
         modelView:   true,
       };
 
-      openingFolder.add(openingParams.start, 'alongWall', -2, 12, 0.1).name('Start (along wall)').onChange((value) => {
+      // Slider ranges are clamped to the wall length so dragging can't push
+      // the cutter past the wall ends — the kernel produces non-manifold
+      // geometry when a CSG cutter exceeds the cuttee bounds.
+      openingFolder.add(openingParams.start, 'alongWall', 0, DIAG, 0.05).name('Start (along wall)').onChange((value) => {
         if (opening) opening.start = [value, openingParams.start.acrossWall, openingParams.start.elevation];
       });
       openingFolder.add(openingParams.start, 'acrossWall', -2, 2, 0.1).name('Start (across wall)').onChange((value) => {
         if (opening) opening.start = [openingParams.start.alongWall, value, openingParams.start.elevation];
       });
-      openingFolder.add(openingParams.start, 'elevation', -2, 5, 0.1).name('Start (elevation)').onChange((value) => {
+      openingFolder.add(openingParams.start, 'elevation', 0, 5, 0.1).name('Start (elevation)').onChange((value) => {
         if (opening) opening.start = [openingParams.start.alongWall, openingParams.start.acrossWall, value];
       });
-      openingFolder.add(openingParams.end, 'alongWall', -2, 12, 0.1).name('End (along wall)').onChange((value) => {
+      openingFolder.add(openingParams.end, 'alongWall', 0, DIAG, 0.05).name('End (along wall)').onChange((value) => {
         if (opening) opening.end = [value, openingParams.end.acrossWall, openingParams.end.elevation];
       });
       openingFolder.add(openingParams.end, 'acrossWall', -2, 2, 0.1).name('End (across wall)').onChange((value) => {
         if (opening) opening.end = [openingParams.end.alongWall, value, openingParams.end.elevation];
       });
-      openingFolder.add(openingParams.end, 'elevation', -2, 5, 0.1).name('End (elevation)').onChange((value) => {
+      openingFolder.add(openingParams.end, 'elevation', 0, 5, 0.1).name('End (elevation)').onChange((value) => {
         if (opening) opening.end = [openingParams.end.alongWall, openingParams.end.acrossWall, value];
       });
       openingFolder.add(openingParams, 'thickness', 0.1, 2, 0.1).name('Thickness').onChange((value) => {
@@ -244,10 +254,12 @@
         modelView:         true,
       };
 
-      doorFolder.add(doorParams.stationLocal, 'alongWall', -2, 12, 0.1).name('Station (along wall)').onChange((value) => {
+      // Clamp station range so the door's hole can't extend past the wall ends
+      // (out-of-bounds CSG cutters are a kernel non-manifold trigger).
+      doorFolder.add(doorParams.stationLocal, 'alongWall', 0.7, DIAG - 0.7, 0.05).name('Station (along wall)').onChange((value) => {
         if (door) door.station = { alongWall: value, elevation: doorParams.stationLocal.elevation };
       });
-      doorFolder.add(doorParams.stationLocal, 'elevation', -2, 5, 0.1).name('Station (elevation)').onChange((value) => {
+      doorFolder.add(doorParams.stationLocal, 'elevation', 0, 2, 0.05).name('Station (elevation)').onChange((value) => {
         if (door) door.station = { alongWall: doorParams.stationLocal.alongWall, elevation: value };
       });
       doorFolder.add(doorParams, 'doorQuadrant', 1, 4, 1).name('Door Quadrant (1-4)').onChange((value) => {
@@ -300,7 +312,7 @@
         modelView:        true,
       };
 
-      windowFolder.add(windowParams.stationLocal, 'alongWall', -2, 12, 0.1).name('Station (along wall)').onChange((value) => {
+      windowFolder.add(windowParams.stationLocal, 'alongWall', 1, DIAG - 1, 0.05).name('Station (along wall)').onChange((value) => {
         if (windowElement) windowElement.station = { alongWall: value };
       });
       windowFolder.add(windowParams.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {

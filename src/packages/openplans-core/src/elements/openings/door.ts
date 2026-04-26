@@ -513,7 +513,12 @@ export class Door extends Opening implements IShape {
    */
   private buildHole(): void {
     const { panelDimensions, frameDimensions, doorHeight, stationLocal } = this.propertySet;
-    const tolerance = 0.001;
+    // 10 mm overshoot. Smaller values (1 mm) fall inside the kernel's
+    // internal snap window for some host geometries (e.g. PolyWall extruded
+    // prisms) and produce "Boolean kernel produced a degenerate result
+    // triangle". 10 mm is unambiguously past the wall face and small enough
+    // not to intersect adjacent geometry for any realistic wall thickness.
+    const tolerance = 0.01;
     const wallThickness = this.resolveWallThickness();
 
     const halfTotalWidthAlongWall = panelDimensions.width / 2 + frameDimensions.width + tolerance;

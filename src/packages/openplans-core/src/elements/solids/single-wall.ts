@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BooleanResult, Line, Polygon, Solid, Vector3 } from "opengeometry";
+import { Line, Polygon, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
@@ -320,7 +320,11 @@ export class SingleWall extends Line implements IShape {
       return;
     }
 
-    const result = wall2D.subtract(all2DOpenings);
+    // Pass the wall's color through to the boolean result so the resolved
+    // (cut) wall mesh inherits the wall's color. Note: the kernel still
+    // returns a translucent material (transparent: true, opacity: 0.82
+    // hardcoded inside BooleanResult) — see OPENGEOMETRY_KERNEL_DEBT.md #1.
+    const result = wall2D.subtract(all2DOpenings, { color: this.propertySet.color });
 
     wall2D.visible = false;
     all2DOpenings.forEach((opening2D) => {
@@ -350,7 +354,7 @@ export class SingleWall extends Line implements IShape {
       return;
     }
 
-    const result3D = wall3D.subtract(all3DOpenings);
+    const result3D = wall3D.subtract(all3DOpenings, { color: this.propertySet.color });
 
     wall3D.visible = false;
     all3DOpenings.forEach((opening3D) => {
