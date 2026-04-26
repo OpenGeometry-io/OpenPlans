@@ -9,7 +9,7 @@ import { WallFrame, localToWorld } from "../solids/wall-frame";
 export type ElementViewType = 'plan' | '3d';
 export type SubElementType = 'frame' | 'finish' | 'swingArc' | 'panel';
 type Door2DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'swingArc' | 'door-opening';
-type Door3DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'door-opening';
+type Door3DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'stop' | 'door-opening';
 export type DoorQuandrant = 1 | 2 | 3 | 4;
 
 export enum DoorMaterialType {
@@ -70,17 +70,17 @@ export class Door extends Opening implements IShape {
     hostWallId: undefined,
     panelDimensions: {
       width: 1,
-      thickness: 0.2,
+      thickness: 0.04,    // Standard door leaf thickness: 40 mm
     },
     frameDimensions: {
-      width: 0.2,
-      thickness: 0.2,
+      width: 0.1,         // Standard frame/architrave width: 100 mm
+      thickness: 0.15,    // Standard frame depth matching typical wall thickness
     },
     stationLocal: { u: 0, h: 0 },
     doorType: DoorType.WOOD,
     doorHeight: 2.1,
-    doorColor: 0xcc7a00,
-    frameColor: 0x654321,
+    doorColor: 0xF0EDE6,     // Off-white — standard painted door
+    frameColor: 0xD4D0CB,    // Light warm gray — standard painted frame
     panelMaterial: DoorMaterialType.WOOD,
     doorRotation: 1.5,
     doorQuadrant: 1,
@@ -354,7 +354,8 @@ export class Door extends Opening implements IShape {
     const u = stationLocal.u;
     const h = stationLocal.h;
 
-    // Frame sweep: a U-shape around the door opening (left jamb, head, right jamb).
+    // ── Frame: U-shaped sweep (left jamb → head → right jamb) ──────────────
+    // Profile is a rectangular cross-section (frameWidth × frameThickness).
     const frameProfile = [
       this.worldFromLocal(-frameWidth / 2, -frameThickness / 2, 0),
       this.worldFromLocal(-frameWidth / 2, +frameThickness / 2, 0),
@@ -377,6 +378,35 @@ export class Door extends Opening implements IShape {
     this.subElements3D.set('frame', frameSweep);
     this.add(frameSweep);
 
+    // ── Door stop: thin bead running along the panel-face of the frame ──────
+    // Sits proud of the frame face at v = 0 (wall plane), preventing the panel
+    // from swinging past the frame. Standard dimensions: 38 mm wide, 12 mm deep.
+    const stopW = 0.038;
+    const stopD = 0.012;
+
+    const stopProfile = [
+      this.worldFromLocal(-stopW / 2, -stopD / 2, 0),
+      this.worldFromLocal(-stopW / 2, +stopD / 2, 0),
+      this.worldFromLocal(+stopW / 2, +stopD / 2, 0),
+      this.worldFromLocal(+stopW / 2, -stopD / 2, 0),
+      this.worldFromLocal(-stopW / 2, -stopD / 2, 0),
+    ];
+
+    const stopSweep = new Sweep({
+      path: [
+        this.worldFromLocal(u - halfPanelWidth, 0, h),
+        this.worldFromLocal(u - halfPanelWidth, 0, h + doorHeight),
+        this.worldFromLocal(u + halfPanelWidth, 0, h + doorHeight),
+        this.worldFromLocal(u + halfPanelWidth, 0, h),
+      ],
+      profile: stopProfile,
+      color: frameColor,
+    });
+
+    this.subElements3D.set('stop', stopSweep);
+    this.add(stopSweep);
+
+    // ── Door panel: flat leaf, shown in closed (plumb) position ─────────────
     const panelCenter = this.worldFromLocal(u, 0, h + doorHeight / 2);
     const panelCuboid = new Cuboid({
       center: panelCenter,
@@ -391,13 +421,15 @@ export class Door extends Opening implements IShape {
   }
 
   private build2D(): void {
-    const { panelDimensions, frameDimensions, stationLocal } = this.propertySet;
+    const { panelDimensions, frameDimensions, stationLocal, doorQuadrant } = this.propertySet;
     const halfPanelWidth = panelDimensions.width / 2;
     const frameWidth = frameDimensions.width;
     const halfT = frameDimensions.thickness / 2;
     const u = stationLocal.u;
     const h = stationLocal.h;
+    const q = doorQuadrant;
 
+    // ── Frame jambs: filled rectangles at each side of the opening ──────────
     const frameLeftPolygon = new Polygon({
       vertices: [
         this.worldFromLocal(u - halfPanelWidth - frameWidth, -halfT, h),
@@ -426,12 +458,19 @@ export class Door extends Opening implements IShape {
     this.subElements2D.set('frame', frameGroup);
     this.add(frameGroup);
 
+    // ── Door panel: shown in OPEN position (90° to wall) from hinge ─────────
+    // Q1/Q3 → hinge on left;  Q2/Q4 → hinge on right.
+    // Q1/Q2 → opens in +v direction;  Q3/Q4 → opens in -v direction.
+    const hingeU = (q === 1 || q === 3) ? u - halfPanelWidth : u + halfPanelWidth;
+    const vSign  = (q === 1 || q === 2) ? 1 : -1;
+    const halfPT = panelDimensions.thickness / 2;
+
     const panelPolygon = new Polygon({
       vertices: [
-        this.worldFromLocal(u - halfPanelWidth, -panelDimensions.thickness / 2, h),
-        this.worldFromLocal(u - halfPanelWidth, +panelDimensions.thickness / 2, h),
-        this.worldFromLocal(u + halfPanelWidth, +panelDimensions.thickness / 2, h),
-        this.worldFromLocal(u + halfPanelWidth, -panelDimensions.thickness / 2, h),
+        this.worldFromLocal(hingeU - halfPT, 0,                              h),
+        this.worldFromLocal(hingeU + halfPT, 0,                              h),
+        this.worldFromLocal(hingeU + halfPT, vSign * panelDimensions.width,  h),
+        this.worldFromLocal(hingeU - halfPT, vSign * panelDimensions.width,  h),
       ],
       color: this.propertySet.doorColor,
     });
@@ -439,13 +478,43 @@ export class Door extends Opening implements IShape {
     this.subElements2D.set('panel', panelPolygon);
     this.add(panelPolygon);
 
-    const swingRadius = panelDimensions.width;
+    // ── Swing arc: quarter-circle tracing the door's sweep path ─────────────
+    // Angles are in the horizontal (XZ) plane, measured from +X counterclockwise
+    // (standard math convention, consistent with opengeometry Arc).
+    //
+    // For an unhosted door: u→X, v→+Z  → vAngle = π/2, wallAngle = 0.
+    // For a wall-hosted door: angles derived from the wall's local frame axes.
+    const frame = this.hostFrame;
+    const wallAngle = frame
+      ? Math.atan2(frame.uAxis.z, frame.uAxis.x)
+      : 0;
+    const vAngle = frame
+      ? Math.atan2(frame.vAxis.z, frame.vAxis.x)
+      : Math.PI / 2;
+
+    // Direction from hinge toward panel handle (the "closed" end of the arc).
+    const closedAngle = (q === 2 || q === 4) ? wallAngle + Math.PI : wallAngle;
+    // Direction from hinge perpendicular to wall (the "open" end of the arc).
+    const openAngle   = (q === 3 || q === 4) ? vAngle   + Math.PI : vAngle;
+
+    // Choose start/end so the arc is always a counterclockwise π/2 sweep.
+    const diff = ((openAngle - closedAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    let arcStart: number;
+    let arcEnd: number;
+    if (Math.abs(diff - Math.PI / 2) < 0.01) {
+      arcStart = closedAngle;
+      arcEnd   = closedAngle + Math.PI / 2;
+    } else {
+      arcStart = openAngle;
+      arcEnd   = openAngle + Math.PI / 2;
+    }
+
     const swingArc = new Arc({
-      center: this.worldFromLocal(u - halfPanelWidth, 0, h),
-      radius: swingRadius,
-      startAngle: 0,
-      endAngle: Math.PI / 2,
-      color: 0x0000ff,
+      center: this.worldFromLocal(hingeU, 0, h),
+      radius: panelDimensions.width,
+      startAngle: arcStart,
+      endAngle:   arcEnd,
+      color: 0x606060,   // Neutral gray — industry-standard swing indicator
       segments: 32,
     });
 
@@ -458,17 +527,22 @@ export class Door extends Opening implements IShape {
 
     const frameGroup2D = this.subElements2D.get('frame') as THREE.Group | undefined;
     if (frameGroup2D) {
-      const leftFrame = frameGroup2D.children[0] as Polygon | undefined;
+      const leftFrame  = frameGroup2D.children[0] as Polygon | undefined;
       const rightFrame = frameGroup2D.children[1] as Polygon | undefined;
-      if (leftFrame) leftFrame.color = frameColor;
+      if (leftFrame)  leftFrame.color  = frameColor;
       if (rightFrame) rightFrame.color = frameColor;
     }
 
     const panel2D = this.subElements2D.get('panel') as Polygon | undefined;
     if (panel2D) panel2D.color = doorColor;
 
+    // Swing arc stays neutral gray regardless of user color (architectural convention).
+
     const frame3D = this.subElements3D.get('frame') as Sweep | undefined;
     if (frame3D) frame3D.color = frameColor;
+
+    const stop3D = this.subElements3D.get('stop') as Sweep | undefined;
+    if (stop3D) stop3D.color = frameColor;
 
     const panel3D = this.subElements3D.get('panel') as Cuboid | undefined;
     if (panel3D) panel3D.color = doorColor;
