@@ -58,17 +58,20 @@
       doorFolder.open();
 
       const params = {
-        // Wall-local station: u is distance along the wall, h is vertical offset.
-        stationLocal: { u: 0, h: 0 },
-        panelDimensions: { width: 1, thickness: 0.2 },
-        frameDimensions: { width: 0.2, thickness: 0.2 },
+        // Wall-local station: alongWall is distance along the wall, elevation is vertical offset.
+        stationLocal: { alongWall: 0, elevation: 0 },
+        panelDimensions: { width: 1, thickness: 0.04 },
+        frameDimensions: { width: 0.1, thickness: 0.15 },
         doorHeight: 2.1,
-        doorColor: '#cc7a00',
-        frameColor: '#654321',
+        doorColor: '#f0ede6',
+        frameColor: '#d4d0cb',
         isProfileView: true,
         isModelView: true,
         isHostObject: false,
         outline: true,
+        doorQuadrant: 1,
+        // 0 = closed (panel along wall), 90 = fully open (panel perpendicular).
+        swingAngleDegrees: 90,
       };
 
       doorFolder.add(params, 'isHostObject').name('Host Object').onChange((value) => {
@@ -78,23 +81,29 @@
           door.hostObject = null;
         }
       });
-      doorFolder.add(params.stationLocal, 'u', -10, 10, 0.1).name('Station U (along wall)').onChange((value) => {
-        if (door) door.station = { u: value, h: params.stationLocal.h };
+      doorFolder.add(params.stationLocal, 'alongWall', -10, 10, 0.1).name('Station (along wall)').onChange((value) => {
+        if (door) door.station = { alongWall: value, elevation: params.stationLocal.elevation };
       });
-      doorFolder.add(params.stationLocal, 'h', -5, 5, 0.1).name('Station H (vertical)').onChange((value) => {
-        if (door) door.station = { u: params.stationLocal.u, h: value };
+      doorFolder.add(params.stationLocal, 'elevation', -5, 5, 0.1).name('Station (elevation)').onChange((value) => {
+        if (door) door.station = { alongWall: params.stationLocal.alongWall, elevation: value };
       });
-      doorFolder.add(params.panelDimensions, 'width', 0.1, 2, 0.1).name('Width').onChange((value) => {
+      doorFolder.add(params.panelDimensions, 'width', 0.6, 2.4, 0.05).name('Panel Width').onChange((value) => {
         if (door) door.panelWidth = value;
       });
-      doorFolder.add(params.panelDimensions, 'thickness', 0.1, 2, 0.1).name('Thickness').onChange((value) => {
+      doorFolder.add(params.panelDimensions, 'thickness', 0.025, 0.1, 0.005).name('Panel Thickness').onChange((value) => {
         if (door) door.panelThickness = value;
       });
-      doorFolder.add(params.frameDimensions, 'width', 0.1, 1, 0.1).name('Frame Width').onChange((value) => {
+      doorFolder.add(params.frameDimensions, 'width', 0.05, 0.2, 0.005).name('Frame Width').onChange((value) => {
         if (door) door.frameWidth = value;
       });
-      doorFolder.add(params.frameDimensions, 'thickness', 0.1, 1, 0.1).name('Frame Thickness').onChange((value) => {
+      doorFolder.add(params.frameDimensions, 'thickness', 0.1, 0.3, 0.01).name('Frame Thickness').onChange((value) => {
         if (door) door.frameThickness = value;
+      });
+      doorFolder.add(params, 'doorQuadrant', 1, 4, 1).name('Door Quadrant').onChange((value) => {
+        if (door) door.doorQuadrant = value;
+      });
+      doorFolder.add(params, 'swingAngleDegrees', 0, 90, 1).name('Swing Angle (°)').onChange((value) => {
+        if (door) door.swingAngleDegrees = value;
       });
       doorFolder.add(params, 'doorHeight', 0.1, 5, 0.1).name('Height').onChange((value) => {
         if (door) door.doorHeight = value;

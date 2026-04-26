@@ -41,7 +41,6 @@ const DEFAULT_POINTS: WallPoint[] = [
 
 const GEOMETRY_EPSILON = 1e-6;
 const FOOTPRINT_AREA_EPSILON = 1e-6;
-const PLAN_RENDER_ORDER = 20;
 
 function clonePoint(point: WallPoint): WallPoint {
   return [point[0], point[1], point[2]];
@@ -189,10 +188,6 @@ function buildFootprint(points: WallPoint[], thickness: number): GeometryStateRe
   try {
     const positiveOffset = sourceLine.getOffset(thickness / 2, 50, true);
     const negativeOffset = sourceLine.getOffset(-thickness / 2, 50, true);
-
-    console.log(positiveOffset.points);
-    console.log(negativeOffset.points);
-
 
     const footprint = sanitizeFootprintVertices([
       ...positiveOffset.points.map((point) => cloneVector(point)),
@@ -560,7 +555,7 @@ export class PolyWall extends Polyline implements IShape {
       const b = new Vector3(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
       const segLength = a.clone().subtract(b).length();
       if (remaining <= segLength || i === pts.length - 2) {
-        const frame = computeWallFrame(a, b);
+        const frame = computeWallFrame(a, b, this.propertySet.thickness);
         const localU = Math.max(0, Math.min(remaining, segLength));
         return { segmentIndex: i, localU, frame };
       }
@@ -575,10 +570,15 @@ export class PolyWall extends Polyline implements IShape {
     const baseHeight = placement?.baseHeight ?? 0;
     const resolution = this.getFrameForOffset(offset);
 
+    // Mutate the propertySet directly so the station change does NOT trigger
+    // a setOPGeometry (which would rebuild against the OLD host frame and
+    // immediately get thrown away by the bindHostFrame call below). The
+    // bindHostFrame call then performs a single rebuild against the new
+    // frame with the new station already in place.
     if (element instanceof Door) {
-      element.station = { u: resolution.localU, h: baseHeight };
+      element.propertySet.stationLocal = { alongWall: resolution.localU, elevation: baseHeight };
     } else if (element instanceof Window) {
-      element.station = { u: resolution.localU };
+      element.propertySet.stationLocal = { alongWall: resolution.localU };
     }
 
     element.bindHostFrame(resolution.frame);
@@ -595,9 +595,6 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
-    openingFromDoor.profileView = false;
-    openingFromDoor.modelView = false;
-
     this.openings.push(openingFromDoor);
     const openingConfig = openingFromDoor.getOPConfig();
     this.propertySet.openings.push(openingConfig.ogid!);
@@ -606,6 +603,29 @@ export class PolyWall extends Polyline implements IShape {
     openingFromDoor.onOpeningUpdated.add(() => {
       this.resolveOpenings();
     });
+  }
+
+  /**
+   * Detach a previously attached door. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG. Mirrors SingleWall.detachDoor.
+   */
+  detachDoor(doorElement: Door) {
+    const openingFromDoor = doorElement.opening as Opening;
+    const openingOgid = openingFromDoor?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromDoor);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    doorElement.hostWallId = undefined;
+    doorElement.bindHostFrame(null);
+
+    this.resolveOpenings();
   }
 
   attachWindow(windowElement: Window, placement?: PolyWallHostPlacement) {
@@ -617,9 +637,6 @@ export class PolyWall extends Polyline implements IShape {
       console.error("Window element does not have a valid opening configuration.");
       return;
     }
-
-    openingFromWindow.profileView = false;
-    openingFromWindow.modelView = false;
 
     this.openings.push(openingFromWindow);
     const openingConfig = openingFromWindow.getOPConfig();
@@ -633,9 +650,6 @@ export class PolyWall extends Polyline implements IShape {
 
   attachOpening(openingElement: Opening, placement?: PolyWallHostPlacement) {
     this.applyHostPlacement(openingElement, placement);
-
-    openingElement.profileView = false;
-    openingElement.modelView = false;
 
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
@@ -676,24 +690,48 @@ export class PolyWall extends Polyline implements IShape {
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
 
+    // BooleanResult defaults to translucent (`transparent: true, opacity: 0.82`).
+    // Override since opengeometry 2.0.8 so the cut wall matches a regular Solid.
     if (wall2D && all2DOpenings.length > 0) {
-      const result2D = wall2D.subtract(all2DOpenings, {
-        color: this.propertySet.color,
-        outline: this._outlineEnabled,
-      }) as BooleanResult;
+      try {
+        const result2D = wall2D.subtract(all2DOpenings, {
+          color:       this.propertySet.color,
+          outline:     this._outlineEnabled,
+          transparent: false,
+          opacity:     1,
+        }) as BooleanResult;
 
-      this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
-      this.add(result2D);
+        this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
+        this.add(result2D);
+      } catch (error) {
+        console.error(
+          `[PolyWall] 2D subtract failed for ${all2DOpenings.length} cutter(s).`,
+          "openings:", this.openings.map((o) => o.ogid),
+          error,
+        );
+        throw error;
+      }
     }
 
     if (wall3D && all3DOpenings.length > 0) {
-      const result3D = wall3D.subtract(all3DOpenings, {
-        color: this.propertySet.color,
-        outline: this._outlineEnabled,
-      }) as BooleanResult;
+      try {
+        const result3D = wall3D.subtract(all3DOpenings, {
+          color:       this.propertySet.color,
+          outline:     this._outlineEnabled,
+          transparent: false,
+          opacity:     1,
+        }) as BooleanResult;
 
-      this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
-      this.add(result3D);
+        this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
+        this.add(result3D);
+      } catch (error) {
+        console.error(
+          `[PolyWall] 3D subtract failed for ${all3DOpenings.length} cutter(s).`,
+          "openings:", this.openings.map((o) => o.ogid),
+          error,
+        );
+        throw error;
+      }
     }
 
     all2DOpenings.forEach((opening2D) => {
@@ -812,12 +850,16 @@ export class PolyWall extends Polyline implements IShape {
       (obj as Polygon | BooleanResult).outline = this._outlineEnabled;
     }
 
-    obj.renderOrder = PLAN_RENDER_ORDER;
+    // Use default depth behavior so the 2D plan polygon is correctly
+    // occluded by the 3D wall when both views are on (matches SingleWall).
+    // The earlier `depthTest: false` + high renderOrder forced the 2D plan
+    // to draw OVER the 3D wall, making solid walls look see-through.
+    obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
-      material.depthWrite = false;
-      material.depthTest = false;
-      material.transparent = true;
+      material.depthWrite = true;
+      material.depthTest = true;
+      material.transparent = false;
       material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.DoubleSide;
@@ -834,10 +876,13 @@ export class PolyWall extends Polyline implements IShape {
     obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
+      // Render fully opaque in the wall color, matching a regular Solid (and
+      // SingleWall). The earlier `transparent: true, opacity: 0.6` made every
+      // PolyWall — even one with no openings — render at 60% alpha.
       material.depthWrite = true;
       material.depthTest = true;
-      material.transparent = true;
-      material.opacity = 0.6;
+      material.transparent = false;
+      material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.FrontSide;
       }

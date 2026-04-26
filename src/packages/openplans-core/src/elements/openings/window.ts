@@ -10,8 +10,8 @@ type Window2DSubElementType = "frame" | "glass" | "window-opening";
 type Window3DSubElementType = "frame" | "glass" | "window-opening";
 
 export interface WindowStationLocal {
-  /** Distance along the wall (wall-local u). */
-  u: number;
+  /** Distance along the wall from its start point. */
+  alongWall: number;
 }
 
 export interface WindowOptions {
@@ -52,7 +52,7 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     type: ElementType.WINDOW,
     labelName: "Simple Window",
     hostWallId: undefined,
-    stationLocal: { u: 0 },
+    stationLocal: { alongWall: 0 },
     windowDimensions: {
       width: 1.5,
       thickness: 0.2,
@@ -194,7 +194,8 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   set modelView(value: boolean) {
     this._windowModelView = value;
     for (const [key, obj] of this.subElements3D.entries()) {
-      if (key === this.ogid + '-3d') {
+      if (key === this.ogid + '-3d' || key === 'hole-base-3d') {
+        // Hole solid (CSG-only) and the 3D extrusion seed never render.
         obj.visible = false;
       } else {
         obj.visible = value;
@@ -203,9 +204,16 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   }
   get modelView() { return this._windowModelView; }
 
-  /** Window IS the opening — return self. Kept for back-compat with wall attachers. */
+  /**
+   * Window IS the opening — return self. Kept for back-compat with wall attachers.
+   *
+   * The cast bypasses TS's structural check on `propertySet` (WindowOptions
+   * does not extend OpeningOptions because the `type` literal differs:
+   * `WINDOW` vs `OPENING`). At runtime, a Window instance is a real Opening
+   * subclass and exposes every accessor a wall expects, so the cast is sound.
+   */
   get opening(): Opening {
-    return this;
+    return this as unknown as Opening;
   }
 
   // @ts-ignore — returning WindowOptions where Opening returns OpeningOptions.
@@ -291,9 +299,17 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   }
 
   /**
-   * Hole: a rectangular slab centered on stationLocal.u, spanning the full
-   * outer frame footprint (width + 2*frameWidth) and height (windowHeight +
-   * 2*frameWidth). Base of the hole = sillHeight - frameWidth.
+   * Hole: a rectangular slab centered on stationLocal.alongWall, spanning the
+   * full outer frame footprint (width + 2*frameWidth) and height (windowHeight
+   * + 2*frameWidth). Base of the hole = sillHeight - frameWidth.
+   *
+   * Two polygons are built so the same hole drives both CSG passes correctly:
+   *   - The `'-2d'` polygon lives at floor elevation (0) so it is coplanar
+   *     with the wall's floor polygon for 2D boolean subtraction.
+   *   - A separate 3D-base polygon lives at the hole's actual base elevation
+   *     and is extruded vertically to produce the `'-3d'` solid that gets
+   *     subtracted from the wall's volume — leaving wall material above and
+   *     below the window.
    */
   private buildHole(): void {
     const { windowDimensions, frameDimensions, windowHeight, sillHeight, stationLocal } = this.propertySet;
@@ -302,27 +318,43 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     const totalHeight = windowHeight + frameDimensions.width * 2 + tol;
     const halfThickness = frameDimensions.thickness / 2 + tol;
 
-    const u0 = stationLocal.u - halfTotalWidth;
-    const u1 = stationLocal.u + halfTotalWidth;
-    const h0 = sillHeight - frameDimensions.width;
+    const u0 = stationLocal.alongWall - halfTotalWidth;
+    const u1 = stationLocal.alongWall + halfTotalWidth;
+    const baseElevation = sillHeight - frameDimensions.width;
 
-    const footprint: Vector3[] = [
-      this.worldFromLocal(u0, -halfThickness, h0),
-      this.worldFromLocal(u1, -halfThickness, h0),
-      this.worldFromLocal(u1, +halfThickness, h0),
-      this.worldFromLocal(u0, +halfThickness, h0),
+    // ── 2D footprint at floor level (coplanar with the wall) ─────────────────
+    const footprint2D: Vector3[] = [
+      this.worldFromLocal(u0, -halfThickness, 0),
+      this.worldFromLocal(u1, -halfThickness, 0),
+      this.worldFromLocal(u1, +halfThickness, 0),
+      this.worldFromLocal(u0, +halfThickness, 0),
     ];
-
-    const polygon = new Polygon({
+    const polygon2D = new Polygon({
       ogid: this.ogid + '-2d',
-      vertices: footprint,
+      vertices: footprint2D,
       color: 0xffcccc,
     });
-    polygon.outline = false;
-    this.subElements2D.set(polygon.ogid, polygon);
-    this.add(polygon);
+    polygon2D.outline = false;
+    this.subElements2D.set(polygon2D.ogid, polygon2D);
+    this.add(polygon2D);
 
-    const solid = polygon.extrude(totalHeight);
+    // ── 3D extrusion seed at the hole's actual base elevation ───────────────
+    const footprint3D: Vector3[] = [
+      this.worldFromLocal(u0, -halfThickness, baseElevation),
+      this.worldFromLocal(u1, -halfThickness, baseElevation),
+      this.worldFromLocal(u1, +halfThickness, baseElevation),
+      this.worldFromLocal(u0, +halfThickness, baseElevation),
+    ];
+    const polygon3DBase = new Polygon({
+      vertices: footprint3D,
+      color: 0xffcccc,
+    });
+    polygon3DBase.outline = false;
+    polygon3DBase.visible = false;     // never rendered; just an extrusion seed.
+    this.subElements3D.set('hole-base-3d', polygon3DBase);
+    this.add(polygon3DBase);
+
+    const solid = polygon3DBase.extrude(totalHeight);
     solid.ogid = this.ogid + '-3d';
     this.subElements3D.set(solid.ogid, solid);
     this.add(solid);
@@ -333,7 +365,7 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     const halfWindowWidth = windowDimensions.width / 2;
     const frameWidth = frameDimensions.width;
     const frameThickness = frameDimensions.thickness;
-    const u = stationLocal.u;
+    const u = stationLocal.alongWall;
 
     // Closed frame loop (includes top + bottom, unlike doors).
     const frameProfile = [
@@ -377,7 +409,7 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     const halfWindowWidth = windowDimensions.width / 2;
     const frameWidth = frameDimensions.width;
     const halfT = frameDimensions.thickness / 2;
-    const u = stationLocal.u;
+    const u = stationLocal.alongWall;
     const h = sillHeight;
 
     const frameLeftPolygon = new Polygon({

@@ -316,9 +316,10 @@
       const door = openPlans.door({
         labelName: id,
         hostWallId: wall.ogid,
-        // station[0] = u (distance along the wall); station[1/2] previously held
-        // out-of-plane and vertical offsets that are now implicit (v = 0, h = 0).
-        stationLocal: { u: station[0], h: 0 },
+        // station[0] = distance along the wall; station[1/2] previously held
+        // out-of-plane and vertical offsets that are now implicit
+        // (across-wall = 0, elevation = 0).
+        stationLocal: { alongWall: station[0], elevation: 0 },
         panelDimensions: {
           width,
           thickness: panelThickness,
@@ -362,8 +363,8 @@
       const windowElement = openPlans.window({
         labelName: id,
         hostWallId: wall.ogid,
-        // station[0] = u (distance along the wall); vertical is sillHeight below.
-        stationLocal: { u: station[0] },
+        // station[0] = distance along the wall; vertical is sillHeight below.
+        stationLocal: { alongWall: station[0] },
         windowDimensions: {
           width,
           thickness: windowThickness,

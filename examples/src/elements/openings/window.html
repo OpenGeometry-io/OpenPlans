@@ -58,8 +58,8 @@
       windowFolder.open();
 
       const params = {
-        // Wall-local station: u = distance along wall. Vertical is sillHeight.
-        stationLocal: { u: 0 },
+        // Wall-local station: alongWall = distance along wall. Vertical is sillHeight.
+        stationLocal: { alongWall: 0 },
         windowDimensions: { width: 1.5, thickness: 0.2 },
         frameDimensions: { width: 0.2, thickness: 0.2 },
         windowHeight: 1.2,
@@ -79,8 +79,8 @@
           windowElement.hostObject = null;
         }
       });
-      windowFolder.add(params.stationLocal, 'u', -10, 10, 0.1).name('Station U (along wall)').onChange((value) => {
-        if (windowElement) windowElement.station = { u: value };
+      windowFolder.add(params.stationLocal, 'alongWall', -10, 10, 0.1).name('Station (along wall)').onChange((value) => {
+        if (windowElement) windowElement.station = { alongWall: value };
       });
       windowFolder.add(params.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {
         if (windowElement) windowElement.windowWidth = value;
@@ -122,7 +122,7 @@
             ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
             labelName: 'Preloaded Window',
             hostWallId: 'example-wall-id',
-            stationLocal: { u: 1.5 },
+            stationLocal: { alongWall: 1.5 },
             windowDimensions: { width: 1.8, thickness: 0.16 },
             frameDimensions: { width: 0.14, thickness: 0.18 },
             windowType: 'CASEMENT',

@@ -4,22 +4,21 @@ import { Vector3 } from "opengeometry";
  * Wall-local coordinate frame.
  *
  * Convention: +Y up. Walls live in the XZ plane.
- *   u — along the wall (start → end), distance from start
- *   v — perpendicular to the wall in the XZ plane (normal)
- *   h — vertical (world Y)
- *
- * Any opening hosted on a wall stores its geometry in this local basis;
- * the host transforms it into world coordinates via {@link localToWorld}.
+ *   alongWall  — along the wall (start → end), distance from start
+ *   acrossWall — perpendicular to the wall in the XZ plane (normal)
+ *   elevation  — vertical (world Y)
  */
 export interface WallFrame {
   origin: Vector3;
-  uAxis: Vector3;
-  vAxis: Vector3;
-  wAxis: Vector3;
+  alongWallAxis: Vector3;
+  acrossWallAxis: Vector3;
+  verticalAxis: Vector3;
   length: number;
+  /** Host wall thickness. Populated when the frame comes from a wall; undefined for unhosted use. */
+  thickness?: number;
 }
 
-export type LocalPoint = [u: number, v: number, h: number];
+export type LocalPoint = [alongWall: number, acrossWall: number, elevation: number];
 
 function crossV(a: Vector3, b: Vector3): Vector3 {
   return new Vector3(
@@ -29,7 +28,7 @@ function crossV(a: Vector3, b: Vector3): Vector3 {
   );
 }
 
-export function computeWallFrame(start: Vector3, end: Vector3): WallFrame {
+export function computeWallFrame(start: Vector3, end: Vector3, thickness?: number): WallFrame {
   const delta = end.clone().subtract(start);
   const length = delta.length();
 
@@ -39,29 +38,39 @@ export function computeWallFrame(start: Vector3, end: Vector3): WallFrame {
     );
   }
 
-  const uAxis = delta.clone().normalize();
-  const wAxis = new Vector3(0, 1, 0);
-  const vAxis = crossV(wAxis, uAxis).normalize();
+  const alongWallAxis = delta.clone().normalize();
+  const verticalAxis = new Vector3(0, 1, 0);
+  const acrossWallAxis = crossV(verticalAxis, alongWallAxis).normalize();
 
   return {
     origin: start.clone(),
-    uAxis,
-    vAxis,
-    wAxis,
+    alongWallAxis,
+    acrossWallAxis,
+    verticalAxis,
     length,
+    thickness,
   };
 }
 
 export function localToWorld(
   frame: WallFrame,
-  u: number,
-  v: number,
-  h: number,
+  alongWall: number,
+  acrossWall: number,
+  elevation: number,
 ): Vector3 {
   return new Vector3(
-    frame.origin.x + frame.uAxis.x * u + frame.vAxis.x * v + frame.wAxis.x * h,
-    frame.origin.y + frame.uAxis.y * u + frame.vAxis.y * v + frame.wAxis.y * h,
-    frame.origin.z + frame.uAxis.z * u + frame.vAxis.z * v + frame.wAxis.z * h,
+    frame.origin.x
+      + frame.alongWallAxis.x  * alongWall
+      + frame.acrossWallAxis.x * acrossWall
+      + frame.verticalAxis.x   * elevation,
+    frame.origin.y
+      + frame.alongWallAxis.y  * alongWall
+      + frame.acrossWallAxis.y * acrossWall
+      + frame.verticalAxis.y   * elevation,
+    frame.origin.z
+      + frame.alongWallAxis.z  * alongWall
+      + frame.acrossWallAxis.z * acrossWall
+      + frame.verticalAxis.z   * elevation,
   );
 }
 
@@ -69,5 +78,7 @@ export function localToWorldPoints(
   frame: WallFrame,
   points: LocalPoint[],
 ): Vector3[] {
-  return points.map(([u, v, h]) => localToWorld(frame, u, v, h));
+  return points.map(([alongWall, acrossWall, elevation]) =>
+    localToWorld(frame, alongWall, acrossWall, elevation),
+  );
 }
