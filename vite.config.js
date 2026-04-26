@@ -25,6 +25,7 @@ function getExampleInputs() {
 
 export default defineConfig({
   base: './',
+  root: resolve(__dirname, 'examples/src'),
   resolve: {
     dedupe: ['three'],
     alias: {
@@ -37,7 +38,7 @@ export default defineConfig({
   plugins: [trackPlugin()],
   build: {
     target: 'esnext',  // Enable top-level await support
-    outDir: 'examples/dist',
+    outDir: resolve(__dirname, 'examples/dist'),
     rollupOptions: {
       input: getExampleInputs(),
       output: {
