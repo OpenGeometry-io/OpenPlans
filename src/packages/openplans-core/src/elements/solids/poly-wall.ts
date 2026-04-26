@@ -560,7 +560,7 @@ export class PolyWall extends Polyline implements IShape {
       const b = new Vector3(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
       const segLength = a.clone().subtract(b).length();
       if (remaining <= segLength || i === pts.length - 2) {
-        const frame = computeWallFrame(a, b);
+        const frame = computeWallFrame(a, b, this.propertySet.thickness);
         const localU = Math.max(0, Math.min(remaining, segLength));
         return { segmentIndex: i, localU, frame };
       }
@@ -576,9 +576,9 @@ export class PolyWall extends Polyline implements IShape {
     const resolution = this.getFrameForOffset(offset);
 
     if (element instanceof Door) {
-      element.station = { u: resolution.localU, h: baseHeight };
+      element.station = { alongWall: resolution.localU, elevation: baseHeight };
     } else if (element instanceof Window) {
-      element.station = { u: resolution.localU };
+      element.station = { alongWall: resolution.localU };
     }
 
     element.bindHostFrame(resolution.frame);

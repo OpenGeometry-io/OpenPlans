@@ -126,8 +126,13 @@ export class Opening extends Line implements IShape {
   get modelView() { return this.isModelView; }
   set modelView(value: boolean) {
     this.isModelView = value;
-    for (const obj of this.subElements3D.values()) {
-      obj.visible = value;
+    for (const [key, obj] of this.subElements3D.entries()) {
+      if (key === 'hole-base-3d') {
+        // 3D extrusion seed; never rendered.
+        obj.visible = false;
+      } else {
+        obj.visible = value;
+      }
     }
   }
 
@@ -141,9 +146,9 @@ export class Opening extends Line implements IShape {
 
   constructor(openingConfig?: Partial<OpeningOptions>) {
     super({
-      start: new Vector3(0, 0, 0),
-      end: new Vector3(1.5, 0, 1.5),
-      color: 0xffcccc,
+      start: new Vector3(-0.75, 0, 0),
+      end: new Vector3(0.75, 0, 0),
+      color: 0xff0000,
     });
 
     this.subElements2D = new Map<string, THREE.Object3D>();
@@ -178,9 +183,12 @@ export class Opening extends Line implements IShape {
 
   /**
    * Bind this opening to its host wall's frame. After binding, propertySet.points
-   * are interpreted as wall-local (u, v, h) and transformed to world on demand.
+   * are interpreted as wall-local (alongWall, acrossWall, elevation) and
+   * transformed to world on demand. Pass `null` to unhost the opening — its
+   * geometry then renders in identity coordinates (alongWall→x, elevation→y,
+   * acrossWall→z).
    */
-  bindHostFrame(frame: WallFrame): void {
+  bindHostFrame(frame: WallFrame | null): void {
     this.hostFrame = frame;
     this.setOPGeometry();
   }
@@ -247,34 +255,44 @@ export class Opening extends Line implements IShape {
     const offset1 = this.getOffset(this.propertySet.thickness / 2);
     const offset2 = this.getOffset(-this.propertySet.thickness / 2);
 
-    // Use loop later
-    const points: Vector3[] = [
-      // Start point with positive offset
+    // Four polygon vertices following the line at its actual elevation.
+    const elevatedFootprint: Vector3[] = [
       offset1.points[0].clone(),
-      // End point with positive offset
       offset1.points[1].clone(),
-      // End point with negative offset
       offset2.points[1].clone(),
-      // Start point with negative offset
       offset2.points[0].clone(),
     ];
 
-    // We will use these points to generate the 2D and 3D geometry for the wall, and keep them in sync with the line geometry.
-    // 2D Polygon
-    const polygon = new Polygon({
+    // ── 2D polygon at floor level (Y=0) ──────────────────────────────────────
+    // Coplanar with the wall's floor polygon so boolean subtraction works
+    // even when the opening's points carry a non-zero elevation.
+    const footprint2D: Vector3[] = elevatedFootprint.map(
+      (p) => new Vector3(p.x, 0, p.z),
+    );
+    const polygon2D = new Polygon({
       ogid: this.ogid + '-2d',
-      vertices: points,
+      vertices: footprint2D,
       color: 0xffcccc,
     });
-    this.subElements2D.set(polygon.ogid, polygon);
-    // polygon.visible = false;
-    polygon.outline = true;
-    polygon.outlineColor = 0x4466ff;
-    this.add(polygon);
+    this.subElements2D.set(polygon2D.ogid, polygon2D);
+    polygon2D.outline = true;
+    polygon2D.outlineColor = 0x4466ff;
+    this.add(polygon2D);
 
-    // 3D Extrusion
-    const height = this.propertySet.height; // Default height if not set
-    const extrudedShape = polygon.extrude(height);
+    // ── 3D extrusion seed at the line's actual elevation ────────────────────
+    // Extruded vertically by `height` so the resulting solid spans
+    // [lineElevation, lineElevation + height] for boolean subtraction from
+    // the wall's volume.
+    const polygon3DBase = new Polygon({
+      vertices: elevatedFootprint,
+      color: 0xffcccc,
+    });
+    polygon3DBase.outline = false;
+    polygon3DBase.visible = false;     // never rendered; just an extrusion seed.
+    this.subElements3D.set('hole-base-3d', polygon3DBase);
+    this.add(polygon3DBase);
+
+    const extrudedShape = polygon3DBase.extrude(this.propertySet.height);
     extrudedShape.ogid = this.ogid + '-3d';
     this.subElements3D.set(extrudedShape.ogid, extrudedShape);
     this.add(extrudedShape);

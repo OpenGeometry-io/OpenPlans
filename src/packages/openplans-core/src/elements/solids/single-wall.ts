@@ -210,6 +210,7 @@ export class SingleWall extends Line implements IShape {
       this._frame = computeWallFrame(
         new Vector3(s[0], s[1], s[2]),
         new Vector3(e[0], e[1], e[2]),
+        this.propertySet.thickness,
       );
     }
     return this._frame;
@@ -235,6 +236,29 @@ export class SingleWall extends Line implements IShape {
     this.onWallGeometryChanged.add(() => {
       doorElement.bindHostFrame(this.getFrame());
     });
+  }
+
+  /**
+   * Detach a previously attached door. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG so the cut hole is closed up.
+   */
+  detachDoor(doorElement: Door) {
+    const openingFromDoor = doorElement.opening as Opening;
+    const openingOgid = openingFromDoor?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromDoor);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    doorElement.hostWallId = undefined;
+    doorElement.bindHostFrame(null);
+
+    this.resolveOpenings();
   }
 
   attachWindow(windowElement: Window) {
@@ -397,7 +421,7 @@ export class SingleWall extends Line implements IShape {
       color: this.propertySet.color,
     });
 
-    this._frame = computeWallFrame(startVec, endVec);
+    this._frame = computeWallFrame(startVec, endVec, this.propertySet.thickness);
     this.onWallGeometryChanged.trigger(null);
 
     if (this.isLineWall) {

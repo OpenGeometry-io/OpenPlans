@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { IShape } from "../../shapes/base-type";
 import { ElementType, DoorType } from "./../base-type";
-import { Arc, Cuboid, Polygon, Sweep, Vector3 } from "opengeometry";
+import { Arc, Polygon, Solid, Sweep, Vector3 } from "opengeometry";
 import type { Placement, PlanExportView, PlanVectorExportable } from "../../types";
 import { Opening } from "./opening";
 import { WallFrame, localToWorld } from "../solids/wall-frame";
@@ -9,7 +9,7 @@ import { WallFrame, localToWorld } from "../solids/wall-frame";
 export type ElementViewType = 'plan' | '3d';
 export type SubElementType = 'frame' | 'finish' | 'swingArc' | 'panel';
 type Door2DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'swingArc' | 'door-opening';
-type Door3DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'stop' | 'door-opening';
+type Door3DSubElementType = 'frame' | 'panelPivot' | 'panel' | 'door-opening';
 export type DoorQuandrant = 1 | 2 | 3 | 4;
 
 export enum DoorMaterialType {
@@ -20,10 +20,10 @@ export enum DoorMaterialType {
 }
 
 export interface StationLocal {
-  /** Distance along the wall (wall-local u). */
-  u: number;
-  /** Vertical offset above wall base (wall-local h). */
-  h: number;
+  /** Distance along the wall from its start point. */
+  alongWall: number;
+  /** Vertical offset above the wall's base (typically 0 for doors). */
+  elevation: number;
 }
 
 export interface DoorOptions {
@@ -32,16 +32,23 @@ export interface DoorOptions {
   type: ElementType.DOOR;
   hostWallId?: string;
   /**
-   * Door center in the host wall's local frame.
-   *   u — distance along the wall from its start
-   *   h — vertical offset above wall base (typically 0 for doors)
-   * v is always 0 (door sits centered on the wall plane).
+   * Door insertion point in the host wall's local frame.
+   *   alongWall — distance along the wall from its start
+   *   elevation — vertical offset above wall base (typically 0)
+   * The across-wall offset is always 0 (door sits centered on the wall plane).
    */
   stationLocal: StationLocal;
   panelDimensions: {
     width: number;
     thickness: number;
   };
+  /**
+   * Frame (door lining) dimensions.
+   *   width      — the visible face of the lining along the wall
+   *   thickness  — across-wall depth, used only when the door is unhosted.
+   *                When hosted, the lining depth auto-matches the host wall's
+   *                thickness so the lining fills the opening front-to-back.
+   */
   frameDimensions: {
     width: number;
     thickness: number;
@@ -53,6 +60,14 @@ export interface DoorOptions {
   doorColor: number;
   doorRotation: number;
   doorQuadrant: number;
+  /**
+   * How far the panel is swung open, in degrees.
+   *   0  — closed (panel lies along the wall, in the opening plane)
+   *   90 — fully open (panel perpendicular to the wall)
+   * Applied in both 2D plan view and 3D. The swing arc in plan view
+   * always shows the full 90° range regardless of this value.
+   */
+  swingAngleDegrees: number;
   placement: Placement;
 }
 
@@ -73,10 +88,10 @@ export class Door extends Opening implements IShape {
       thickness: 0.04,    // Standard door leaf thickness: 40 mm
     },
     frameDimensions: {
-      width: 0.1,         // Standard frame/architrave width: 100 mm
-      thickness: 0.15,    // Standard frame depth matching typical wall thickness
+      width: 0.05,        // Visible face of the lining: 50 mm
+      thickness: 0.15,    // Across-wall depth fallback for unhosted doors
     },
-    stationLocal: { u: 0, h: 0 },
+    stationLocal: { alongWall: 0, elevation: 0 },
     doorType: DoorType.WOOD,
     doorHeight: 2.1,
     doorColor: 0xF0EDE6,     // Off-white — standard painted door
@@ -84,6 +99,7 @@ export class Door extends Opening implements IShape {
     panelMaterial: DoorMaterialType.WOOD,
     doorRotation: 1.5,
     doorQuadrant: 1,
+    swingAngleDegrees: 90,   // Default to fully open; matches the plan-view convention.
     placement: {
       position: [0, 0, 0],
       rotation: [0, 0, 0],
@@ -94,6 +110,8 @@ export class Door extends Opening implements IShape {
   // Door overrides Opening's view state (doors are visible by default in both views).
   private _doorProfileView: boolean = true;
   private _doorModelView: boolean = true;
+
+  // Profile View Outline is enabled. Only Model View Outline is toggleable via the `outline` property; it is enabled by default.
   private _doorOutlineEnabled: boolean = true;
 
   constructor(baseDoorConfig?: DoorOptions) {
@@ -111,6 +129,38 @@ export class Door extends Opening implements IShape {
     }
 
     this.propertySet.ogid = this.ogid;
+
+    // Door positions itself with `station` (single insertion point), not start/end.
+    // The inherited Line setters from Opening would mutate propertySet.points
+    // without affecting the rendered door, which is misleading. Replace them
+    // with no-op getters/setters that warn once. Done via defineProperty so
+    // we don't trigger the accessor-variance issue with TS class inheritance.
+    let warningEmitted = false;
+    const warnAndIgnore = () => {
+      if (!warningEmitted) {
+        console.warn(
+          "Door.start / Door.end are read-only. Use `door.station = { alongWall, elevation }` to position the door.",
+        );
+        warningEmitted = true;
+      }
+    };
+    Object.defineProperty(this, 'start', {
+      configurable: true,
+      get: () => {
+        const { stationLocal, panelDimensions } = this.propertySet;
+        return [stationLocal.alongWall - panelDimensions.width / 2, 0, stationLocal.elevation];
+      },
+      set: warnAndIgnore,
+    });
+    Object.defineProperty(this, 'end', {
+      configurable: true,
+      get: () => {
+        const { stationLocal, panelDimensions } = this.propertySet;
+        return [stationLocal.alongWall + panelDimensions.width / 2, 0, stationLocal.elevation];
+      },
+      set: warnAndIgnore,
+    });
+
     this.setOPGeometry();
   }
 
@@ -155,6 +205,14 @@ export class Door extends Opening implements IShape {
     this.propertySet.doorQuadrant = value;
     this.setOPGeometry();
   }
+  get doorQuadrant() { return this.propertySet.doorQuadrant; }
+
+  set swingAngleDegrees(value: number) {
+    const clamped = Math.max(0, Math.min(180, value));
+    this.propertySet.swingAngleDegrees = clamped;
+    this.setOPGeometry();
+  }
+  get swingAngleDegrees() { return this.propertySet.swingAngleDegrees; }
 
   set panelWidth(value: number) {
     this.propertySet.panelDimensions.width = value;
@@ -213,8 +271,10 @@ export class Door extends Opening implements IShape {
   set modelView(value: boolean) {
     this._doorModelView = value;
     for (const [key, obj] of this.subElements3D.entries()) {
-      if (key === this.ogid + '-3d') {
-        obj.visible = false; // The hole solid is used for CSG only; never visible.
+      if (key === this.ogid + '-3d' || key === 'panel-base' || key === 'hole-base-3d') {
+        // Hole solid (CSG-only), panel-base (panel extrusion seed), and
+        // hole-base-3d (hole extrusion seed) never render.
+        obj.visible = false;
       } else {
         obj.visible = value;
       }
@@ -267,23 +327,155 @@ export class Door extends Opening implements IShape {
   }
 
   /**
-   * Transform a wall-local (u, v, h) point to world coordinates.
-   * If no host frame is bound, use an identity frame (u→x, h→y, v→z)
-   * so an unhosted door still renders sensibly in world space.
+   * Transform a wall-local (alongWall, acrossWall, elevation) point to world
+   * coordinates. If no host frame is bound, use an identity frame
+   * (alongWall→x, elevation→y, acrossWall→z) so an unhosted door still
+   * renders sensibly in world space.
    */
-  private worldFromLocal(u: number, v: number, h: number): Vector3 {
+  private worldFromLocal(alongWall: number, acrossWall: number, elevation: number): Vector3 {
     const frame = this.hostFrame;
     if (!frame) {
-      return new Vector3(u, h, v);
+      return new Vector3(alongWall, elevation, acrossWall);
     }
-    return localToWorld(frame, u, v, h);
+    return localToWorld(frame, alongWall, acrossWall, elevation);
+  }
+
+  /**
+   * Resolve the across-wall depth used for the lining and the cut hole.
+   * When hosted, this is the host wall's thickness (so the lining exactly
+   * fills the opening front-to-back). When unhosted, fall back to the
+   * `frameDimensions.thickness` field.
+   */
+  private resolveWallThickness(): number {
+    return this.hostFrame?.thickness ?? this.propertySet.frameDimensions.thickness;
+  }
+
+  /**
+   * Compute the panel's hinge anchor and rotated local axes in wall-local
+   * (alongWall, acrossWall) coordinates for the current quadrant + swing angle.
+   *
+   * The panel is treated as a rectangle pivoting around a vertical axis at
+   * the hinge anchor. The anchor sits at the inside corner of the jamb on
+   * the swing-out face of the wall, so:
+   *   - At swing 0° (closed): the panel lies in the wall thickness, parallel
+   *     to the wall axis.
+   *   - At swing 90° (open):  the panel sits perpendicular to the wall, its
+   *     thickness extending into the opening (NOT into the jamb), and its
+   *     width extending out into the room on the swing side.
+   *
+   * Returns the anchor + the panel's local axes in wall-local space:
+   *   xAxis = panel "width" direction (from hinge corner toward the handle)
+   *   yAxis = panel "thickness" direction (perpendicular to xAxis, on the
+   *           non-swing side at swing 0°, on the open-into-opening side at 90°)
+   * The four panel corners are derived by:
+   *   corner0 = anchor                                          (hinge corner)
+   *   corner1 = anchor + panelWidth     × xAxis                 (far hinge edge)
+   *   corner2 = anchor + panelWidth × xAxis + panelThickness × yAxis
+   *   corner3 = anchor + panelThickness × yAxis                 (anchor opposite face)
+   */
+  private computePanelAnchorAndAxes(swingRadians: number): {
+    anchorAlongWall:  number;
+    anchorAcrossWall: number;
+    xAxisAlongWall:   number;
+    xAxisAcrossWall:  number;
+    yAxisAlongWall:   number;
+    yAxisAcrossWall:  number;
+  } {
+    const { panelDimensions, stationLocal, doorQuadrant } = this.propertySet;
+    const halfPanelWidth    = panelDimensions.width / 2;
+    const wallThickness     = this.resolveWallThickness();
+    const halfWallThickness = wallThickness / 2;
+
+    // Hinge along-wall position: the inner edge of the chosen jamb.
+    //   Q1, Q3 → hinge on the LEFT jamb  (alongWall = station − halfPanelWidth)
+    //   Q2, Q4 → hinge on the RIGHT jamb (alongWall = station + halfPanelWidth)
+    const hingeOnLeft = doorQuadrant === 1 || doorQuadrant === 3;
+    const anchorAlongWall = hingeOnLeft
+      ? stationLocal.alongWall - halfPanelWidth
+      : stationLocal.alongWall + halfPanelWidth;
+
+    // Hinge across-wall position: the wall face on the SWING-OUT side.
+    //   Q1, Q2 swing toward +acrossWall → hinge sits at +halfWallThickness
+    //   Q3, Q4 swing toward −acrossWall → hinge sits at −halfWallThickness
+    const swingFaceSign = (doorQuadrant === 1 || doorQuadrant === 2) ? +1 : -1;
+    const anchorAcrossWall = swingFaceSign * halfWallThickness;
+
+    // Closed-position panel-X angle (in the wall-local floor plane,
+    // measured CCW from +alongWall):
+    //   Q1, Q3 (hinge left)  → X points +alongWall when closed → angle 0
+    //   Q2, Q4 (hinge right) → X points −alongWall when closed → angle π
+    const closedXAngle = (doorQuadrant === 2 || doorQuadrant === 4) ? Math.PI : 0;
+
+    // Rotation direction the panel sweeps as swingRadians grows from 0 → π/2:
+    //   Q1, Q4 → CCW (rotationSign = +1) so the panel-thickness corner moves
+    //            into the opening (not back into the jamb).
+    //   Q2, Q3 → CW  (rotationSign = −1) for the same reason on the mirrored hand.
+    const rotationSign = (doorQuadrant === 1 || doorQuadrant === 4) ? +1 : -1;
+
+    const panelXAngle = closedXAngle + rotationSign * swingRadians;
+    const xAxisAlongWall  = Math.cos(panelXAngle);
+    const xAxisAcrossWall = Math.sin(panelXAngle);
+
+    // yAxis = xAxis rotated by (−rotationSign × π/2) — keeps the panel-Y axis
+    // pointing AWAY from the jamb so the panel-thickness corner ends up inside
+    // the opening at swing 90°. Derived by trig identity from the rotation:
+    //   yAxisAlongWall  =  rotationSign · sin(panelXAngle)
+    //   yAxisAcrossWall = −rotationSign · cos(panelXAngle)
+    const yAxisAlongWall  =  rotationSign * Math.sin(panelXAngle);
+    const yAxisAcrossWall = -rotationSign * Math.cos(panelXAngle);
+
+    return {
+      anchorAlongWall, anchorAcrossWall,
+      xAxisAlongWall,  xAxisAcrossWall,
+      yAxisAlongWall,  yAxisAcrossWall,
+    };
+  }
+
+  /**
+   * Return the panel's four floor-plane corners in CCW winding (in the
+   * right-handed (alongWall, acrossWall) plane viewed from above), in
+   * wall-local coordinates, for a given swing angle.
+   *
+   * opengeometry's Polygon expects CCW input to produce an outward-facing
+   * normal. The natural corner order anchor → +X → +X+Y → +Y is CCW only
+   * when (X, Y) form a right-handed basis. For Q1/Q4 the basis is left-
+   * handed (Y is CW from X), so we swap c1 and c3 to recover CCW winding.
+   */
+  private computePanelCornersCCW(swingRadians: number): Array<[number, number]> {
+    const panel = this.computePanelAnchorAndAxes(swingRadians);
+    const { panelDimensions, doorQuadrant } = this.propertySet;
+    const widthValue     = panelDimensions.width;
+    const thicknessValue = panelDimensions.thickness;
+
+    const corner0: [number, number] = [
+      panel.anchorAlongWall,
+      panel.anchorAcrossWall,
+    ];
+    const cornerXOnly: [number, number] = [
+      panel.anchorAlongWall  + panel.xAxisAlongWall  * widthValue,
+      panel.anchorAcrossWall + panel.xAxisAcrossWall * widthValue,
+    ];
+    const cornerXY: [number, number] = [
+      panel.anchorAlongWall  + panel.xAxisAlongWall  * widthValue + panel.yAxisAlongWall  * thicknessValue,
+      panel.anchorAcrossWall + panel.xAxisAcrossWall * widthValue + panel.yAxisAcrossWall * thicknessValue,
+    ];
+    const cornerYOnly: [number, number] = [
+      panel.anchorAlongWall  + panel.yAxisAlongWall  * thicknessValue,
+      panel.anchorAcrossWall + panel.yAxisAcrossWall * thicknessValue,
+    ];
+
+    const yIsCWFromX = doorQuadrant === 1 || doorQuadrant === 4;
+    return yIsCWFromX
+      ? [corner0, cornerYOnly, cornerXY, cornerXOnly]   // CCW for left-handed (X,Y)
+      : [corner0, cornerXOnly, cornerXY, cornerYOnly];  // CCW for right-handed (X,Y)
   }
 
   /**
    * Override of Opening.setOPGeometry. We build:
    *   - The hole polygon/solid at keys `ogid + '-2d'` and `ogid + '-3d'` (what CSG subtracts)
    *   - Panel, frame, swing arc under keys 'panel', 'frame', 'swingArc'
-   * Everything is computed in wall-local (u, v, h) and transformed via worldFromLocal.
+   * Everything is computed in wall-local (alongWall, acrossWall, elevation)
+   * and transformed via worldFromLocal.
    */
   setOPGeometry(): void {
     // Guard: when super() is running, this.propertySet is still Opening's defaults
@@ -307,69 +499,104 @@ export class Door extends Opening implements IShape {
 
   /**
    * Build the hole (what gets subtracted from the wall).
-   * A rectangular slab centered on stationLocal.u, spanning:
-   *   u:  [u - halfTotalWidth, u + halfTotalWidth]
-   *   v:  [-frameThickness/2, +frameThickness/2]   (wall thickness direction)
-   *   h:  [stationLocal.h, stationLocal.h + totalHeight]
+   * A rectangular slab centered on the door station, spanning:
+   *   alongWall:  [station - halfTotalWidth, station + halfTotalWidth]
+   *   acrossWall: [-halfWallThickness, +halfWallThickness]
+   *   elevation:  [station.elevation, station.elevation + totalHeight]
+   *
+   * Two polygons are built so the same hole drives both CSG passes correctly:
+   *   - The `'-2d'` polygon lives at floor elevation (0) so it is coplanar
+   *     with the wall's floor polygon for 2D boolean subtraction.
+   *   - A separate 3D-base polygon lives at the hole's actual base elevation
+   *     and is extruded vertically into the `'-3d'` solid that gets
+   *     subtracted from the wall's volume.
    */
   private buildHole(): void {
     const { panelDimensions, frameDimensions, doorHeight, stationLocal } = this.propertySet;
-    const tol = 0.001;
-    const halfTotalWidth = panelDimensions.width / 2 + frameDimensions.width + tol;
-    const totalHeight = doorHeight + frameDimensions.width + tol;
-    const halfThickness = frameDimensions.thickness / 2 + tol;
+    const tolerance = 0.001;
+    const wallThickness = this.resolveWallThickness();
 
-    const u0 = stationLocal.u - halfTotalWidth;
-    const u1 = stationLocal.u + halfTotalWidth;
-    const h0 = stationLocal.h;
+    const halfTotalWidthAlongWall = panelDimensions.width / 2 + frameDimensions.width + tolerance;
+    const totalHeightElevation    = doorHeight + frameDimensions.width + tolerance;
+    const halfWallThicknessSlab   = wallThickness / 2 + tolerance;
 
-    const footprint: Vector3[] = [
-      this.worldFromLocal(u0, -halfThickness, h0),
-      this.worldFromLocal(u1, -halfThickness, h0),
-      this.worldFromLocal(u1, +halfThickness, h0),
-      this.worldFromLocal(u0, +halfThickness, h0),
+    const startAlongWall = stationLocal.alongWall - halfTotalWidthAlongWall;
+    const endAlongWall   = stationLocal.alongWall + halfTotalWidthAlongWall;
+    const baseElevation  = stationLocal.elevation;
+
+    // ── 2D footprint at floor level (coplanar with the wall) ─────────────────
+    const footprint2D: Vector3[] = [
+      this.worldFromLocal(startAlongWall, -halfWallThicknessSlab, 0),
+      this.worldFromLocal(endAlongWall,   -halfWallThicknessSlab, 0),
+      this.worldFromLocal(endAlongWall,   +halfWallThicknessSlab, 0),
+      this.worldFromLocal(startAlongWall, +halfWallThicknessSlab, 0),
     ];
-
-    const polygon = new Polygon({
+    const polygon2D = new Polygon({
       ogid: this.ogid + '-2d',
-      vertices: footprint,
+      vertices: footprint2D,
       color: 0xffcccc,
     });
-    polygon.outline = false;
-    this.subElements2D.set(polygon.ogid, polygon);
-    this.add(polygon);
+    polygon2D.outline = false;
+    this.subElements2D.set(polygon2D.ogid, polygon2D);
+    this.add(polygon2D);
 
-    const solid = polygon.extrude(totalHeight);
+    // ── 3D extrusion seed at the hole's actual base elevation ───────────────
+    const footprint3D: Vector3[] = [
+      this.worldFromLocal(startAlongWall, -halfWallThicknessSlab, baseElevation),
+      this.worldFromLocal(endAlongWall,   -halfWallThicknessSlab, baseElevation),
+      this.worldFromLocal(endAlongWall,   +halfWallThicknessSlab, baseElevation),
+      this.worldFromLocal(startAlongWall, +halfWallThicknessSlab, baseElevation),
+    ];
+    const polygon3DBase = new Polygon({
+      vertices: footprint3D,
+      color: 0xffcccc,
+    });
+    polygon3DBase.outline = false;
+    polygon3DBase.visible = false;     // never rendered; just an extrusion seed.
+    this.subElements3D.set('hole-base-3d', polygon3DBase);
+    this.add(polygon3DBase);
+
+    const solid = polygon3DBase.extrude(totalHeightElevation);
     solid.ogid = this.ogid + '-3d';
     this.subElements3D.set(solid.ogid, solid);
     this.add(solid);
   }
 
   private build3D(): void {
-    const { panelDimensions, frameDimensions, doorHeight, doorColor, frameColor, stationLocal } = this.propertySet;
-    const halfPanelWidth = panelDimensions.width / 2;
-    const frameWidth = frameDimensions.width;
-    const frameThickness = frameDimensions.thickness;
+    const {
+      panelDimensions, frameDimensions, doorHeight, doorColor, frameColor,
+      stationLocal,
+    } = this.propertySet;
 
-    const u = stationLocal.u;
-    const h = stationLocal.h;
+    const halfPanelWidth     = panelDimensions.width / 2;
+    const frameVisibleWidth  = frameDimensions.width;
+    const wallThickness      = this.resolveWallThickness();
+    const halfWallThickness  = wallThickness / 2;
 
-    // ── Frame: U-shaped sweep (left jamb → head → right jamb) ──────────────
-    // Profile is a rectangular cross-section (frameWidth × frameThickness).
+    const stationAlongWall   = stationLocal.alongWall;
+    const stationElevation   = stationLocal.elevation;
+
+    // ── Frame: single U-sweep (left jamb → head → right jamb) ────────────────
+    // Profile is a rectangle: visible-face-width (along-wall) × wall-thickness
+    // (across-wall), so the lining exactly fills the opening front-to-back.
     const frameProfile = [
-      this.worldFromLocal(-frameWidth / 2, -frameThickness / 2, 0),
-      this.worldFromLocal(-frameWidth / 2, +frameThickness / 2, 0),
-      this.worldFromLocal(+frameWidth / 2, +frameThickness / 2, 0),
-      this.worldFromLocal(+frameWidth / 2, -frameThickness / 2, 0),
-      this.worldFromLocal(-frameWidth / 2, -frameThickness / 2, 0),
+      this.worldFromLocal(-frameVisibleWidth / 2, -halfWallThickness, 0),
+      this.worldFromLocal(-frameVisibleWidth / 2, +halfWallThickness, 0),
+      this.worldFromLocal(+frameVisibleWidth / 2, +halfWallThickness, 0),
+      this.worldFromLocal(+frameVisibleWidth / 2, -halfWallThickness, 0),
+      this.worldFromLocal(-frameVisibleWidth / 2, -halfWallThickness, 0),
     ];
+
+    const leftJambAlongWall  = stationAlongWall - halfPanelWidth - frameVisibleWidth / 2;
+    const rightJambAlongWall = stationAlongWall + halfPanelWidth + frameVisibleWidth / 2;
+    const headElevation      = stationElevation + doorHeight + frameVisibleWidth / 2;
 
     const frameSweep = new Sweep({
       path: [
-        this.worldFromLocal(u - halfPanelWidth - frameWidth / 2, 0, h),
-        this.worldFromLocal(u - halfPanelWidth - frameWidth / 2, 0, h + doorHeight + frameWidth / 2),
-        this.worldFromLocal(u + halfPanelWidth + frameWidth / 2, 0, h + doorHeight + frameWidth / 2),
-        this.worldFromLocal(u + halfPanelWidth + frameWidth / 2, 0, h),
+        this.worldFromLocal(leftJambAlongWall,  0, stationElevation),
+        this.worldFromLocal(leftJambAlongWall,  0, headElevation),
+        this.worldFromLocal(rightJambAlongWall, 0, headElevation),
+        this.worldFromLocal(rightJambAlongWall, 0, stationElevation),
       ],
       profile: frameProfile,
       color: frameColor,
@@ -378,75 +605,63 @@ export class Door extends Opening implements IShape {
     this.subElements3D.set('frame', frameSweep);
     this.add(frameSweep);
 
-    // ── Door stop: thin bead running along the panel-face of the frame ──────
-    // Sits proud of the frame face at v = 0 (wall plane), preventing the panel
-    // from swinging past the frame. Standard dimensions: 38 mm wide, 12 mm deep.
-    const stopW = 0.038;
-    const stopD = 0.012;
+    // ── Panel: rectangle pivoting around the hinge anchor ────────────────────
+    // We build the panel's floor footprint (using the anchor + axes helper) and
+    // extrude it vertically by doorHeight. The polygon vertices already encode
+    // the swing rotation, so the resulting solid is correctly oriented at any
+    // swingAngleDegrees value — no Three.js rotation needed.
+    const swingRadians = (this.propertySet.swingAngleDegrees ?? 90) * Math.PI / 180;
+    const panelFootprint: Vector3[] = this.computePanelCornersCCW(swingRadians).map(
+      ([alongWall, acrossWall]) =>
+        this.worldFromLocal(alongWall, acrossWall, stationElevation),
+    );
 
-    const stopProfile = [
-      this.worldFromLocal(-stopW / 2, -stopD / 2, 0),
-      this.worldFromLocal(-stopW / 2, +stopD / 2, 0),
-      this.worldFromLocal(+stopW / 2, +stopD / 2, 0),
-      this.worldFromLocal(+stopW / 2, -stopD / 2, 0),
-      this.worldFromLocal(-stopW / 2, -stopD / 2, 0),
-    ];
-
-    const stopSweep = new Sweep({
-      path: [
-        this.worldFromLocal(u - halfPanelWidth, 0, h),
-        this.worldFromLocal(u - halfPanelWidth, 0, h + doorHeight),
-        this.worldFromLocal(u + halfPanelWidth, 0, h + doorHeight),
-        this.worldFromLocal(u + halfPanelWidth, 0, h),
-      ],
-      profile: stopProfile,
-      color: frameColor,
+    const panelBasePolygon = new Polygon({
+      ogid:     this.ogid + '-panel-base',
+      vertices: panelFootprint,
+      color:    doorColor,
     });
+    panelBasePolygon.outline = false;
+    panelBasePolygon.visible = false;     // base polygon is just an extrusion seed; never rendered.
+    this.subElements3D.set('panel-base', panelBasePolygon);
+    this.add(panelBasePolygon);
 
-    this.subElements3D.set('stop', stopSweep);
-    this.add(stopSweep);
-
-    // ── Door panel: flat leaf, shown in closed (plumb) position ─────────────
-    const panelCenter = this.worldFromLocal(u, 0, h + doorHeight / 2);
-    const panelCuboid = new Cuboid({
-      center: panelCenter,
-      width: panelDimensions.width,
-      height: doorHeight,
-      depth: panelDimensions.thickness,
-      color: doorColor,
-    });
-
-    this.subElements3D.set('panel', panelCuboid);
-    this.add(panelCuboid);
+    const panelSolid = panelBasePolygon.extrude(doorHeight);
+    panelSolid.ogid = this.ogid + '-panel';
+    this.subElements3D.set('panel', panelSolid);
+    this.add(panelSolid);
   }
 
   private build2D(): void {
     const { panelDimensions, frameDimensions, stationLocal, doorQuadrant } = this.propertySet;
-    const halfPanelWidth = panelDimensions.width / 2;
-    const frameWidth = frameDimensions.width;
-    const halfT = frameDimensions.thickness / 2;
-    const u = stationLocal.u;
-    const h = stationLocal.h;
-    const q = doorQuadrant;
+    const halfPanelWidth     = panelDimensions.width / 2;
+    const frameVisibleWidth  = frameDimensions.width;
+    const wallThickness      = this.resolveWallThickness();
+    const halfWallThickness  = wallThickness / 2;
 
-    // ── Frame jambs: filled rectangles at each side of the opening ──────────
+    const stationAlongWall = stationLocal.alongWall;
+    const stationElevation = stationLocal.elevation;
+    const quadrant = doorQuadrant;
+
+    // ── Frame jambs: filled rectangles on each side of the opening ──────────
+    // Plan view shows the lining as two jamb cross-sections at floor level
+    // (the head sits up at door height and is not in the floor cut plane).
     const frameLeftPolygon = new Polygon({
       vertices: [
-        this.worldFromLocal(u - halfPanelWidth - frameWidth, -halfT, h),
-        this.worldFromLocal(u - halfPanelWidth - frameWidth, +halfT, h),
-        this.worldFromLocal(u - halfPanelWidth,              +halfT, h),
-        this.worldFromLocal(u - halfPanelWidth,              -halfT, h),
+        this.worldFromLocal(stationAlongWall - halfPanelWidth - frameVisibleWidth, -halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall - halfPanelWidth - frameVisibleWidth, +halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall - halfPanelWidth,                     +halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall - halfPanelWidth,                     -halfWallThickness, stationElevation),
       ],
       color: this.propertySet.frameColor,
     });
 
     const frameRightPolygon = new Polygon({
       vertices: [
-        this.worldFromLocal(u + halfPanelWidth + frameWidth, -halfT, h),
-        this.worldFromLocal(u + halfPanelWidth + frameWidth, +halfT, h),
-        this.worldFromLocal(u + halfPanelWidth,              +halfT, h),
-        this.worldFromLocal(u + halfPanelWidth,              -halfT, h),
-        this.worldFromLocal(u + halfPanelWidth + frameWidth, -halfT, h),
+        this.worldFromLocal(stationAlongWall + halfPanelWidth + frameVisibleWidth, -halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall + halfPanelWidth + frameVisibleWidth, +halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall + halfPanelWidth,                     +halfWallThickness, stationElevation),
+        this.worldFromLocal(stationAlongWall + halfPanelWidth,                     -halfWallThickness, stationElevation),
       ],
       color: this.propertySet.frameColor,
     });
@@ -458,59 +673,60 @@ export class Door extends Opening implements IShape {
     this.subElements2D.set('frame', frameGroup);
     this.add(frameGroup);
 
-    // ── Door panel: shown in OPEN position (90° to wall) from hinge ─────────
-    // Q1/Q3 → hinge on left;  Q2/Q4 → hinge on right.
-    // Q1/Q2 → opens in +v direction;  Q3/Q4 → opens in -v direction.
-    const hingeU = (q === 1 || q === 3) ? u - halfPanelWidth : u + halfPanelWidth;
-    const vSign  = (q === 1 || q === 2) ? 1 : -1;
-    const halfPT = panelDimensions.thickness / 2;
+    // ── Door panel: rectangle pivoting around the hinge anchor ──────────────
+    // Anchor at the inside corner of the chosen jamb on the swing-out face of
+    // the wall. The four corners come from `computePanelCornersCCW`, which
+    // ensures the panel always extends INTO the opening (never back into the
+    // jamb) at any swing angle from 0 (closed) through 90° (fully open).
+    const swingRadians = (this.propertySet.swingAngleDegrees ?? 90) * Math.PI / 180;
+    const panel = this.computePanelAnchorAndAxes(swingRadians);
 
     const panelPolygon = new Polygon({
-      vertices: [
-        this.worldFromLocal(hingeU - halfPT, 0,                              h),
-        this.worldFromLocal(hingeU + halfPT, 0,                              h),
-        this.worldFromLocal(hingeU + halfPT, vSign * panelDimensions.width,  h),
-        this.worldFromLocal(hingeU - halfPT, vSign * panelDimensions.width,  h),
-      ],
+      vertices: this.computePanelCornersCCW(swingRadians).map(
+        ([alongWall, acrossWall]) =>
+          this.worldFromLocal(alongWall, acrossWall, stationElevation),
+      ),
       color: this.propertySet.doorColor,
     });
 
     this.subElements2D.set('panel', panelPolygon);
     this.add(panelPolygon);
 
-    // ── Swing arc: quarter-circle tracing the door's sweep path ─────────────
+    // ── Swing arc: quarter-circle tracing the door's full 0→90° sweep ───────
+    // Always rendered for the full architectural 90° range, regardless of the
+    // current swingAngleDegrees value (so users can see the door's footprint).
     // Angles are in the horizontal (XZ) plane, measured from +X counterclockwise
     // (standard math convention, consistent with opengeometry Arc).
     //
-    // For an unhosted door: u→X, v→+Z  → vAngle = π/2, wallAngle = 0.
-    // For a wall-hosted door: angles derived from the wall's local frame axes.
+    // For an unhosted door: alongWall→X, acrossWall→+Z → acrossWallAngle = π/2,
+    // wallAngle = 0. For a wall-hosted door: angles derived from the wall frame.
     const frame = this.hostFrame;
     const wallAngle = frame
-      ? Math.atan2(frame.uAxis.z, frame.uAxis.x)
+      ? Math.atan2(frame.alongWallAxis.z, frame.alongWallAxis.x)
       : 0;
-    const vAngle = frame
-      ? Math.atan2(frame.vAxis.z, frame.vAxis.x)
+    const acrossWallAngle = frame
+      ? Math.atan2(frame.acrossWallAxis.z, frame.acrossWallAxis.x)
       : Math.PI / 2;
 
-    // Direction from hinge toward panel handle (the "closed" end of the arc).
-    const closedAngle = (q === 2 || q === 4) ? wallAngle + Math.PI : wallAngle;
-    // Direction from hinge perpendicular to wall (the "open" end of the arc).
-    const openAngle   = (q === 3 || q === 4) ? vAngle   + Math.PI : vAngle;
+    // Direction from anchor toward panel handle when CLOSED (panel-X at 0°).
+    const arcClosedAngle = (quadrant === 2 || quadrant === 4) ? wallAngle + Math.PI : wallAngle;
+    // Direction from anchor toward panel handle when OPEN (panel-X at 90°).
+    const arcOpenAngle   = (quadrant === 3 || quadrant === 4) ? acrossWallAngle + Math.PI : acrossWallAngle;
 
     // Choose start/end so the arc is always a counterclockwise π/2 sweep.
-    const diff = ((openAngle - closedAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const angleDifference = ((arcOpenAngle - arcClosedAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
     let arcStart: number;
     let arcEnd: number;
-    if (Math.abs(diff - Math.PI / 2) < 0.01) {
-      arcStart = closedAngle;
-      arcEnd   = closedAngle + Math.PI / 2;
+    if (Math.abs(angleDifference - Math.PI / 2) < 0.01) {
+      arcStart = arcClosedAngle;
+      arcEnd   = arcClosedAngle + Math.PI / 2;
     } else {
-      arcStart = openAngle;
-      arcEnd   = openAngle + Math.PI / 2;
+      arcStart = arcOpenAngle;
+      arcEnd   = arcOpenAngle + Math.PI / 2;
     }
 
     const swingArc = new Arc({
-      center: this.worldFromLocal(hingeU, 0, h),
+      center: this.worldFromLocal(panel.anchorAlongWall, panel.anchorAcrossWall, stationElevation),
       radius: panelDimensions.width,
       startAngle: arcStart,
       endAngle:   arcEnd,
@@ -541,10 +757,7 @@ export class Door extends Opening implements IShape {
     const frame3D = this.subElements3D.get('frame') as Sweep | undefined;
     if (frame3D) frame3D.color = frameColor;
 
-    const stop3D = this.subElements3D.get('stop') as Sweep | undefined;
-    if (stop3D) stop3D.color = frameColor;
-
-    const panel3D = this.subElements3D.get('panel') as Cuboid | undefined;
+    const panel3D = this.subElements3D.get('panel') as Solid | undefined;
     if (panel3D) panel3D.color = doorColor;
   }
 }
