@@ -138,8 +138,23 @@ export class Opening extends OPElement implements IShape {
     }
   }
 
-  get opening2D(): Polygon {
-    return this.subElements2D.get(this.ogid + '-2d') as Polygon;
+  /** Plan-view hole loop (Vector3[] in the XZ plane at Y=0). The wall uses this as a Polygon hole. */
+  get holeLoop2D(): Vector3[] {
+    const worldPoints = this.toWorldPoints();
+    if (worldPoints.length < 2) return [];
+
+    const start = worldPoints[0];
+    const end   = worldPoints[1];
+    const dir   = new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
+    const perp  = new THREE.Vector3(0, 1, 0).cross(dir);
+    const t2    = this.propertySet.thickness / 2;
+
+    return [
+      new Vector3(start.x + perp.x * t2, 0, start.z + perp.z * t2),
+      new Vector3(end.x   + perp.x * t2, 0, end.z   + perp.z * t2),
+      new Vector3(end.x   - perp.x * t2, 0, end.z   - perp.z * t2),
+      new Vector3(start.x - perp.x * t2, 0, start.z - perp.z * t2),
+    ];
   }
 
   get opening3D(): Solid {
@@ -259,22 +274,6 @@ export class Opening extends OPElement implements IShape {
       new Vector3(end.x   - perp.x * t2, end.y   - perp.y * t2, end.z   - perp.z * t2),
       new Vector3(start.x - perp.x * t2, start.y - perp.y * t2, start.z - perp.z * t2),
     ];
-
-    // ── 2D polygon at floor level (Y=0) ──────────────────────────────────────
-    // Coplanar with the wall's floor polygon so boolean subtraction works
-    // even when the opening's points carry a non-zero elevation.
-    const footprint2D: Vector3[] = elevatedFootprint.map(
-      (p) => new Vector3(p.x, 0, p.z),
-    );
-    const polygon2D = new Polygon({
-      ogid: this.ogid + '-2d',
-      vertices: footprint2D,
-      color: 0xffcccc,
-    });
-    this.subElements2D.set(polygon2D.ogid, polygon2D);
-    polygon2D.outline = true;
-    polygon2D.outlineColor = 0x4466ff;
-    this.add(polygon2D);
 
     // ── 3D extrusion seed at the line's actual elevation ────────────────────
     // Extruded vertically by `height` so the resulting solid spans

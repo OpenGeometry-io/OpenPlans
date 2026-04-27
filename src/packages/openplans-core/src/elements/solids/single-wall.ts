@@ -24,6 +24,7 @@ export class SingleWall extends Line implements IShape {
 
   private openings: Opening[] = [];
   private _frame: WallFrame | null = null;
+  private _wallOutlineVertices: Vector3[] = [];
 
   /** Fires whenever the wall's frame changes (endpoints, thickness, height). */
   onWallGeometryChanged: Event<null> = new Event();
@@ -139,16 +140,8 @@ export class SingleWall extends Line implements IShape {
   get profileView() { return this.isProfileView; }
   set profileView(value: boolean) {
     this.isProfileView = value;
-
-    if (this.subElements2D.has(this.ogid + '-2d-resolved')) {
-      const resolved2D = this.subElements2D.get(this.ogid + '-2d-resolved') as Polygon;
-      resolved2D.visible = value;
-      return;
-    }
-
-    for (const obj of this.subElements2D.values()) {
-      obj.visible = value;
-    }
+    const wall2D = this.subElements2D.get(this.ogid + '-2d');
+    if (wall2D) wall2D.visible = value;
   }
 
   get modelView() { return this.isModelView; }
@@ -324,45 +317,37 @@ export class SingleWall extends Line implements IShape {
   }
 
   resolveOpenings() {
-    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
-    if (!wall2D) return;
+    // ── 2D: polygon-with-holes rebuild ───────────────────────────────────────
+    if (this._wallOutlineVertices.length >= 3) {
+      const existing2D = this.subElements2D.get(this.ogid + '-2d');
+      if (existing2D) {
+        const mesh = existing2D as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => (m as THREE.Material).dispose());
+        } else if (mesh.material) {
+          (mesh.material as THREE.Material).dispose();
+        }
+        existing2D.removeFromParent();
+        this.subElements2D.delete(this.ogid + '-2d');
+      }
 
-    const resolved2DKey = this.ogid + "-2d-resolved";
-    const existingResolved2D = this.subElements2D.get(resolved2DKey);
-    if (existingResolved2D) {
-      existingResolved2D.removeFromParent();
-      this.subElements2D.delete(resolved2DKey);
-    }
+      const holeLoops = this.openings
+        .map((o) => o.holeLoop2D)
+        .filter((loop): loop is Vector3[] => loop.length >= 3);
 
-    const all2DOpenings = this.openings
-      .map((opening) => opening.opening2D)
-      .filter((opening): opening is Polygon => Boolean(opening));
-
-    if (all2DOpenings.length === 0) {
+      const wall2D = new Polygon({
+        vertices: this._wallOutlineVertices.map((v) => v.clone()),
+        holes: holeLoops,
+        color: this.propertySet.color,
+      });
+      wall2D.outline = this._outlineEnabled;
       wall2D.visible = this.isProfileView;
-      return;
+      this.subElements2D.set(this.ogid + '-2d', wall2D);
+      this.add(wall2D);
     }
 
-    // Pass the wall's color and force opaque material — opengeometry's
-    // BooleanResult defaults to `transparent: true, opacity: 0.82`, which
-    // makes a cut wall render translucent. The kernel exposes overrides
-    // since 2.0.8; we use them to match a regular Solid (opaque, double-
-    // sided so the cut interior renders correctly).
-    const result = wall2D.subtract(all2DOpenings, {
-      color:       this.propertySet.color,
-      transparent: false,
-      opacity:     1,
-    });
-
-    wall2D.visible = false;
-    all2DOpenings.forEach((opening2D) => {
-      opening2D.visible = false;
-    });
-
-    this.subElements2D.set(resolved2DKey, result);
-    this.add(result);
-
-    // 3D Resolution
+    // ── 3D: unchanged boolean subtract ───────────────────────────────────────
     const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
     if (!wall3D) return;
 
@@ -395,20 +380,15 @@ export class SingleWall extends Line implements IShape {
 
     this.subElements3D.set(resolved3DKey, result3D);
     this.add(result3D);
-}
+  }
 
 
   detachOpening(ogid: string) {
-    const index = this.openings.findIndex(opening => opening.ogid === ogid);
-    if (index !== -1) {
-      this.openings.splice(index, 1);
-    }
-
-    if (this.openings.length === 0) {
-      // If no more openings, remove resolved geometry and show original wall geometry
-      this.subElements2D.delete(this.ogid + '-2d-resolved');
-      this.subElements3D.delete(this.ogid + '-3d-resolved');
-    }
+    const index = this.openings.findIndex((opening) => opening.ogid === ogid);
+    if (index !== -1) this.openings.splice(index, 1);
+    const propIndex = this.propertySet.openings.indexOf(ogid);
+    if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    this.resolveOpenings();
   }
 
   getHostedOpenings() {
@@ -479,13 +459,16 @@ export class SingleWall extends Line implements IShape {
       offset2.points[0].clone(),
     ];
 
-    // We will use these points to generate the 2D and 3D geometry for the wall, and keep them in sync with the line geometry.
-    // 2D Polygon
+    // Store wall outline for resolveOpenings() to build the polygon-with-holes.
+    this._wallOutlineVertices = points.map((v) => v.clone());
+
+    // Base polygon: extrusion seed for the 3D path; not directly rendered (resolveOpenings builds '-2d').
     const polygon = new Polygon({
       ogid: this.ogid + '-2d-base',
       vertices: points,
       color: this.propertySet.color,
     });
+    polygon.visible = false;
     this.subElements2D.set(polygon.ogid, polygon);
     this.add(polygon);
 

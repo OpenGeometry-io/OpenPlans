@@ -304,6 +304,7 @@ export class PolyWall extends Polyline implements IShape {
   private isModelView = true;
 
   private openings: Opening[] = [];
+  private _wallOutlineVertices: Vector3[] = [];
 
   selected = false;
   edit = false;
@@ -700,41 +701,30 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   resolveOpenings() {
-    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
     const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
 
-    this.clearResolvedElement(this.subElements2D, this.ogid + "-2d-resolved");
+    // ── 2D: rebuild polygon-with-holes ────────────────────────────────────────
+    this.clearResolvedElement(this.subElements2D, this.ogid + "-2d");
     this.clearResolvedElement(this.subElements3D, this.ogid + "-3d-resolved");
 
-    const all2DOpenings = this.openings
-      .map((opening) => opening.opening2D)
-      .filter((opening): opening is Polygon => Boolean(opening));
+    if (this._wallOutlineVertices.length >= 3) {
+      const holeLoops = this.openings
+        .map((opening) => opening.holeLoop2D)
+        .filter((loop): loop is Vector3[] => loop.length >= 3);
+
+      const wall2D = new Polygon({
+        vertices: this._wallOutlineVertices.map((point) => cloneVector(point)),
+        holes: holeLoops,
+        color: this.propertySet.color,
+      });
+      this.subElements2D.set(this.ogid + "-2d", wall2D);
+      this.add(wall2D);
+    }
+
+    // ── 3D: unchanged boolean subtract ────────────────────────────────────────
     const all3DOpenings = this.openings
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
-
-    // BooleanResult defaults to translucent (`transparent: true, opacity: 0.82`).
-    // Override since opengeometry 2.0.8 so the cut wall matches a regular Solid.
-    if (wall2D && all2DOpenings.length > 0) {
-      try {
-        const result2D = wall2D.subtract(all2DOpenings, {
-          color:       this.propertySet.color,
-          outline:     this._outlineEnabled,
-          transparent: false,
-          opacity:     1,
-        }) as BooleanResult;
-
-        this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
-        this.add(result2D);
-      } catch (error) {
-        console.error(
-          `[PolyWall] 2D subtract failed for ${all2DOpenings.length} cutter(s).`,
-          "openings:", this.openings.map((o) => o.ogid),
-          error,
-        );
-        throw error;
-      }
-    }
 
     if (wall3D && all3DOpenings.length > 0) {
       try {
@@ -757,9 +747,6 @@ export class PolyWall extends Polyline implements IShape {
       }
     }
 
-    all2DOpenings.forEach((opening2D) => {
-      opening2D.visible = false;
-    });
     all3DOpenings.forEach((opening3D) => {
       opening3D.visible = false;
     });
@@ -799,11 +786,15 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
+    this._wallOutlineVertices = geometryState.footprint.map((point) => cloneVector(point));
+
+    // Base polygon: extrusion seed for the 3D path; not directly rendered (resolveOpenings builds '-2d').
     const polygon = new Polygon({
       ogid: this.ogid + "-2d-base",
-      vertices: geometryState.footprint.map((point) => cloneVector(point)),
+      vertices: this._wallOutlineVertices.map((point) => cloneVector(point)),
       color: this.propertySet.color,
     });
+    polygon.visible = false;
     this.subElements2D.set(polygon.ogid, polygon);
     this.add(polygon);
 
@@ -844,13 +835,13 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   private syncViewVisibility(): void {
-    const resolved2DKey = this.ogid + "-2d-resolved";
+    const wall2DKey     = this.ogid + "-2d";
     const resolved3DKey = this.ogid + "-3d-resolved";
-    const hasResolved2D = this.subElements2D.has(resolved2DKey);
     const hasResolved3D = this.subElements3D.has(resolved3DKey);
 
     for (const [key, obj] of this.subElements2D.entries()) {
-      obj.visible = this.isProfileView && (!hasResolved2D || key === resolved2DKey);
+      // '-2d-base' is the extrusion seed, never shown; '-2d' is the visible plan polygon.
+      obj.visible = this.isProfileView && key === wall2DKey;
     }
 
     for (const [key, obj] of this.subElements3D.entries()) {
