@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Line, Polygon, Solid, Vector3 } from "opengeometry";
+import { Polygon, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
@@ -28,8 +28,9 @@ export interface OpeningOptions {
   placement: Placement;
 }
 
-export class Opening extends Line implements IShape {
+export class Opening extends THREE.Group implements IShape {
   ogType = ElementType.OPENING;
+  ogid: string;
   
   subElements2D: Map<string, THREE.Object3D> = new Map();
   private isProfileView: boolean = false;
@@ -145,11 +146,8 @@ export class Opening extends Line implements IShape {
   }
 
   constructor(openingConfig?: Partial<OpeningOptions>) {
-    super({
-      start: new Vector3(-0.75, 0, 0),
-      end: new Vector3(0.75, 0, 0),
-      color: 0xff0000,
-    });
+    super();
+    this.ogid = openingConfig?.ogid ?? crypto.randomUUID();
 
     this.subElements2D = new Map<string, THREE.Object3D>();
     this.subElements3D = new Map<string, THREE.Object3D>();
@@ -236,7 +234,6 @@ export class Opening extends Line implements IShape {
 
     this.subElements2D.clear();
     this.subElements3D.clear();
-    this.discardGeometry();
   }
 
   setOPGeometry(): void {
@@ -247,20 +244,19 @@ export class Opening extends Line implements IShape {
       return;
     }
 
-    this.setConfig({
-      start: worldPoints[0],
-      end: worldPoints[1],
-    });
+    const start = worldPoints[0];
+    const end   = worldPoints[1];
+    const dir   = new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
+    const perp  = new THREE.Vector3(0, 1, 0).cross(dir);
+    const t2    = this.propertySet.thickness / 2;
 
-    const offset1 = this.getOffset(this.propertySet.thickness / 2);
-    const offset2 = this.getOffset(-this.propertySet.thickness / 2);
-
-    // Four polygon vertices following the line at its actual elevation.
+    // Four polygon vertices — winding matches the old getOffset result:
+    // [off1.start, off1.end, off2.end, off2.start]
     const elevatedFootprint: Vector3[] = [
-      offset1.points[0].clone(),
-      offset1.points[1].clone(),
-      offset2.points[1].clone(),
-      offset2.points[0].clone(),
+      new Vector3(start.x + perp.x * t2, start.y + perp.y * t2, start.z + perp.z * t2),
+      new Vector3(end.x   + perp.x * t2, end.y   + perp.y * t2, end.z   + perp.z * t2),
+      new Vector3(end.x   - perp.x * t2, end.y   - perp.y * t2, end.z   - perp.z * t2),
+      new Vector3(start.x - perp.x * t2, start.y - perp.y * t2, start.z - perp.z * t2),
     ];
 
     // ── 2D polygon at floor level (Y=0) ──────────────────────────────────────
