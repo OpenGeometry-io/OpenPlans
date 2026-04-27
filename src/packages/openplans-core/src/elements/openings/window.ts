@@ -468,11 +468,8 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     this.subElements2D.set('frame', frameGroup);
     this.add(frameGroup);
 
-    // Architectural floor-plan glass symbol: two slit lines spanning the opening
-    // width. The equal-zones formula places the lines so that outer reveal,
-    // glass gap, and inner reveal are all the same width — matching the standard
-    // double-line convention for a glazed unit in a wall opening.
-    const slitThick  = 0.012; // 12 mm per slit
+    // Two Slit
+    const slitThick  = halfWallThickness; // 12 mm per slit
     const slitOffset = (halfWallThickness + slitThick / 2) / 3; // equal-zone spacing
     const glassColor = this.propertySet.glassColor;
 
