@@ -578,7 +578,7 @@ export class PolyWall extends Polyline implements IShape {
     if (element instanceof Door) {
       element.propertySet.stationLocal = { alongWall: resolution.localU, elevation: baseHeight };
     } else if (element instanceof Window) {
-      element.propertySet.stationLocal = { alongWall: resolution.localU };
+      element.propertySet.stationLocal = { alongWall: resolution.localU, elevation: baseHeight };
     }
 
     element.bindHostFrame(resolution.frame);

@@ -142,6 +142,7 @@
       const windowParams = {
         attached: true,
         alongWall: 2.5,
+        planElevation: 0,
         windowWidth: 1.2,
         glassThickness: 0.04,
         frameWidth: 0.05,
@@ -165,7 +166,11 @@
       });
 
       windowFolder.add(windowParams, 'alongWall', 0.5, 4.5, 0.05).name('Along Wall').onChange((value) => {
-        if (windowElement) windowElement.station = { alongWall: value };
+        if (windowElement) windowElement.station = { alongWall: value, elevation: windowParams.planElevation };
+      });
+
+      windowFolder.add(windowParams, 'planElevation', 0, 10, 0.5).name('Plan Elevation').onChange((value) => {
+        if (windowElement) windowElement.planElevation = value;
       });
 
       windowFolder.add(windowParams, 'windowWidth', 0.3, 2.5, 0.05).name('Width').onChange((value) => {

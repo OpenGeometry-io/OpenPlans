@@ -9,6 +9,13 @@ import { localToWorld } from "../solids/wall-frame";
 export interface WindowStationLocal {
   /** Distance along the wall from its start point. */
   alongWall: number;
+  /**
+   * World Y of the floor this window belongs to (default 0).
+   * Used only for the 2D plan symbol — the 3D geometry derives its vertical
+   * position from `sillHeight` instead. Set this to the storey's floor
+   * elevation so the plan stamp is coplanar with the correct wall polygon.
+   */
+  elevation?: number;
 }
 
 export interface WindowOptions {
@@ -17,8 +24,9 @@ export interface WindowOptions {
   type: ElementType.WINDOW;
   hostWallId?: string;
   /**
-   * Window center in the host wall's local frame. Only `alongWall` is
-   * needed — vertical position comes from `sillHeight`, across-wall is always 0.
+   * Window center in the host wall's local frame. `alongWall` positions the
+   * window centre along the wall; `elevation` (optional, default 0) sets the
+   * floor Y for the 2D plan symbol so it sits on the correct storey's polygon.
    */
   stationLocal: WindowStationLocal;
   windowDimensions: {
@@ -145,6 +153,13 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
   get station(): WindowStationLocal { return this.propertySet.stationLocal; }
   set station(value: WindowStationLocal) {
     this.propertySet.stationLocal = value;
+    this.setOPGeometry();
+  }
+
+  /** World Y of the floor this window belongs to (2D plan symbol only). */
+  get planElevation(): number { return this.propertySet.stationLocal.elevation ?? 0; }
+  set planElevation(value: number) {
+    this.propertySet.stationLocal = { ...this.propertySet.stationLocal, elevation: value };
     this.setOPGeometry();
   }
 
@@ -423,7 +438,9 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     const frameVisibleWidth = frameDimensions.width;
     const halfWallThickness = this.resolveWallThickness() / 2;
     const u = stationLocal.alongWall;
-    const h = 0; // 2D plan elements live at floor level (Y = 0), coincident with wall polygon
+    // h = floor elevation of this storey (default 0). 2D plan symbol must be
+    // coplanar with the host wall polygon, which lives at this Y level.
+    const h = stationLocal.elevation ?? 0;
 
     // Plan view: two jamb cross-sections (left and right lining).
     const frameLeftPolygon = new Polygon({
@@ -452,10 +469,11 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     this.add(frameGroup);
 
     // Architectural floor-plan glass symbol: two slit lines spanning the opening
-    // width, positioned symmetrically at ±¼ of wall thickness from centre — the
-    // standard double-line convention indicating a glazed unit in a wall opening.
-    const slitThick  = 0.015; // 15 mm per slit — visible but not overweight
-    const slitOffset = halfWallThickness * 0.5; // places each slit at ±¼ full thickness
+    // width. The equal-zones formula places the lines so that outer reveal,
+    // glass gap, and inner reveal are all the same width — matching the standard
+    // double-line convention for a glazed unit in a wall opening.
+    const slitThick  = 0.012; // 12 mm per slit
+    const slitOffset = (halfWallThickness + slitThick / 2) / 3; // equal-zone spacing
     const glassColor = this.propertySet.glassColor;
 
     const makeSlit = (vCentre: number): Polygon =>
