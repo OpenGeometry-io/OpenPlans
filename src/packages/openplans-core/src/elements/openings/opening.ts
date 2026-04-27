@@ -3,6 +3,7 @@ import { Polygon, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
+import { OPElement } from "../op-element";
 import { Placement } from "../../types";
 import { Event } from "../../../../../utils/event";
 import { WallFrame, localToWorld } from "../solids/wall-frame";
@@ -28,7 +29,7 @@ export interface OpeningOptions {
   placement: Placement;
 }
 
-export class Opening extends THREE.Group implements IShape {
+export class Opening extends OPElement implements IShape {
   ogType = ElementType.OPENING;
   ogid: string;
   

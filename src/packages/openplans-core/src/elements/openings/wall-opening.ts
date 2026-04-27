@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { OPElement } from "../op-element";
 
 export interface WallOpeningOptions {
   ogid?: string;
@@ -9,7 +9,7 @@ export interface WallOpeningOptions {
   hostWallId?: string;
 }
 
-export class WallOpening extends THREE.Group {
+export class WallOpening extends OPElement {
   ogType = "WALL_OPENING";
   ogid: string;
 
