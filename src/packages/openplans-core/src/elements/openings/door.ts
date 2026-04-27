@@ -169,9 +169,8 @@ export class Door extends Opening implements IShape {
 
   set profileView(value: boolean) {
     this._doorProfileView = value;
-    for (const [key, obj] of this.subElements2D.entries()) {
-      // The hole polygon is CSG-only; never visible.
-      obj.visible = key === this.ogid + '-2d' ? false : value;
+    for (const obj of this.subElements2D.values()) {
+      obj.visible = value;
     }
   }
   get profileView() { return this._doorProfileView; }
@@ -189,6 +188,29 @@ export class Door extends Opening implements IShape {
   // Cast bypasses TS's structural check on `propertySet` (DoorOptions has a
   // different `type` literal than OpeningOptions). At runtime Door IS an Opening.
   get opening(): Opening { return this as unknown as Opening; }
+
+  /** Plan-view hole loop (Vector3[] at Y=0). No acrossWall tolerance — the polygon-with-holes path needs exact edges. */
+  get holeLoop2D(): Vector3[] {
+    const { panelDimensions, frameDimensions, stationLocal } = this.propertySet;
+    if (!panelDimensions) return [];
+    const wallThickness           = this.resolveWallThickness();
+    const halfTotalWidthAlongWall = panelDimensions.width / 2 + frameDimensions.width;
+    const halfWallThicknessSlab   = wallThickness / 2;
+
+    const startAlongWall = stationLocal.alongWall - halfTotalWidthAlongWall;
+    const endAlongWall   = stationLocal.alongWall + halfTotalWidthAlongWall;
+
+    const v0 = this.worldFromLocal(startAlongWall, -halfWallThicknessSlab, 0);
+    const v1 = this.worldFromLocal(endAlongWall,   -halfWallThicknessSlab, 0);
+    const v2 = this.worldFromLocal(endAlongWall,   +halfWallThicknessSlab, 0);
+    const v3 = this.worldFromLocal(startAlongWall, +halfWallThicknessSlab, 0);
+    return [
+      new Vector3(v0.x, 0, v0.z),
+      new Vector3(v1.x, 0, v1.z),
+      new Vector3(v2.x, 0, v2.z),
+      new Vector3(v3.x, 0, v3.z),
+    ];
+  }
 
   // @ts-ignore — DoorOptions vs OpeningOptions return shape mismatch.
   getOPConfig(): DoorOptions { return this.propertySet; }
@@ -350,21 +372,6 @@ export class Door extends Opening implements IShape {
     const startAlongWall = stationLocal.alongWall - halfTotalWidthAlongWall;
     const endAlongWall   = stationLocal.alongWall + halfTotalWidthAlongWall;
     const baseElevation  = stationLocal.elevation;
-
-    const footprint2D: Vector3[] = [
-      this.worldFromLocal(startAlongWall, -halfWallThicknessSlab, 0),
-      this.worldFromLocal(endAlongWall,   -halfWallThicknessSlab, 0),
-      this.worldFromLocal(endAlongWall,   +halfWallThicknessSlab, 0),
-      this.worldFromLocal(startAlongWall, +halfWallThicknessSlab, 0),
-    ];
-    const polygon2D = new Polygon({
-      ogid: this.ogid + '-2d',
-      vertices: footprint2D,
-      color: 0xffcccc,
-    });
-    polygon2D.outline = false;
-    this.subElements2D.set(polygon2D.ogid, polygon2D);
-    this.add(polygon2D);
 
     const footprint3D: Vector3[] = [
       this.worldFromLocal(startAlongWall, -halfWallThicknessSlab, baseElevation),

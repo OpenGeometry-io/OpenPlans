@@ -51,10 +51,9 @@ export interface WindowOptions {
 }
 
 /**
- * Window IS an Opening — the hole it cuts in the host wall is carried on
- * `subElements2D/3D` at keys `ogid + '-2d'` and `ogid + '-3d'` (read by the
- * inherited `opening2D` / `opening3D` accessors). Frame and glass are extra
- * decoration on top.
+ * Window IS an Opening — the hole it cuts in the host wall is provided via
+ * `holeLoop2D` (2D plan polygon-with-holes path) and `opening3D` (3D solid
+ * CSG path). Frame and glass are extra decoration on top.
  */
 export class Window extends Opening implements IShape, PlanVectorExportable {
   // @ts-ignore — WindowOptions doesn't extend OpeningOptions (different `type` literal).
@@ -190,9 +189,8 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
 
   set profileView(value: boolean) {
     this._windowProfileView = value;
-    for (const [key, obj] of this.subElements2D.entries()) {
-      // The hole polygon is CSG-only; never visible.
-      obj.visible = key === this.ogid + '-2d' ? false : value;
+    for (const obj of this.subElements2D.values()) {
+      obj.visible = value;
     }
   }
   get profileView() { return this._windowProfileView; }
@@ -215,6 +213,29 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
    * Window is a real Opening subclass and exposes every accessor a wall expects.
    */
   get opening(): Opening { return this as unknown as Opening; }
+
+  /** Plan-view hole loop (Vector3[] at Y=0). No acrossWall tolerance — the polygon-with-holes path needs exact edges. */
+  get holeLoop2D(): Vector3[] {
+    const { windowDimensions, frameDimensions, stationLocal } = this.propertySet;
+    if (!windowDimensions) return [];
+    const wallThickness         = this.resolveWallThickness();
+    const halfTotalWidth        = windowDimensions.width / 2 + frameDimensions.width;
+    const halfWallThicknessSlab = wallThickness / 2;
+
+    const u0 = stationLocal.alongWall - halfTotalWidth;
+    const u1 = stationLocal.alongWall + halfTotalWidth;
+
+    const v0 = this.worldFromLocal(u0, -halfWallThicknessSlab, 0);
+    const v1 = this.worldFromLocal(u1, -halfWallThicknessSlab, 0);
+    const v2 = this.worldFromLocal(u1, +halfWallThicknessSlab, 0);
+    const v3 = this.worldFromLocal(u0, +halfWallThicknessSlab, 0);
+    return [
+      new Vector3(v0.x, 0, v0.z),
+      new Vector3(v1.x, 0, v1.z),
+      new Vector3(v2.x, 0, v2.z),
+      new Vector3(v3.x, 0, v3.z),
+    ];
+  }
 
   // @ts-ignore — returning WindowOptions where Opening returns OpeningOptions.
   getOPConfig(): WindowOptions { return this.propertySet; }
@@ -312,22 +333,6 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     const u0           = stationLocal.alongWall - halfTotalWidth;
     const u1           = stationLocal.alongWall + halfTotalWidth;
     const baseElevation = sillHeight - frameDimensions.width;
-
-    // ── 2D footprint at floor level (coplanar with the wall) ─────────────────
-    const footprint2D: Vector3[] = [
-      this.worldFromLocal(u0, -halfWallThicknessSlab, 0),
-      this.worldFromLocal(u1, -halfWallThicknessSlab, 0),
-      this.worldFromLocal(u1, +halfWallThicknessSlab, 0),
-      this.worldFromLocal(u0, +halfWallThicknessSlab, 0),
-    ];
-    const polygon2D = new Polygon({
-      ogid: this.ogid + '-2d',
-      vertices: footprint2D,
-      color: 0xffcccc,
-    });
-    polygon2D.outline = false;
-    this.subElements2D.set(polygon2D.ogid, polygon2D);
-    this.add(polygon2D);
 
     // ── 3D extrusion seed at the hole's actual base elevation ────────────────
     const footprint3D: Vector3[] = [
