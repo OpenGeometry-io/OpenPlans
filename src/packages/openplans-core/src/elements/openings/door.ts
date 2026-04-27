@@ -79,33 +79,6 @@ export class Door extends Opening implements IShape {
     }
     this.propertySet.ogid = this.ogid;
 
-    // Door positions itself with `station`, not start/end. Replace the
-    // inherited Line setters with no-op getters that warn once. Done via
-    // defineProperty to avoid TS's accessor-variance issue when overriding.
-    let warningEmitted = false;
-    const warnAndIgnore = () => {
-      if (!warningEmitted) {
-        console.warn("Door.start / Door.end are read-only. Use `door.station = { alongWall, elevation }` to position the door.");
-        warningEmitted = true;
-      }
-    };
-    Object.defineProperty(this, 'start', {
-      configurable: true,
-      get: () => {
-        const { stationLocal, panelDimensions } = this.propertySet;
-        return [stationLocal.alongWall - panelDimensions.width / 2, 0, stationLocal.elevation];
-      },
-      set: warnAndIgnore,
-    });
-    Object.defineProperty(this, 'end', {
-      configurable: true,
-      get: () => {
-        const { stationLocal, panelDimensions } = this.propertySet;
-        return [stationLocal.alongWall + panelDimensions.width / 2, 0, stationLocal.elevation];
-      },
-      set: warnAndIgnore,
-    });
-
     this.setOPGeometry();
   }
 
@@ -232,7 +205,6 @@ export class Door extends Opening implements IShape {
     for (const obj of this.subElements3D.values()) this.disposeObject(obj);
     this.subElements2D.clear();
     this.subElements3D.clear();
-    this.discardGeometry();
   }
 
   private disposeObject(obj: THREE.Object3D): void {

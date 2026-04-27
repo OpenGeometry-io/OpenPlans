@@ -100,35 +100,6 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
 
     this.propertySet.ogid = this.ogid;
 
-    // Window positions itself via `station` + `sillHeight`, not start/end.
-    // Replace the inherited Line setters with read-only getters that warn once.
-    let warningEmitted = false;
-    const warnAndIgnore = () => {
-      if (!warningEmitted) {
-        console.warn(
-          "Window.start / Window.end are read-only. " +
-          "Use `window.station` and `window.sillHeight` to position the window.",
-        );
-        warningEmitted = true;
-      }
-    };
-    Object.defineProperty(this, 'start', {
-      configurable: true,
-      get: () => {
-        const { stationLocal, windowDimensions } = this.propertySet;
-        return [stationLocal.alongWall - windowDimensions.width / 2, 0, this.propertySet.sillHeight];
-      },
-      set: warnAndIgnore,
-    });
-    Object.defineProperty(this, 'end', {
-      configurable: true,
-      get: () => {
-        const { stationLocal, windowDimensions } = this.propertySet;
-        return [stationLocal.alongWall + windowDimensions.width / 2, 0, this.propertySet.sillHeight];
-      },
-      set: warnAndIgnore,
-    });
-
     this.setOPGeometry();
   }
 
@@ -271,7 +242,6 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
     for (const obj of this.subElements3D.values()) this.disposeObject(obj);
     this.subElements2D.clear();
     this.subElements3D.clear();
-    this.discardGeometry();
   }
 
   private disposeObject(obj: THREE.Object3D): void {
