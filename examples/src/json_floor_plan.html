@@ -5,42 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON Floor Plan Example</title>
-    <!-- MIXPANEL_TRACKING -->
+    <!-- TRACKING -->
+  <link rel="stylesheet" href="./shared/example.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-
-        #canvas-container {
+    #canvas-container {
             width: 100vw;
             height: 100vh;
         }
-
-        .example-title {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Space Mono', monospace;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #fff;
-            background: rgba(26, 26, 26, 0.8);
-            padding: 12px 24px;
-            z-index: 1000;
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </style>
 </head>
 
 <body>
     <div class="example-title">JSON Floor Plan</div>
     <div id="canvas-container"></div>
     <script type="module">
-        import { OpenPlans, CameraMode } from '/src/index.ts';
+        import { OpenPlans, CameraMode } from '@opengeometry/openplans';
 
         // Floor Plan JSON provided by user
         const floorPlanData = {

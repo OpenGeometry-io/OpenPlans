@@ -1,27 +1,56 @@
 # OpenPlans
 
-Floor-planning, drawing, and export toolkit for the web, built on top of OpenGeometry and Three.js.
+[![npm version](https://img.shields.io/npm/v/@opengeometry/openplans)](https://www.npmjs.com/package/@opengeometry/openplans)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE.md)
+[![built on Three.js](https://img.shields.io/badge/built%20on-Three.js-black)](https://threejs.org)
 
 [OpenGeometry](https://opengeometry.io) · [OpenGeometry Docs](https://docs.opengeometry.io) · [Contributor Guide](./CONTRIBUTING.md) · [Agent Guide](./AGENTS.md) · [Docs Site Guide](./docs/README.md)
 
-> **Actively under development.** OpenPlans is evolving in the open, so APIs, examples, and docs may change as the library matures.
+> **Actively maintained.** OpenPlans is production-ready and ships regular updates. We welcome bug reports, feature requests, and contributions on [GitHub](https://github.com/OpenGeometry-io/OpenPlans/issues).
 
-## What OpenPlans Provides
+A web-based floor-planning, drawing, and export toolkit built on [OpenGeometry](https://opengeometry.io) and Three.js. OpenPlans gives architects and developers a browser-native environment for authoring 2D/3D architectural plans, annotating with dimensions and reference datums, composing drawing sheets, and exporting to IFC, DXF, or printable PDF. It is the application-facing layer on top of the OpenGeometry geometry kernel.
 
-OpenPlans is the application-facing layer on top of [`opengeometry`](https://github.com/OpenGeometry-io/OpenGeometry). It combines scene setup, plan-view authoring, building elements, drawing helpers, and export workflows in one package.
+## Features
 
-Today the repo includes:
+**Primitives**
+- Line, Arc, Polyline, Rectangle
 
-- primitives such as lines, arcs, polylines, and rectangles
-- shapes such as cuboids and cylinders
-- architectural elements such as walls, openings, doors, and windows
-- drawing helpers such as paper frames, linked viewport blocks, and dimensions
-- export flows such as IFC and printable PDF output
-- browser examples for runtime and visual verification
+**Shapes**
+- Cuboid, Cylinder, Wedge
+
+**Architectural Elements**
+- SingleWall, PolyWall, WallOpening, Door, Window
+
+**Reference Datums**
+- Levels, Grids, ReferencePlanes, SectionLines, ElevationMarkers, ProjectOrigin
+
+**Drawing Helpers**
+- PaperFrame (A4 / A3 / A2, portrait and landscape)
+- ViewportBlock — linked, scaled view compositions
+- Dimensions — line, angle, and radius
+- DynamicTextBlock, LogoBlock — sheet annotation elements
+
+**Catalog**
+- Furniture: Chair, Sofa, Bed, Desk, DiningTable, Wardrobe
+- Kitchen: Counter, Cabinet, Island, KitchenSink, Stove, Refrigerator, Dishwasher, Washer
+- Fixtures: Bathtub, Shower, Sink, Toilet, Bidet, Urinal
+- Landscape: Tree, Shrub, Planter, Fountain
+
+**Camera Modes**
+- `CameraMode.Plan` — orthographic top-down view
+- `CameraMode.Model` — perspective 3D view
+
+**Themes**
+- `light`, `dark`, `darkBlue`
+
+**Export**
+- IFC — semantic BIM with B-rep geometry and property sets
+- PDF — vector printable output via jsPDF
+- DXF — CAD-compatible vector export
+
+The document-first views/sheets API (`document-sheet-editor`) is available as a preview. The paper-frame PDF path, architectural elements, primitives, and IFC export are the primary production APIs.
 
 ## Quick Start
-
-Install from npm:
 
 ```bash
 npm install @opengeometry/openplans three camera-controls lil-gui
@@ -42,11 +71,21 @@ const wall = openPlans.singleWall();
 wall.position.set(2, 0, 0);
 ```
 
-`setupOpenGeometry()` must complete before creating geometry-backed content.
+`setupOpenGeometry()` must complete before creating any geometry-backed content.
 
-## Paper Frames And PDF Export
+## Architecture
 
-The stable sheet/export workflow today is the paper-frame path: compose linked viewports on a paper frame and export the result as a downloadable PDF.
+OpenPlans is organized as two internal packages under `src/packages/`:
+
+**`openplans-core`** — the semantic BIM layer. Contains all element types (primitives, shapes, architectural elements, datums, catalog), layout and view management, dimension tools, and IFC/PDF/DXF exporters. Has no direct dependency on a renderer.
+
+**`openplans-three`** — the Three.js runtime. Owns scene setup, the render loop, camera (Plan/Model modes), grid, and Three.js-specific helpers. Consumes `openplans-core` types and drives them through the OpenGeometry kernel.
+
+The `OpenPlans` class in `src/index.ts` is the public facade that wires both packages together and is the primary entry point for application code.
+
+## Paper Frames and PDF Export
+
+Compose linked viewports on a named paper frame and export the result as a downloadable vector PDF.
 
 ```ts
 const openPlans = new OpenPlans(container);
@@ -83,36 +122,73 @@ await openPlans.exportPaperFrameToPDF(paperFrame, {
 });
 ```
 
-There is active work in the repository toward a larger document-first views/sheets architecture, but that path is still experimental and is not the primary production-facing API yet.
+## IFC Export
+
+OpenPlans emits semantically valid IFC with B-rep geometry and standard property sets. See [Semantic IFC Export](./docs/docs/semantic-ifc-export.md) for the full workflow and property set reference.
 
 ## Examples
 
-The repository keeps example source files under `examples/src/`. Useful entry points:
+Run `npm run dev` to serve all examples locally at `http://localhost:5555`.
 
+Source files live in `examples/src/`. Useful entry points by category:
+
+**General**
 - [Demo](./examples/src/demo.html)
 - [IFC export](./examples/src/export-ifc.html)
-- [Single wall](./examples/src/elements/solids/single-wall.html)
-- [Door opening](./examples/src/elements/openings/door.html)
-- [Section and floor views](./examples/src/views/section-floor-views.html)
-- [Paper frame export](./examples/src/drawings/paper.html)
-- [Paper section sheet](./examples/src/drawings/paper-section-sheet.html)
-- [Document sheet editor (experimental)](./examples/src/drawings/document-sheet-editor.html)
-- [Viewport block](./examples/src/drawings/viewport-block.html)
-- [Primitive line](./examples/src/primitives/line.html)
+- [DXF export](./examples/src/dxf-export/index.html)
 
-Run `npm run dev` to serve these locally at `http://localhost:5555`.
+**Elements**
+- [Single wall](./examples/src/elements/solids/single-wall.html)
+- [Polyline wall](./examples/src/elements/solids/polyline-wall.html)
+- [Wall opening](./examples/src/elements/solids/wall-opening.html)
+- [Door](./examples/src/elements/openings/door.html)
+- [Window](./examples/src/elements/openings/window.html)
+- [Opening](./examples/src/elements/openings/opening.html)
+
+**Primitives**
+- [Line](./examples/src/primitives/line.html)
+- [Arc](./examples/src/primitives/arc.html)
+- [Polyline](./examples/src/primitives/polyline.html)
+- [Rectangle](./examples/src/primitives/rectangle.html)
+
+**Shapes**
+- [Cuboid](./examples/src/shapes/cuboid.html)
+- [Cylinder](./examples/src/shapes/cylinder.html)
+
+**Datums**
+- [All datums](./examples/src/datums/all-datums.html)
+- [Level](./examples/src/datums/level.html)
+- [Grid](./examples/src/datums/grid.html)
+- [Section line](./examples/src/datums/section-line.html)
+- [Elevation marker](./examples/src/datums/elevation-marker.html)
+- [Reference plane](./examples/src/datums/reference-plane.html)
+- [Project origin](./examples/src/datums/project-origin.html)
+
+**Dimensions**
+- [Line dimension](./examples/src/dimensions/line-dimension.html)
+- [Angle dimension](./examples/src/dimensions/angle-dimension.html)
+- [Radius dimension](./examples/src/dimensions/radius-dimension.html)
+
+**Drawings and Sheets**
+- [Paper frame export](./examples/src/drawings/paper.html)
+- [Viewport block](./examples/src/drawings/viewport-block.html)
+- [Dynamic text block](./examples/src/drawings/dynamic-text-block.html)
+- [Logo block](./examples/src/drawings/logo-block.html)
+
+**Views**
+- [View creation](./examples/src/views/view-creation.html)
 
 ## Documentation
 
-Product documentation lives in this repository:
+Product documentation lives in this repository under `docs/docs/`:
 
-- [Introduction](./docs/docs/intro.md)
 - [Semantic architecture](./docs/docs/semantic-architecture.md)
 - [Semantic IFC export](./docs/docs/semantic-ifc-export.md)
 - [Colors and appearance](./docs/docs/colors-and-appearance.md)
-- [Create wall tutorial](./docs/docs/tutorial-create-elements/create-wall.md)
+- [Document views and sheets](./docs/docs/document-views-sheets.md)
+- [Migration guide](./docs/docs/migration-semantic-core.md)
 
-If you also need kernel-level geometry docs, see [docs.opengeometry.io](https://docs.opengeometry.io).
+For kernel-level geometry documentation, see [docs.opengeometry.io](https://docs.opengeometry.io).
 
 ## Repository Layout
 
@@ -122,19 +198,14 @@ src/packages/openplans-core/src/     Primitives, shapes, elements, layouts, expo
 src/packages/openplans-three/src/    Three.js runtime, camera, grid, helpers
 examples/src/                        Browser examples used for manual verification
 docs/docs/                           User-facing documentation pages
-scripts/                             Build helpers and example build utilities
-dist/                                Generated library output
-examples/dist/                       Generated example site output
+scripts/                             Build helpers
+dist/                                Generated library output (do not edit)
+examples/dist/                       Generated example site output (do not edit)
 ```
 
 ## Develop From Source
 
-Prerequisites:
-
-- Node.js 18 or newer
-- npm
-
-Install and build:
+Prerequisites: Node.js 18 or newer, npm.
 
 ```bash
 npm install
@@ -143,11 +214,11 @@ npm run build
 
 Useful commands:
 
-- `npm run dev`: start the Vite example server on port `5555`
-- `npm run build`: build the library into `dist/`
-- `npm run build-examples`: build the example site into `examples/dist/`
+- `npm run dev` — start the Vite example server on port `5555`
+- `npm run build` — build the library into `dist/`
+- `npm run build-examples` — build the example site into `examples/dist/`
 
-For docs site work:
+For the docs site:
 
 ```bash
 cd docs
@@ -155,8 +226,12 @@ npm install
 npm run start
 ```
 
-The repository does not currently include a maintained committed automated test suite, so build and example validation are the primary verification paths.
+Verify changes by running `npm run build` and exercising the relevant examples in the browser at `http://localhost:5555`.
 
 ## Contributing
 
-OpenPlans is open source under the [MIT license](./LICENSE.md). For the practical change workflow, see [CONTRIBUTING.md](./CONTRIBUTING.md). For repository-specific agent instructions, see [AGENTS.md](./AGENTS.md).
+OpenPlans is open source under the [MIT license](./LICENSE.md). Contributions are welcome.
+
+- For the change workflow, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+- For repository-specific agent instructions, see [AGENTS.md](./AGENTS.md).
+- To report a bug or request a feature, open an issue on [GitHub](https://github.com/OpenGeometry-io/OpenPlans/issues).

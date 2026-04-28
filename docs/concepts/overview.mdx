@@ -1,0 +1,151 @@
+---
+title: 'Core Concepts Overview'
+description: 'Understanding the fundamental building blocks of OpenPlans'
+---
+
+## Introduction
+
+OpenPlans is built on a hierarchical architecture that organizes geometric entities into distinct categories. Understanding these core concepts will help you build effective 2D floor plans and architectural drawings.
+
+## Architecture Hierarchy
+
+The library is organized into four main categories:
+
+<CardGroup cols={2}>
+  <Card title="Primitives" icon="shapes" href="/concepts/primitives">
+    Basic 2D geometric entities like lines, arcs, rectangles, and polylines
+  </Card>
+  
+  <Card title="Elements" icon="door-open" href="/concepts/elements">
+    Architectural components such as doors, windows, slabs, and stairs
+  </Card>
+  
+  <Card title="Shapes" icon="cube" href="/concepts/shapes">
+    3D geometric forms including cuboids and cylinders
+  </Card>
+  
+  <Card title="Layouts" icon="file" href="/concepts/layouts">
+    Drawing composition tools like paper frames for creating technical drawings
+  </Card>
+</CardGroup>
+
+## Design Philosophy
+
+### Property-Based Configuration
+
+All entities in OpenPlans follow a consistent pattern:
+
+```typescript
+interface EntityPattern {
+  ogid?: string;              // Unique identifier
+  propertySet: object;        // Configuration properties
+  setOPConfig(): void;        // Update configuration
+  getOPConfig(): object;      // Retrieve configuration
+  setOPGeometry(): void;      // Update geometry
+  setOPMaterial(): void;      // Update materials
+}
+```
+
+### Three.js Integration
+
+All OpenPlans entities extend Three.js objects:
+
+- **Primitives & Elements** extend Three.js geometric classes
+- **Shapes** extend kernel geometric primitives
+- All entities can be added to Three.js scenes using `scene.add()`
+
+<Note>
+OpenPlans automatically manages geometry updates when you modify properties through setters.
+</Note>
+
+## Common Patterns
+
+### Creating Entities
+
+All entities follow a consistent creation pattern:
+
+```typescript
+const line = openPlans.line({
+  startPoint: [0, 0, 0],
+  endPoint: [5, 0, 0],
+  color: 0x000000
+});
+```
+
+### Modifying Properties
+
+Use property setters to modify entities dynamically:
+
+```typescript
+line.startPoint = [1, 0, 0];
+line.lineColor = 0xFF0000;
+```
+
+### Managing Lifecycle
+
+OpenPlans tracks all created entities:
+
+```typescript
+// Get all entities of a specific type
+const allLines = openPlans.getEntitiesByType('LinePrimitive');
+
+// Dispose an entity
+openPlans.disposeElement(line.ogid);
+```
+
+## Working with the Kernel
+
+OpenPlans is built on top of the `OpenGeometry` kernel, which provides the underlying geometric computation engine. The kernel handles:
+
+- Geometric computations
+- BREP (Boundary Representation) data
+- Shape manipulation
+- Boolean operations
+
+<Info>
+You need to initialize the OpenGeometry kernel before using advanced features:
+
+```typescript
+await openPlans.setupOpenGeometry();
+```
+</Info>
+
+## Next Steps
+
+<Steps>
+  <Step title="Learn about Primitives">
+    Explore basic 2D geometric entities in the [Primitives](/concepts/primitives) section
+  </Step>
+  
+  <Step title="Understand Elements">
+    Discover architectural components in the [Elements](/concepts/elements) section
+  </Step>
+  
+  <Step title="Work with Shapes">
+    Create 3D geometry in the [Shapes](/concepts/shapes) section
+  </Step>
+  
+  <Step title="Create Layouts">
+    Compose technical drawings in the [Layouts](/concepts/layouts) section
+  </Step>
+</Steps>
+
+## Code Organization
+
+The source code follows this structure:
+
+```
+src/
+├── primitives/     # 2D geometric primitives
+├── elements/       # Architectural elements
+├── shapes/         # 3D geometric shapes
+├── layouts/        # Drawing layout tools
+├── kernel/         # OpenGeometry kernel
+└── index.ts        # Main OpenPlans class
+```
+
+Each entity is self-contained with its own:
+- Configuration interface
+- Property management
+- Geometry generation
+- Material handling

@@ -1,0 +1,354 @@
+---
+title: Working with Primitives
+description: Master the basic 2D primitives in OpenPlans - lines, arcs, rectangles, and polylines
+---
+
+## Overview
+
+Primitives are the fundamental 2D drawing elements in OpenPlans. They form the basis for creating floor plans and architectural drawings. All primitives extend from the OpenGeometry kernel and provide a consistent API.
+
+## Line Primitive
+
+The `LinePrimitive` creates a straight line between two points.
+
+### Creating Lines
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+// Create a basic line
+const line = openPlans.line({
+  startPoint: [0, 0, 0],
+  endPoint: [10, 0, 2],
+  color: 0x000000
+});
+```
+
+### Modifying Lines
+
+```typescript
+// Update start point
+line.startPoint = [5, 0, 0];
+
+// Update end point
+line.endPoint = [15, 0, 3];
+
+// Change color
+line.lineColor = 0xFF0000; // Red
+
+// Get configuration
+const config = line.getOPConfig();
+console.log(config);
+// Output: { startPoint: [5, 0, 0], endPoint: [15, 0, 3], color: 16711680 }
+```
+
+### Line Properties
+
+- **startPoint**: `[x, y, z]` - Starting point coordinates
+- **endPoint**: `[x, y, z]` - Ending point coordinates  
+- **color**: `number` - Line color as hex number (e.g., 0xFF0000)
+- **ogid**: `string` - Unique identifier (auto-generated or custom)
+
+## Rectangle Primitive
+
+The `RectanglePrimitive` creates a rectangular outline.
+
+### Creating Rectangles
+
+```typescript
+// Create a rectangle
+const rectangle = openPlans.rectangle({
+  center: [0, 0, 0],
+  width: 10,
+  breadth: 5,
+  color: 0x0000FF
+});
+```
+
+### Modifying Rectangles
+
+```typescript
+// Update center position
+rectangle.center = [5, 0, 5];
+
+// Modify dimensions
+rectangle.width = 20;
+rectangle.breadth = 10;
+
+// Change color
+rectangle.rectangleColor = 0x00FF00; // Green
+```
+
+### Rectangle Properties
+
+- **center**: `[x, y, z]` - Center point of rectangle
+- **width**: `number` - Width (along X-axis)
+- **breadth**: `number` - Breadth (along Z-axis)
+- **color**: `number` - Rectangle outline color
+
+### Preloading Rectangles
+
+```typescript
+const preloadedRect = openPlans.rectangle({
+  ogid: 'preloaded-rectangle-222',
+  center: [0, 0, 0],
+  width: 20,
+  breadth: 10,
+  color: 0xE1A038 // Orange
+});
+```
+
+## Polyline Primitive
+
+The `PolylinePrimitive` creates connected line segments through multiple points.
+
+### Creating Polylines
+
+```typescript
+// Create a polyline with multiple points
+const polyline = openPlans.polyline({
+  points: [
+    [0, 0, 0],
+    [5, 0, 0],
+    [5, 0, 3],
+    [0, 0, 3],
+    [0, 0, 0]  // Close the shape
+  ],
+  color: 0x000000
+});
+```
+
+### Modifying Polylines
+
+```typescript
+// Change color
+polyline.lineColor = 0xFF00FF; // Magenta
+
+// Add a new point
+polyline.attachPoint([10, 0, 5]);
+
+// Get configuration
+const polyConfig = polyline.getOPConfig();
+console.log(polyConfig.points);
+```
+
+### Creating Complex Shapes
+
+```typescript
+// L-shaped room
+const lShape = openPlans.polyline({
+  points: [
+    [0, 0, 0],
+    [6, 0, 0],
+    [6, 0, 3],
+    [3, 0, 3],
+    [3, 0, 6],
+    [0, 0, 6],
+    [0, 0, 0]
+  ],
+  color: 0x000000
+});
+```
+
+## Arc Primitive
+
+The `ArcPrimitive` creates curved segments, useful for curved walls and decorative elements.
+
+### Creating Arcs
+
+```typescript
+const arc = openPlans.arc({
+  center: [5, 0, 5],
+  radius: 3,
+  startAngle: 0,
+  endAngle: Math.PI,  // 180 degrees
+  segments: 32,  // Higher = smoother curve
+  color: 0x000000
+});
+```
+
+### Modifying Arcs
+
+```typescript
+// Update center
+arc.arcCenter = new Vector3(10, 0, 10);
+
+// Change radius
+arc.arcRadius = 5;
+
+// Modify angles (in radians)
+arc.arcStartAngle = 0;
+arc.arcEndAngle = Math.PI * 1.5;  // 270 degrees
+
+// Adjust smoothness
+arc.arcSegments = 64;
+
+// Change color
+arc.arcColor = 0x0000FF;
+```
+
+### Arc Properties
+
+- **center**: `[x, y, z]` - Center point of arc
+- **radius**: `number` - Arc radius
+- **startAngle**: `number` - Start angle in radians
+- **endAngle**: `number` - End angle in radians
+- **segments**: `number` - Number of segments (affects smoothness)
+- **color**: `number` - Arc color
+
+## Common Operations
+
+### Selection and Editing States
+
+All primitives support selection and editing states:
+
+```typescript
+// Selection state
+rectangle.selected = true;
+
+// Edit state
+rectangle.edit = true;
+
+// Check state
+if (rectangle.selected) {
+  console.log('Rectangle is selected');
+}
+```
+
+### Sub-nodes
+
+Primitives can have sub-nodes for additional geometry:
+
+```typescript
+// Access sub-nodes map
+const subNodes = line.subNodes;
+
+// Add custom sub-node
+const marker = new THREE.Mesh(geometry, material);
+line.subNodes.set('customMarker', marker);
+line.add(marker);
+```
+
+### Configuration Management
+
+All primitives implement `getOPConfig()` and `setOPConfig()`:
+
+```typescript
+// Get current configuration
+const config = polyline.getOPConfig();
+
+// Save to JSON
+const savedConfig = JSON.stringify(config);
+
+// Load from saved configuration
+const loadedConfig = JSON.parse(savedConfig);
+const newPolyline = openPlans.polyline(loadedConfig);
+```
+
+## Working with the Property Set
+
+Every primitive has a `propertySet` that stores its configuration:
+
+```typescript
+const line = openPlans.line({
+  startPoint: [0, 0, 0],
+  endPoint: [10, 0, 0],
+  color: 0x000000
+});
+
+// Access property set directly
+console.log(line.propertySet);
+// Output: {
+//   ogid: "uuid-here",
+//   startPoint: [0, 0, 0],
+//   endPoint: [10, 0, 0],
+//   color: 0x000000
+// }
+```
+
+## Type Information
+
+Every primitive has an `ogType` property:
+
+```typescript
+console.log(line.ogType);        // "LinePrimitive"
+console.log(rectangle.ogType);   // "RectanglePrimitive"
+console.log(polyline.ogType);    // "PolylinePrimitive"
+console.log(arc.ogType);         // "ArcPrimitive"
+
+// Use for filtering
+const allLines = openPlans.getEntitiesByType('LinePrimitive');
+```
+
+## Complete Example
+
+Here's a complete example using all primitives:
+
+```typescript
+import { OpenPlans, Vector3 } from 'openplans';
+
+async function createDrawing() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create a rectangular boundary
+  const boundary = openPlans.rectangle({
+    center: [5, 0, 5],
+    width: 10,
+    breadth: 10,
+    color: 0x000000
+  });
+  
+  // Add a diagonal line
+  const diagonal = openPlans.line({
+    startPoint: [0, 0, 0],
+    endPoint: [10, 0, 10],
+    color: 0xFF0000
+  });
+  
+  // Create a curved element
+  const curve = openPlans.arc({
+    center: [5, 0, 5],
+    radius: 3,
+    startAngle: 0,
+    endAngle: Math.PI,
+    segments: 32,
+    color: 0x0000FF
+  });
+  
+  // Add an irregular shape
+  const customShape = openPlans.polyline({
+    points: [
+      [1, 0, 1],
+      [3, 0, 1],
+      [3, 0, 2],
+      [2, 0, 3],
+      [1, 0, 2],
+      [1, 0, 1]
+    ],
+    color: 0x00FF00
+  });
+  
+  // Get all primitives
+  const allEntities = [
+    ...openPlans.getEntitiesByType('LinePrimitive'),
+    ...openPlans.getEntitiesByType('RectanglePrimitive'),
+    ...openPlans.getEntitiesByType('PolylinePrimitive'),
+    ...openPlans.getEntitiesByType('ArcPrimitive')
+  ];
+  
+  console.log(`Created ${allEntities.length} primitives`);
+}
+
+createDrawing();
+```
+
+## Next Steps
+
+- Learn about [Architectural Elements](/guides/architectural-elements) built from primitives
+- Explore [3D Shapes](/guides/3d-shapes) for adding volume to your drawings
+- Add annotations with [Dimensions and Glyphs](/guides/dimensions-and-glyphs)

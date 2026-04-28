@@ -1,0 +1,245 @@
+---
+title: 'Glyphs'
+description: 'Create and manage text annotations with the Glyphs system'
+icon: 'font'
+---
+
+## Overview
+
+The Glyphs system provides text rendering and annotation capabilities in OpenPlans. It allows you to add text labels, annotations, and dynamic text elements that can be positioned, rotated, and scaled in your 3D scene.
+
+Glyphs are powered by the `@opengeometry/openglyph` package and integrate seamlessly with the OpenPlans rendering pipeline.
+
+## Setup
+
+The Glyphs system is automatically initialized when you call `setupOpenGeometry()`:
+
+```typescript
+const openplans = new OpenPlans(container);
+await openplans.setupOpenGeometry();
+
+// Glyphs system is now ready
+// Font faces are loaded and scene references are set
+```
+
+## Creating Glyphs
+
+### glyph()
+
+Create a new text glyph and add it to the scene.
+
+```typescript
+const textGlyph = openplans.glyph(
+  'Room 101',           // text
+  16,                   // size
+  0x000000,            // color (hex)
+  true                 // staticZoom (maintains size when zooming)
+);
+```
+
+<ParamField path="text" type="string" required>
+  The text content to display.
+</ParamField>
+
+<ParamField path="size" type="number" required>
+  The font size of the text.
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  The color of the text as a hexadecimal value (e.g., `0x000000` for black, `0xFF0000` for red).
+</ParamField>
+
+<ParamField path="staticZoom" type="boolean" default="true">
+  When `true`, the glyph maintains a consistent size regardless of camera zoom level. When `false`, the glyph scales with the scene.
+</ParamField>
+
+**Returns:** `GlyphNode` - A glyph node object that can be positioned and manipulated.
+
+## Managing Glyphs
+
+### getGlyph()
+
+Retrieve a glyph by its unique identifier.
+
+```typescript
+const glyph = openplans.getGlyph('glyph-id-123');
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the glyph to retrieve.
+</ParamField>
+
+**Returns:** `GlyphNode` - The glyph node object.
+
+**Throws:** Error if the glyph is not found.
+
+### glyphNodes
+
+Access all glyph nodes in the scene.
+
+```typescript
+const allGlyphs = openplans.glyphNodes;
+const count = allGlyphs.size;
+```
+
+**Returns:** `Map<string, GlyphNode>` - A map of all glyph nodes indexed by their IDs.
+
+## Manipulating Glyphs
+
+### updateGlyphText()
+
+Update the text content of an existing glyph.
+
+```typescript
+openplans.updateGlyphText('glyph-id-123', 'Updated Room Name');
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the glyph to update.
+</ParamField>
+
+<ParamField path="text" type="string" required>
+  The new text content to display.
+</ParamField>
+
+### rotateGlyph()
+
+Rotate a glyph by a specified angle.
+
+```typescript
+openplans.rotateGlyph('glyph-id-123', Math.PI / 4); // Rotate 45 degrees
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the glyph to rotate.
+</ParamField>
+
+<ParamField path="angle" type="number" required>
+  The rotation angle in radians.
+</ParamField>
+
+### selectGlyph()
+
+Select a glyph for editing or highlighting.
+
+```typescript
+openplans.selectGlyph('glyph-id-123');
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the glyph to select.
+</ParamField>
+
+### clearGlyphSelection()
+
+Clear the current glyph selection.
+
+```typescript
+openplans.clearGlyphSelection();
+```
+
+## Positioning Glyphs
+
+Glyph nodes are Three.js Object3D instances, so you can position and transform them using standard Three.js methods:
+
+```typescript
+const glyph = openplans.glyph('Label', 14, 0x000000);
+
+// Position the glyph
+glyph.position.set(10, 0, 5);
+
+// Rotate the glyph
+glyph.rotation.y = Math.PI / 2;
+
+// Scale the glyph (if staticZoom is false)
+glyph.scale.set(2, 2, 2);
+```
+
+## Complete Example
+
+```typescript
+import { OpenPlans } from '@opengeometry/openplans';
+
+// Initialize OpenPlans
+const container = document.getElementById('canvas');
+const openplans = new OpenPlans(container);
+await openplans.setupOpenGeometry();
+
+// Create a room rectangle
+const room = openplans.rectangle({
+  center: [5, 0, 5],
+  width: 10,
+  height: 8,
+  color: 0x0000FF
+});
+
+// Add a room label
+const roomLabel = openplans.glyph(
+  'Living Room',
+  18,
+  0x000000,
+  true  // Static zoom - maintains size
+);
+
+// Position the label at the room center
+roomLabel.position.set(5, 0.1, 5);
+
+// Add dimension text
+const dimensionLabel = openplans.glyph(
+  '10.00 m',
+  12,
+  0x666666,
+  true
+);
+dimensionLabel.position.set(5, 0.1, 0);
+
+// Update label later
+setTimeout(() => {
+  openplans.updateGlyphText(roomLabel.id, 'Master Bedroom');
+}, 2000);
+
+// Rotate a label
+openplans.rotateGlyph(dimensionLabel.id, Math.PI / 2);
+
+// Get all glyphs
+console.log(`Total glyphs: ${openplans.glyphNodes.size}`);
+
+// Select and manipulate
+openplans.selectGlyph(roomLabel.id);
+// ... perform operations on selected glyph ...
+openplans.clearGlyphSelection();
+```
+
+## Camera Integration
+
+The Glyphs system automatically updates when the camera moves to maintain proper orientation and scale (when `staticZoom` is enabled):
+
+```typescript
+// This is handled automatically by OpenPlans
+openplans.planCamera.controls.addEventListener("update", () => {
+  Glyphs.updateManager(openplans.threeCamera);
+});
+```
+
+## Font Customization
+
+The default font is 'Source_Code_Pro_Regular'. The font is loaded during initialization:
+
+```typescript
+await Glyphs.loadFaces('Source_Code_Pro_Regular');
+```
+
+## Best Practices
+
+- Use `staticZoom: true` for labels and annotations that should remain readable at any zoom level
+- Use `staticZoom: false` for text that should scale with the scene
+- Keep glyph IDs for labels you need to update dynamically
+- Position glyphs slightly above (y-axis) geometry to prevent z-fighting
+- Use consistent text sizes for related annotations (e.g., all room labels at size 18)
+
+## Notes
+
+- Glyphs are rendered as part of the main scene
+- The Glyphs system uses the `@opengeometry/openglyph` package internally
+- Text rendering performance is optimized for real-time applications
+- Glyphs automatically update when camera changes occur

@@ -6,6 +6,20 @@ import { ElementType } from "../base-type";
 import { Door, Window } from "../openings";
 import { Opening } from "../openings/opening";
 import { WallMaterial, WallOptions } from "./wall-types";
+import { WallFrame, computeWallFrame } from "./wall-frame";
+
+/** Optional hosting placement for PolyWall.attach* — offset is total arc-length along the polyline. */
+export interface PolyWallHostPlacement {
+  offset?: number;
+  baseHeight?: number;
+}
+
+/** Resolution of a polyline arc-length offset into a specific segment. */
+export interface PolyWallSegmentResolution {
+  segmentIndex: number;
+  localU: number;
+  frame: WallFrame;
+}
 
 type WallPoint = [number, number, number];
 
@@ -27,7 +41,6 @@ const DEFAULT_POINTS: WallPoint[] = [
 
 const GEOMETRY_EPSILON = 1e-6;
 const FOOTPRINT_AREA_EPSILON = 1e-6;
-const PLAN_RENDER_ORDER = 20;
 
 function clonePoint(point: WallPoint): WallPoint {
   return [point[0], point[1], point[2]];
@@ -176,10 +189,6 @@ function buildFootprint(points: WallPoint[], thickness: number): GeometryStateRe
     const positiveOffset = sourceLine.getOffset(thickness / 2, 50, true);
     const negativeOffset = sourceLine.getOffset(-thickness / 2, 50, true);
 
-    console.log(positiveOffset.points);
-    console.log(negativeOffset.points);
-
-
     const footprint = sanitizeFootprintVertices([
       ...positiveOffset.points.map((point) => cloneVector(point)),
       ...negativeOffset.points.slice().reverse().map((point) => cloneVector(point)),
@@ -295,6 +304,7 @@ export class PolyWall extends Polyline implements IShape {
   private isModelView = true;
 
   private openings: Opening[] = [];
+  private _wallOutlineVertices: Vector3[] = [];
 
   selected = false;
   edit = false;
@@ -528,11 +538,57 @@ export class PolyWall extends Polyline implements IShape {
     return this.setPoints(nextPoints);
   }
 
-  attachDoor(doorElement: Door) {
-    if (doorElement.hostWallId !== this.ogid) {
-      doorElement.hostWallId = this.ogid;
-      doorElement.setOPGeometry();
+  /**
+   * Resolve an arc-length offset along the polyline into the segment that
+   * owns it, plus the wall-local u distance within that segment and the
+   * segment's WallFrame. Throws if the polyline has fewer than 2 points
+   * or the offset is out of range.
+   */
+  getFrameForOffset(offset: number): PolyWallSegmentResolution {
+    const pts = this.propertySet.points;
+    if (pts.length < 2) {
+      throw new Error("PolyWall.getFrameForOffset: polyline must have at least 2 points.");
     }
+
+    let remaining = offset;
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      const a = new Vector3(pts[i][0], pts[i][1], pts[i][2]);
+      const b = new Vector3(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
+      const segLength = a.clone().subtract(b).length();
+      if (remaining <= segLength || i === pts.length - 2) {
+        const frame = computeWallFrame(a, b, this.propertySet.thickness);
+        const localU = Math.max(0, Math.min(remaining, segLength));
+        return { segmentIndex: i, localU, frame };
+      }
+      remaining -= segLength;
+    }
+
+    throw new Error("PolyWall.getFrameForOffset: unreachable offset resolution.");
+  }
+
+  private applyHostPlacement(element: Door | Window | Opening, placement?: PolyWallHostPlacement): WallFrame {
+    const offset = placement?.offset ?? 0;
+    const baseHeight = placement?.baseHeight ?? 0;
+    const resolution = this.getFrameForOffset(offset);
+
+    // Mutate the propertySet directly so the station change does NOT trigger
+    // a setOPGeometry (which would rebuild against the OLD host frame and
+    // immediately get thrown away by the bindHostFrame call below). The
+    // bindHostFrame call then performs a single rebuild against the new
+    // frame with the new station already in place.
+    if (element instanceof Door) {
+      element.propertySet.stationLocal = { alongWall: resolution.localU, elevation: baseHeight };
+    } else if (element instanceof Window) {
+      element.propertySet.stationLocal = { alongWall: resolution.localU, elevation: baseHeight };
+    }
+
+    element.bindHostFrame(resolution.frame);
+    return resolution.frame;
+  }
+
+  attachDoor(doorElement: Door, placement?: PolyWallHostPlacement) {
+    doorElement.hostWallId = this.ogid;
+    this.applyHostPlacement(doorElement, placement);
 
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
@@ -540,24 +596,65 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
-    openingFromDoor.profileView = false;
-    openingFromDoor.modelView = false;
-
     this.openings.push(openingFromDoor);
     const openingConfig = openingFromDoor.getOPConfig();
     this.propertySet.openings.push(openingConfig.ogid!);
     this.resolveOpenings();
 
     openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
-  attachWindow(windowElement: Window) {
-    if (windowElement.hostWallId !== this.ogid) {
-      windowElement.hostWallId = this.ogid;
-      windowElement.setOPGeometry();
+  /**
+   * Detach a previously attached door. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG. Mirrors SingleWall.detachDoor.
+   */
+  detachDoor(doorElement: Door) {
+    const openingFromDoor = doorElement.opening as Opening;
+    const openingOgid = openingFromDoor?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromDoor);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
     }
+
+    doorElement.hostWallId = undefined;
+    doorElement.bindHostFrame(null);
+
+    this.resolveOpenings();
+  }
+
+  /**
+   * Detach a previously attached window. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG. Mirrors detachDoor and SingleWall.detachWindow.
+   */
+  detachWindow(windowElement: Window) {
+    const openingFromWindow = windowElement.opening as Opening;
+    const openingOgid = openingFromWindow?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromWindow);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    windowElement.hostWallId = undefined;
+    windowElement.bindHostFrame(null);
+
+    this.resolveOpenings();
+  }
+
+  attachWindow(windowElement: Window, placement?: PolyWallHostPlacement) {
+    windowElement.hostWallId = this.ogid;
+    this.applyHostPlacement(windowElement, placement);
 
     const openingFromWindow = windowElement.opening as Opening;
     if (!openingFromWindow) {
@@ -565,22 +662,18 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
-    openingFromWindow.profileView = false;
-    openingFromWindow.modelView = false;
-
     this.openings.push(openingFromWindow);
     const openingConfig = openingFromWindow.getOPConfig();
     this.propertySet.openings.push(openingConfig.ogid!);
     this.resolveOpenings();
 
     openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
-  attachOpening(openingElement: Opening) {
-    openingElement.profileView = false;
-    openingElement.modelView = false;
+  attachOpening(openingElement: Opening, placement?: PolyWallHostPlacement) {
+    this.applyHostPlacement(openingElement, placement);
 
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
@@ -588,7 +681,7 @@ export class PolyWall extends Polyline implements IShape {
     this.resolveOpenings();
 
     openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
     });
   }
 
@@ -608,42 +701,52 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   resolveOpenings() {
-    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
     const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
 
-    this.clearResolvedElement(this.subElements2D, this.ogid + "-2d-resolved");
+    // ── 2D: rebuild polygon-with-holes ────────────────────────────────────────
+    this.clearResolvedElement(this.subElements2D, this.ogid + "-2d");
     this.clearResolvedElement(this.subElements3D, this.ogid + "-3d-resolved");
 
-    const all2DOpenings = this.openings
-      .map((opening) => opening.opening2D)
-      .filter((opening): opening is Polygon => Boolean(opening));
+    if (this._wallOutlineVertices.length >= 3) {
+      const holeLoops = this.openings
+        .map((opening) => opening.holeLoop2D)
+        .filter((loop): loop is Vector3[] => loop.length >= 3);
+
+      const wall2D = new Polygon({
+        vertices: this._wallOutlineVertices.map((point) => cloneVector(point)),
+        holes: holeLoops,
+        color: this.propertySet.color,
+      });
+      this.subElements2D.set(this.ogid + "-2d", wall2D);
+      this.add(wall2D);
+    }
+
+    // ── 3D: unchanged boolean subtract ────────────────────────────────────────
     const all3DOpenings = this.openings
       .map((opening) => opening.opening3D)
       .filter((opening): opening is Solid => Boolean(opening));
 
-    if (wall2D && all2DOpenings.length > 0) {
-      const result2D = wall2D.subtract(all2DOpenings, {
-        color: this.propertySet.color,
-        outline: this._outlineEnabled,
-      }) as BooleanResult;
-
-      this.subElements2D.set(this.ogid + "-2d-resolved", result2D);
-      this.add(result2D);
-    }
-
     if (wall3D && all3DOpenings.length > 0) {
-      const result3D = wall3D.subtract(all3DOpenings, {
-        color: this.propertySet.color,
-        outline: this._outlineEnabled,
-      }) as BooleanResult;
+      try {
+        const result3D = wall3D.subtract(all3DOpenings, {
+          color:       this.propertySet.color,
+          outline:     this._outlineEnabled,
+          transparent: false,
+          opacity:     1,
+        }) as BooleanResult;
 
-      this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
-      this.add(result3D);
+        this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
+        this.add(result3D);
+      } catch (error) {
+        console.error(
+          `[PolyWall] 3D subtract failed for ${all3DOpenings.length} cutter(s).`,
+          "openings:", this.openings.map((o) => o.ogid),
+          error,
+        );
+        throw error;
+      }
     }
 
-    all2DOpenings.forEach((opening2D) => {
-      opening2D.visible = false;
-    });
     all3DOpenings.forEach((opening3D) => {
       opening3D.visible = false;
     });
@@ -683,11 +786,15 @@ export class PolyWall extends Polyline implements IShape {
       return;
     }
 
+    this._wallOutlineVertices = geometryState.footprint.map((point) => cloneVector(point));
+
+    // Base polygon: extrusion seed for the 3D path; not directly rendered (resolveOpenings builds '-2d').
     const polygon = new Polygon({
       ogid: this.ogid + "-2d-base",
-      vertices: geometryState.footprint.map((point) => cloneVector(point)),
+      vertices: this._wallOutlineVertices.map((point) => cloneVector(point)),
       color: this.propertySet.color,
     });
+    polygon.visible = false;
     this.subElements2D.set(polygon.ogid, polygon);
     this.add(polygon);
 
@@ -728,13 +835,13 @@ export class PolyWall extends Polyline implements IShape {
   }
 
   private syncViewVisibility(): void {
-    const resolved2DKey = this.ogid + "-2d-resolved";
+    const wall2DKey     = this.ogid + "-2d";
     const resolved3DKey = this.ogid + "-3d-resolved";
-    const hasResolved2D = this.subElements2D.has(resolved2DKey);
     const hasResolved3D = this.subElements3D.has(resolved3DKey);
 
     for (const [key, obj] of this.subElements2D.entries()) {
-      obj.visible = this.isProfileView && (!hasResolved2D || key === resolved2DKey);
+      // '-2d-base' is the extrusion seed, never shown; '-2d' is the visible plan polygon.
+      obj.visible = this.isProfileView && key === wall2DKey;
     }
 
     for (const [key, obj] of this.subElements3D.entries()) {
@@ -757,12 +864,16 @@ export class PolyWall extends Polyline implements IShape {
       (obj as Polygon | BooleanResult).outline = this._outlineEnabled;
     }
 
-    obj.renderOrder = PLAN_RENDER_ORDER;
+    // Use default depth behavior so the 2D plan polygon is correctly
+    // occluded by the 3D wall when both views are on (matches SingleWall).
+    // The earlier `depthTest: false` + high renderOrder forced the 2D plan
+    // to draw OVER the 3D wall, making solid walls look see-through.
+    obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
-      material.depthWrite = false;
-      material.depthTest = false;
-      material.transparent = true;
+      material.depthWrite = true;
+      material.depthTest = true;
+      material.transparent = false;
       material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.DoubleSide;
@@ -779,10 +890,13 @@ export class PolyWall extends Polyline implements IShape {
     obj.renderOrder = 0;
     this.applyObjectColor(obj, this.propertySet.color);
     this.forEachMaterial(obj, (material) => {
+      // Render fully opaque in the wall color, matching a regular Solid (and
+      // SingleWall). The earlier `transparent: true, opacity: 0.6` made every
+      // PolyWall — even one with no openings — render at 60% alpha.
       material.depthWrite = true;
       material.depthTest = true;
-      material.transparent = true;
-      material.opacity = 0.6;
+      material.transparent = false;
+      material.opacity = 1;
       if ("side" in material) {
         material.side = THREE.FrontSide;
       }

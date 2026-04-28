@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenPlans Examples</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -275,10 +275,6 @@
       flex-wrap: wrap;
     }
 
-    .opensource-icon {
-      font-size: 32px;
-    }
-
     .opensource-text {
       font-family: 'Space Mono', monospace;
       color: #fff;
@@ -447,14 +443,6 @@
       border-bottom: 1px solid #e0e0e0;
     }
 
-    .card-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
     .card:hover {
       border-color: #1a1a1a;
       box-shadow: 4px 4px 0 #1a1a1a;
@@ -612,10 +600,6 @@
       .card-grid {
         grid-template-columns: 1fr;
       }
-
-      .search-box {
-        display: none;
-      }
     }
   </style>
 </head>
@@ -628,7 +612,7 @@
       OpenPlans
     </div>
     <nav class="nav">
-      <a href="./examples/demo.html" class="btn-docs" style="background: #1a1a1a;">View Demo</a>
+      <a href="./demo.html" class="btn-docs" style="background: #1a1a1a;">View Demo</a>
       <a href="#" class="active">Examples</a>
       <div class="nav-dropdown">
         <button class="nav-dropdown-trigger">Categories ▾</button>
@@ -638,11 +622,6 @@
           <a href="#" class="nav-dropdown-item" data-filter="shapes">Shapes & 3D</a>
           <a href="#" class="nav-dropdown-item" data-filter="elements">Elements</a>
           <a href="#" class="nav-dropdown-item" data-filter="2d-elements">2D Elements</a>
-          <a href="#" class="nav-dropdown-item" data-filter="fixtures">Fixtures</a>
-          <a href="#" class="nav-dropdown-item" data-filter="appliances">Appliances</a>
-          <a href="#" class="nav-dropdown-item" data-filter="furniture">Furniture</a>
-          <a href="#" class="nav-dropdown-item" data-filter="kitchen">Kitchen</a>
-          <a href="#" class="nav-dropdown-item" data-filter="landscape">Landscape</a>
         </div>
       </div>
       <a href="#" id="docs-link">Docs</a>
@@ -692,11 +671,6 @@
     <button class="filter-btn" data-filter="shapes">Shapes & 3D</button>
     <button class="filter-btn" data-filter="elements">Elements</button>
     <button class="filter-btn" data-filter="2d-elements">2D Elements</button>
-    <button class="filter-btn" data-filter="fixtures">Fixtures</button>
-    <button class="filter-btn" data-filter="appliances">Appliances</button>
-    <button class="filter-btn" data-filter="furniture">Furniture</button>
-    <button class="filter-btn" data-filter="kitchen">Kitchen</button>
-    <button class="filter-btn" data-filter="landscape">Landscape</button>
   </div>
 
   <!-- Demo Section -->
@@ -716,10 +690,8 @@
         </div>
         <span class="card-tag" style="background: #ff6b00; color: #fff; border-color: #ff6b00;">Featured</span>
         <h3 class="card-title">Floor Plan Demo</h3>
-        <!-- <p class="card-description">Interactive demo showcasing a paper frame with doors, windows, and kitchen elements.
-          Includes PDF export and full GUI controls for each element.</p> -->
         <div class="card-links">
-          <a href="./examples/demo.html" class="card-link primary">View Demo <span class="arrow">→</span></a>
+          <a href="./demo.html" class="card-link primary">View Demo <span class="arrow">→</span></a>
         </div>
       </div>
     </div>
@@ -734,22 +706,15 @@
     </div>
     <div class="card-grid">
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/line.png" alt="Line">
-        </div>
         <span class="card-tag">Primitive</span>
         <h3 class="card-title">Line</h3>
         <p class="card-description">Basic line primitive for creating straight lines between two points.</p>
         <div class="card-links">
-          <a href="./primitives/line.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
+          <a href="./primitives/line.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/polyline.png" alt="Polyline">
-        </div>
         <span class="card-tag">Primitive</span>
         <h3 class="card-title">Polyline</h3>
         <p class="card-description">Connected sequence of line segments forming a continuous path.</p>
@@ -759,9 +724,6 @@
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/arc.png" alt="Arc">
-        </div>
         <span class="card-tag">Primitive</span>
         <h3 class="card-title">Arc</h3>
         <p class="card-description">Curved segment defined by radius, start angle, and end angle.</p>
@@ -771,9 +733,6 @@
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/rectangle.png" alt="Rectangle">
-        </div>
         <span class="card-tag">Primitive</span>
         <h3 class="card-title">Rectangle</h3>
         <p class="card-description">Four-sided polygon with right angles, defined by width and height.</p>
@@ -793,40 +752,29 @@
     </div>
     <div class="card-grid">
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/lineDimension.png" alt="Line Dimension">
-        </div>
         <span class="card-tag">Dimension</span>
         <h3 class="card-title">Line Dimension</h3>
         <p class="card-description">Measure linear distance between two points with customizable offsets.</p>
         <div class="card-links">
-          <a href="./examples/dimensions/line-dimension.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+          <a href="./dimensions/line-dimension.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/angleDimension.png" alt="Angle Dimension">
-        </div>
         <span class="card-tag">Dimension</span>
         <h3 class="card-title">Angle Dimension</h3>
         <p class="card-description">Measure angle between two vectors with arc and angular label.</p>
         <div class="card-links">
-          <a href="./examples/dimensions/angle-dimension.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
+          <a href="./dimensions/angle-dimension.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/radiusDimension.png" alt="Radius Dimension">
-        </div>
         <span class="card-tag">Dimension</span>
         <h3 class="card-title">Radius Dimension</h3>
         <p class="card-description">Measure radius of curvature with radial line and leader text.</p>
         <div class="card-links">
-          <a href="./examples/dimensions/radius-dimension.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
+          <a href="./dimensions/radius-dimension.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
     </div>
@@ -837,562 +785,61 @@
     <div class="section-header">
       <h2 class="section-title">Drafting Elements</h2>
       <div class="section-line"></div>
-      <span class="section-count">2 examples</span>
+      <span class="section-count"></span>
     </div>
     <div class="card-grid">
-      <!-- <div class="card">
-        <span class="card-tag in-progress">In Progress</span>
-        <h3 class="card-title">Base Door</h3>
-        <p class="card-description">Configurable door element with 2D and 3D representations.</p>
-        <div class="card-links">
-          <a href="./elements/baseDoor.html" class="card-link primary">3D Example <span
-              class="arrow">→</span></a>
-          <a href="./elements/baseDoor2DView.html" class="card-link">2D Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
       <div class="card">
-        <span class="card-tag in-progress">In Progress</span>
-        <h3 class="card-title">Base Door 2D</h3>
-        <p class="card-description">Configurable 2D door element with customizable dimensions and properties.</p>
-        <div class="card-links">
-          <a href="./elements/baseDoor2D.html" class="card-link">2D Example <span class="arrow">→</span></a>
-        </div>
-      </div> -->
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/paperFrame.png" alt="Paper Frame">
-        </div>
         <span class="card-tag">Element</span>
         <h3 class="card-title">Paper Frame</h3>
-        <p class="card-description">Collection of layouts for creating printable documents and drawings for a defined
-          view.</p>
+        <p class="card-description">Collection of layouts for creating printable documents and drawings for a defined view.</p>
         <div class="card-links">
-          <a href="./examples/drawings/paper.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/board.png" alt="Drawing Board">
-        </div>
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Drawing Board</h3>
-        <p class="card-description">Interactive canvas for creating and editing architectural drawings.</p>
-        <div class="card-links">
-          <a href="./elements/board.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <!-- <div class="card">
-        <span class="card-tag in-progress">In Progress</span>
-        <h3 class="card-title">Base Window</h3>
-        <p class="card-description">Fundamental window element with customizable dimensions and properties.</p>
-        <div class="card-links">
-          <a href="./elements/baseWindow.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
+          <a href="./drawings/paper.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
         <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Simple Window Extended</h3>
-        <p class="card-description">Window element extended from Base Window with user-defined properties and geometry.
-        </p>
+        <h3 class="card-title">Element Loader</h3>
+        <p class="card-description">Load and render reusable .op asset files (furniture, fixtures, appliances, landscape). Backed by the generic element system on feature/drawings.</p>
         <div class="card-links">
           <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
         </div>
       </div>
-
-      <div class="card">
-        <span class="card-tag in-progress">In Progress</span>
-        <h3 class="card-title">Double Window</h3>
-        <p class="card-description">Dual-pane window element with synchronized movement and properties.</p>
-        <div class="card-links">
-          <a href="./elements/baseDoubleWindow.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Base Wall</h3>
-        <p class="card-description">Structural wall element with configurable thickness and material properties.</p>
-        <div class="card-links">
-          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Slab</h3>
-        <p class="card-description">Horizontal structural element typically used for floors and ceilings.</p>
-        <div class="card-links">
-          <a href="./elements/baseSlab.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Curtain Wall</h3>
-        <p class="card-description">Non-structural exterior wall system with glass and framing elements.</p>
-        <div class="card-links">
-          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Roof</h3>
-        <p class="card-description">Top covering element of a building with various slope configurations.</p>
-        <div class="card-links">
-          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Stairs</h3>
-        <p class="card-description">Vertical circulation element with configurable treads and risers.</p>
-        <div class="card-links">
-          <a href="./elements/baseStair.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">JSON Generated Plans</h3>
-        <p class="card-description">Generate floor plans dynamically from JSON configuration data.</p>
-        <div class="card-links">
-          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
-        </div>
-      </div> -->
     </div>
   </section>
 
-  <!-- 2D Elements - Base Section -->
-  <section class="section" data-category="2d-elements">
+  <!-- Semantic Elements Section -->
+  <section class="section" data-category="semantic-elements">
     <div class="section-header">
-      <h2 class="section-title">Elements — Base</h2>
+      <h2 class="section-title">Semantic Elements</h2>
       <div class="section-line"></div>
-      <span class="section-count">6 examples</span>
+      <span class="section-count"></span>
     </div>
     <div class="card-grid">
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/door.png" alt="Door 2D">
-        </div>
-        <span class="card-tag">Element</span>
+        <span class="card-tag">Semantic Element</span>
         <h3 class="card-title">Door</h3>
         <p class="card-description">Single door plan symbol with swing arc and frame representation.</p>
         <div class="card-links">
-          <a href="./elements/2DElements/baseDoor.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
+          <a href="./elements/openings/door.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/doubleDoor.png" alt="Double Door">
-        </div>
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Double Door</h3>
-        <p class="card-description">Double door plan symbol with independent swing arcs and center mullion.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/doubleDoor.html" class="card-link primary">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/baseWindow.png" alt="Window">
-        </div>
-        <span class="card-tag">Element</span>
+        <span class="card-tag">Semantic Element</span>
         <h3 class="card-title">Window</h3>
         <p class="card-description">Single window plan symbol with glass pane and frame bars.</p>
         <div class="card-links">
-          <a href="./elements/2DElements/baseWindow.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+          <a href="./elements/openings/window.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/doubleWindow.png" alt="Double Window">
-        </div>
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Double Window</h3>
-        <p class="card-description">Double window plan symbol with two glass panes and center mullion.</p>
+        <span class="card-tag">Semantic Element</span>
+        <h3 class="card-title">Single Wall</h3>
+        <p class="card-description">Wall plan symbol with configurable segments and thickness.</p>
         <div class="card-links">
-          <a href="./elements/2DElements/doubleWindow.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/wall2D.png" alt="Wall 2D">
-        </div>
-        <span class="card-tag">2D Element</span>
-        <h3 class="card-title">Single Line Wall</h3>
-        <p class="card-description">Wall 2D plan symbol with configurable segments and thickness.</p>
-        <div class="card-links">
-          <a href="./elements/solids/wall.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/stair2D.png" alt="Stair 2D">
-        </div>
-        <span class="card-tag">2D Element</span>
-        <h3 class="card-title">Stair 2D</h3>
-        <p class="card-description">Stair 2D plan symbol with treads, boundary, and direction arrow.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/stair2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2D Elements - Fixtures Section -->
-  <section class="section" data-category="2d-elements fixtures">
-    <div class="section-header">
-      <h2 class="section-title">2D Elements — Fixtures</h2>
-      <div class="section-line"></div>
-      <span class="section-count">6 examples</span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/toilet2D.png" alt="Toilet 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Toilet 2D</h3>
-        <p class="card-description">Bathroom toilet floor plan symbol with tank and bowl representation.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/toilet2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/sink2D.png" alt="Sink 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Sink 2D</h3>
-        <p class="card-description">Bathroom sink floor plan symbol with basin and counter.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/sink2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/bathtub2D.png" alt="Bathtub 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Bathtub 2D</h3>
-        <p class="card-description">Bathtub floor plan symbol with rounded rectangle and drain.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/bathtub2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/shower2D.png" alt="Shower 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Shower 2D</h3>
-        <p class="card-description">Shower floor plan symbol with floor, drain, and shower head indicator.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/shower2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/bidet2D.png" alt="Bidet 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Bidet 2D</h3>
-        <p class="card-description">Bidet floor plan symbol with oval body, basin, and faucet indicator.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/bidet2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/urinal2D.png" alt="Urinal 2D">
-        </div>
-        <span class="card-tag">Fixtures</span>
-        <h3 class="card-title">Urinal 2D</h3>
-        <p class="card-description">Urinal floor plan symbol with U-shaped body and drain.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/fixtures/urinal2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2D Elements - Furniture Section -->
-  <section class="section" data-category="2d-elements furniture">
-    <div class="section-header">
-      <h2 class="section-title">2D Elements — Furniture</h2>
-      <div class="section-line"></div>
-      <span class="section-count">6 examples</span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/bed2D.png" alt="Bed 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Bed 2D</h3>
-        <p class="card-description">Bed floor plan symbol with mattress, headboard, and pillows.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/bed2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/sofa2D.png" alt="Sofa 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Sofa 2D</h3>
-        <p class="card-description">Sofa floor plan symbol with frame, backrest, and cushions.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/sofa2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/diningTable2D.png" alt="Dining Table 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Dining Table 2D</h3>
-        <p class="card-description">Dining table floor plan symbol with configurable seats.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/diningTable2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/desk2D.png" alt="Desk 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Desk 2D</h3>
-        <p class="card-description">Office desk floor plan symbol with surface and drawers.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/desk2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/chair2D.png" alt="Chair 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Chair 2D</h3>
-        <p class="card-description">Chair floor plan symbol with seat and backrest.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/chair2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/wardrobe2D.png" alt="Wardrobe 2D">
-        </div>
-        <span class="card-tag">Furniture</span>
-        <h3 class="card-title">Wardrobe 2D</h3>
-        <p class="card-description">Wardrobe floor plan symbol with doors and shelving.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/furniture/wardrobe2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2D Elements - Appliances Section -->
-  <section class="section" data-category="2d-elements appliances">
-    <div class="section-header">
-      <h2 class="section-title">2D Elements — Appliances</h2>
-      <div class="section-line"></div>
-      <span class="section-count">4 examples</span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/refrigerator2D.png" alt="Refrigerator 2D">
-        </div>
-        <span class="card-tag">Appliances</span>
-        <h3 class="card-title">Refrigerator 2D</h3>
-        <p class="card-description">Refrigerator floor plan symbol with door sections and handles.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/appliances/refrigerator2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/stove2D.png" alt="Stove 2D">
-        </div>
-        <span class="card-tag">Appliances</span>
-        <h3 class="card-title">Stove 2D</h3>
-        <p class="card-description">Stove floor plan symbol with configurable burners.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/appliances/stove2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/dishwasher2D.png" alt="Dishwasher 2D">
-        </div>
-        <span class="card-tag">Appliances</span>
-        <h3 class="card-title">Dishwasher 2D</h3>
-        <p class="card-description">Dishwasher floor plan symbol with door panel and handle.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/appliances/dishwasher2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/washer2D.png" alt="Washer 2D">
-        </div>
-        <span class="card-tag">Appliances</span>
-        <h3 class="card-title">Washer 2D</h3>
-        <p class="card-description">Washing machine floor plan symbol with drum door and control panel.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/appliances/washer2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2D Elements - Kitchen Section -->
-  <section class="section" data-category="2d-elements kitchen">
-    <div class="section-header">
-      <h2 class="section-title">2D Elements — Kitchen</h2>
-      <div class="section-line"></div>
-      <span class="section-count">4 examples</span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/kitchenSink2D.png" alt="Kitchen Sink 2D">
-        </div>
-        <span class="card-tag">Kitchen</span>
-        <h3 class="card-title">Kitchen Sink 2D</h3>
-        <p class="card-description">Kitchen sink floor plan symbol with configurable basins.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/kitchen/kitchenSink2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/island2D.png" alt="Kitchen Island 2D">
-        </div>
-        <span class="card-tag">Kitchen</span>
-        <h3 class="card-title">Kitchen Island 2D</h3>
-        <p class="card-description">Kitchen island floor plan symbol with cabinet and bar stools.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/kitchen/island2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/cabinet2D.png" alt="Cabinet 2D">
-        </div>
-        <span class="card-tag">Kitchen</span>
-        <h3 class="card-title">Cabinet 2D</h3>
-        <p class="card-description">Kitchen cabinet floor plan symbol with configurable doors and handles.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/kitchen/cabinet2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/counter2D.png" alt="Counter 2D">
-        </div>
-        <span class="card-tag">Kitchen</span>
-        <h3 class="card-title">Counter 2D</h3>
-        <p class="card-description">Kitchen counter floor plan symbol with surface and edge detail.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/kitchen/counter2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2D Elements - Landscape Section -->
-  <section class="section" data-category="2d-elements landscape">
-    <div class="section-header">
-      <h2 class="section-title">2D Elements — Landscape</h2>
-      <div class="section-line"></div>
-      <span class="section-count">2 examples</span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/tree2D.png" alt="Tree 2D">
-        </div>
-        <span class="card-tag">Landscape</span>
-        <h3 class="card-title">Tree 2D</h3>
-        <p class="card-description">Tree plan symbol with canopy circle, trunk, and foliage pattern.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/landscape/tree2D.html" class="card-link primary">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/fountain2D.png" alt="Fountain 2D">
-        </div>
-        <span class="card-tag">Landscape</span>
-        <h3 class="card-title">Fountain 2D</h3>
-        <p class="card-description">Fountain plan symbol with basin, water surface, and ripple rings.</p>
-        <div class="card-links">
-          <a href="./elements/2DElements/landscape/fountain2D.html" class="card-link primary">View Example
-            <span class="arrow">→</span></a>
+          <a href="./elements/solids/single-wall.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
     </div>
@@ -1407,9 +854,6 @@
     </div>
     <div class="card-grid">
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/cuboid.png" alt="Cuboid">
-        </div>
         <span class="card-tag">Shape</span>
         <h3 class="card-title">Cuboid</h3>
         <p class="card-description">3D rectangular box defined by width, height, and depth dimensions.</p>
@@ -1419,9 +863,6 @@
       </div>
 
       <div class="card">
-        <div class="card-image">
-          <img src="./public/thumbnails/cylinder.png" alt="Cylinder">
-        </div>
         <span class="card-tag">Shape</span>
         <h3 class="card-title">Cylinder</h3>
         <p class="card-description">3D shape with circular base and uniform cross-section.</p>
@@ -1429,18 +870,6 @@
           <a href="./shapes/cylinder.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
-
-      <!-- Sphere - Coming Soon
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Sphere</h3>
-        <p class="card-description">3D perfectly round geometrical object in three-dimensional space.</p>
-        <div class="card-links">
-          <a href="./examples/shapes/sphere.html" class="card-link disabled">View Example <span
-              class="arrow">→</span></a>
-        </div>
-      </div>
-      -->
     </div>
   </section>
 
@@ -1466,14 +895,11 @@
   </div>
 
   <script>
-    // Dynamic example count for hero
     function updateExampleCount() {
-      // Count all visible cards with active links (not disabled)
       const activeCards = document.querySelectorAll('.card .card-link.primary:not(.disabled)');
       document.getElementById('total-example-count').textContent = activeCards.length;
     }
 
-    // Dynamic section counts
     function updateSectionCounts() {
       const sections = document.querySelectorAll('.section[data-category]');
       sections.forEach(section => {
@@ -1486,13 +912,11 @@
       });
     }
 
-    // Update counts on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateExampleCount();
       updateSectionCounts();
     });
 
-    // Filter functionality
     const filterBtns = document.querySelectorAll('.filter-btn');
     const navDropdownItems = document.querySelectorAll('.nav-dropdown-item');
     const sections = document.querySelectorAll('.section[data-category]');
@@ -1513,7 +937,6 @@
         }
       });
 
-      // Smooth scroll to first visible section
       if (shouldScroll && firstVisibleSection) {
         setTimeout(() => {
           firstVisibleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1534,7 +957,6 @@
       });
     });
 
-    // Coming Soon Popup
     const popup = document.getElementById('popup');
     const popupClose = document.getElementById('popup-close');
     const countdownEl = document.getElementById('countdown');
@@ -1564,7 +986,6 @@
       if (e.target === popup) closePopup();
     });
 
-    // Attach popup to Docs and Get Started buttons
     document.getElementById('docs-link').addEventListener('click', (e) => {
       e.preventDefault();
       showPopup();
@@ -1575,7 +996,6 @@
       showPopup();
     });
 
-    // Footer documentation link
     document.getElementById('footer-docs-link').addEventListener('click', (e) => {
       e.preventDefault();
       showPopup();

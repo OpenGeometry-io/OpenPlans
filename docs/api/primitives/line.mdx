@@ -1,0 +1,130 @@
+---
+title: 'LinePrimitive'
+description: 'Create straight line segments in 3D space'
+---
+
+## Overview
+
+The `LinePrimitive` class creates a straight line segment between two points in 3D space. It extends the kernel `Line` class and implements the `IPrimitive` interface for selection and editing capabilities.
+
+## Constructor
+
+```typescript
+new LinePrimitive(lineConfig?: LineOptions)
+```
+
+<ParamField path="lineConfig" type="LineOptions" optional>
+  Configuration object for the line primitive
+</ParamField>
+
+### LineOptions
+
+<ParamField path="ogid" type="string" optional>
+  Unique identifier for the line object. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="startPoint" type="Array<number>" required>
+  Starting point coordinates as `[x, y, z]`
+</ParamField>
+
+<ParamField path="endPoint" type="Array<number>" required>
+  Ending point coordinates as `[x, y, z]`
+</ParamField>
+
+<ParamField path="color" type="number" required>
+  Line color as hexadecimal number (e.g., `0xFF0000` for red)
+</ParamField>
+
+## Properties
+
+<ParamField path="startPoint" type="Array<number>">
+  Gets or sets the starting point of the line. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="endPoint" type="Array<number>">
+  Gets or sets the ending point of the line. Updates geometry automatically.
+</ParamField>
+
+<ParamField path="lineColor" type="number">
+  Gets or sets the line color. Updates appearance automatically.
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Indicates whether the line is currently selected
+</ParamField>
+
+<ParamField path="edit" type="boolean">
+  Indicates whether the line is in edit mode
+</ParamField>
+
+<ParamField path="ogType" type="string">
+  Returns `'LinePrimitive'` - the type identifier
+</ParamField>
+
+## Methods
+
+### getOPConfig()
+
+Returns the current configuration of the line.
+
+```typescript
+getOPConfig(): LineOptions
+```
+
+**Returns:** `LineOptions` - Current line configuration
+
+### setOPGeometry()
+
+Updates the line geometry based on current property values. Called automatically when properties change.
+
+```typescript
+setOPGeometry(): void
+```
+
+## Examples
+
+### Create a Basic Line
+
+```typescript
+import { LinePrimitive } from 'openplans';
+
+const line = new LinePrimitive({
+  startPoint: [0, 0, 0],
+  endPoint: [10, 5, 0],
+  color: 0x000000
+});
+```
+
+### Update Line Position
+
+```typescript
+// Move the end point
+line.endPoint = [15, 10, 0];
+
+// Change line color to red
+line.lineColor = 0xFF0000;
+```
+
+### Get Line Configuration
+
+```typescript
+const config = line.getOPConfig();
+console.log(config);
+// Output:
+// {
+//   ogid: 'auto-generated-id',
+//   startPoint: [0, 0, 0],
+//   endPoint: [15, 10, 0],
+//   color: 0xFF0000
+// }
+```
+
+### Create a Diagonal Line
+
+```typescript
+const diagonal = new LinePrimitive({
+  startPoint: [0, 0, 0],
+  endPoint: [10, 10, 10],
+  color: 0x00FF00 // Green
+});
+```

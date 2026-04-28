@@ -3,7 +3,8 @@
 
 <head>
   <title>OpenPlans Wall Opening</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="../../shared/example.css">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -14,41 +15,17 @@
     rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      overflow: hidden;
       font-family: "JetBrains Mono", monospace;
     }
-
-    #app {
-      width: 100%;
-      height: 100vh;
-    }
-
-    .example-title {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
-      z-index: 1000;
-    }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="example-title">Wall Opening</div>
-  <div id="app" style="width: 100%; height: 100vh;">
+  <div id="app">
   </div>
   <script type="module">
-    import { OpenPlans, CameraMode } from './../../../../src/index.ts';
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
     import Stats from 'stats.js';
     const stats = new Stats();
@@ -57,62 +34,89 @@
     let singleWall, opening, door, windowElement;
     let openPlans;
 
+    // Diagonal-wall regression fixture: a 10m wall at 45° in the XZ plane.
+    // With wall-local hosting, the door at alongWall=4.5 must sit centered on
+    // the wall axis (world ~ (3.18, 0, 3.18)), not off-wall along world X
+    // as the old world-space-coord bug produced.
+    const DIAG = 10 / Math.SQRT2; // ~7.07
+
+    // Initial values are kept in module scope so the GUI defaults match the
+    // geometry that gets created (no out-of-sync sliders).
+    const wallStart = [0, 0, 0];
+    const wallEnd   = [DIAG, 0, DIAG];
+    const wallHeight    = 5;
+    const wallThickness = 0.3;
+
+    // Layout along the wall (length DIAG ≈ 7.07 m). Openings are placed so
+    // their full footprints stay strictly inside the wall and never overlap
+    // each other — overlapping or out-of-bounds CSG cutters produce
+    // non-manifold geometry under the current kernel.
+    //
+    //  alongWall:   0 ── 1 ── 2.5 ── 3.0 ── 4.0 ── 4.7 ── 6.3 ── 7.07
+    //  occupancy:        [opening ]  ╴ [door ]  ╴  [window ]
+    const openingPoints = [
+      [1.0, 0, 0],   // wall-local (alongWall, acrossWall, elevation)
+      [2.5, 0, 0],
+    ];
+    const openingThickness  = 1;
+    const openingHeightVal  = 3;
+    const openingBaseHeight = 0.5;
+
+    const doorInitial = {
+      stationLocal:    { alongWall: 3.5, elevation: 0 },
+      panelDimensions: { width: 0.9,  thickness: 0.04 },  // 40 mm panel
+      frameDimensions: { width: 0.05, thickness: 0.3  },  // 50 mm casing; depth = wall thickness when hosted
+      doorHeight:        2.1,
+      doorQuadrant:      1,
+      swingAngleDegrees: 90,
+      doorColor:         '#cc7a00',
+      frameColor:        '#654321',
+    };
+
+    const windowInitial = {
+      stationLocal:     { alongWall: 5.5 },
+      windowDimensions: { width: 1.4,  thickness: 0.2  },
+      frameDimensions:  { width: 0.12, thickness: 0.2  },
+      windowHeight:     1.2,
+      sillHeight:       1.0,
+      glassColor:       '#8fbfdf',
+      frameColor:       '#2f2f2f',
+    };
+
     async function init() {
       const container = document.getElementById('app');
       openPlans = new OpenPlans(container);
       await openPlans.setupOpenGeometry();
 
       openPlans.CameraMode = CameraMode.Model;
-
       openPlans.toggleGrid(false);
 
-      // Create a default wall on scene load
       singleWall = openPlans.singleWall({
-        points: [
-          [0, 0, 0],
-          [10, 0, 0],
-        ],
-        height: 5
+        points:    [wallStart, wallEnd],
+        height:    wallHeight,
+        thickness: wallThickness,
       });
       singleWall.outline = true;
 
       opening = openPlans.opening({
-        points: [
-          [1, 0, 0],
-          [4, 0, 0],
-        ],
-        height: 3,
-        thickness: 1,
-        baseHeight: 0.5,
+        points:     openingPoints,
+        height:     openingHeightVal,
+        thickness:  openingThickness,
+        baseHeight: openingBaseHeight,
       });
       singleWall.attachOpening(opening);
 
-      // Adding Door
       door = openPlans.door({
         hostWallId: singleWall.ogid,
-        stationPoint: [4.5, 0, 0],
-        panelDimensions: { width: 1, thickness: 0.3 },
-        frameDimensions: { width: 0.2, thickness: 0.3 },
-        doorHeight: 2.1,
-        doorColor: '#cc7a00',
-        frameColor: '#654321'
+        ...doorInitial,
       });
       singleWall.attachDoor(door);
-      door.modelView = false;
 
-      // Adding Window
       windowElement = openPlans.window({
         hostWallId: singleWall.ogid,
-        stationPoint: [7.5, 0, 0],
-        windowDimensions: { width: 1.6, thickness: 0.2 },
-        frameDimensions: { width: 0.14, thickness: 0.2 },
-        windowHeight: 1.2,
-        sillHeight: 1,
-        glassColor: '#8fbfdf',
-        frameColor: '#2f2f2f'
+        ...windowInitial,
       });
       singleWall.attachWindow(windowElement);
-      windowElement.modelView = false;
 
       openPlans.fitToView([singleWall, opening, door, windowElement]);
 
@@ -125,71 +129,52 @@
     function setUI() {
       const gui = new GUI();
 
+      // ── Wall ───────────────────────────────────────────────────────────────
       const wallFolder = gui.addFolder('Wall');
       wallFolder.open();
-
-      const params = {
-        outline: true,
-        start: { x: 0, y: 0, z: 0 },
-        end: { x: 1.5, y: 0, z: 1.5 },
+      const wallParams = {
+        outline:       true,
+        start:         { x: wallStart[0], y: wallStart[1], z: wallStart[2] },
+        end:           { x: wallEnd[0],   y: wallEnd[1],   z: wallEnd[2]   },
+        thickness:     wallThickness,
+        height:        wallHeight,
         isProfileView: true,
-        isModelView: true,
+        isModelView:   true,
       };
 
-      wallFolder.add(params, 'outline').name('Outline').onChange((value) => {
+      wallFolder.add(wallParams, 'outline').name('Outline').onChange((value) => {
         if (singleWall) singleWall.outline = value;
       });
-      wallFolder.add(params.start, 'x', -10, 10, 0.1).name('Start X').onChange((value) => {
-        if (singleWall) singleWall.start = [value, params.start.y, params.start.z];
+      wallFolder.add(wallParams.start, 'x', -10, 10, 0.1).name('Start X').onChange((value) => {
+        if (singleWall) singleWall.start = [value, wallParams.start.y, wallParams.start.z];
       });
-      wallFolder.add(params.start, 'y', -10, 10, 0.1).name('Start Y').onChange((value) => {
-        if (singleWall) singleWall.start = [params.start.x, value, params.start.z];
+      wallFolder.add(wallParams.start, 'y', -10, 10, 0.1).name('Start Y').onChange((value) => {
+        if (singleWall) singleWall.start = [wallParams.start.x, value, wallParams.start.z];
       });
-      wallFolder.add(params.start, 'z', -10, 10, 0.1).name('Start Z').onChange((value) => {
-        if (singleWall) singleWall.start = [params.start.x, params.start.y, value];
+      wallFolder.add(wallParams.start, 'z', -10, 10, 0.1).name('Start Z').onChange((value) => {
+        if (singleWall) singleWall.start = [wallParams.start.x, wallParams.start.y, value];
       });
-      wallFolder.add(params.end, 'x', -10, 10, 0.1).name('End X').onChange((value) => {
-        if (singleWall) singleWall.end = [value, params.end.y, params.end.z];
+      wallFolder.add(wallParams.end, 'x', -10, 10, 0.1).name('End X').onChange((value) => {
+        if (singleWall) singleWall.end = [value, wallParams.end.y, wallParams.end.z];
       });
-      wallFolder.add(params.end, 'y', -10, 10, 0.1).name('End Y').onChange((value) => {
-        if (singleWall) singleWall.end = [params.end.x, value, params.end.z];
+      wallFolder.add(wallParams.end, 'y', -10, 10, 0.1).name('End Y').onChange((value) => {
+        if (singleWall) singleWall.end = [wallParams.end.x, value, wallParams.end.z];
       });
-      wallFolder.add(params.end, 'z', -10, 10, 0.1).name('End Z').onChange((value) => {
-        if (singleWall) singleWall.end = [params.end.x, params.end.y, value];
+      wallFolder.add(wallParams.end, 'z', -10, 10, 0.1).name('End Z').onChange((value) => {
+        if (singleWall) singleWall.end = [wallParams.end.x, wallParams.end.y, value];
       });
-      wallFolder.add(params, 'isProfileView').name('Profile View').onChange((value) => {
+      wallFolder.add(wallParams, 'thickness', 0.05, 1, 0.01).name('Wall Thickness').onChange((value) => {
+        if (singleWall) singleWall.wallThickness = value;
+      });
+      wallFolder.add(wallParams, 'height', 0.5, 8, 0.1).name('Wall Height').onChange((value) => {
+        if (singleWall) singleWall.wallHeight = value;
+      });
+      wallFolder.add(wallParams, 'isProfileView').name('Profile View').onChange((value) => {
         if (singleWall) singleWall.profileView = value;
       });
-      wallFolder.add(params, 'isModelView').name('Model View').onChange((value) => {
+      wallFolder.add(wallParams, 'isModelView').name('Model View').onChange((value) => {
         if (singleWall) singleWall.modelView = value;
       });
-
-      wallFolder.add({
-        preloadWall: () => {
-          const config = {
-            ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
-            points: [
-              [3, 0, 0],
-              [5, 0, -5],
-            ],
-            color: '#ff0000',
-          };
-          const preloadConfig = openPlans.singleWall(config);
-          preloadConfig.outline = params.outline;
-
-          console.log('Preloaded Wall Config:', preloadConfig.getOPConfig());
-        }
-      }, 'preloadWall');
-
-      wallFolder.add({
-        logConfig: () => {
-          if (singleWall) {
-            console.log('Current Wall Config:', singleWall.getOPConfig());
-          } else {
-            console.log('No wall created yet.');
-          }
-        }
-      }, 'logConfig');
 
       wallFolder.add({
         fit: () => {
@@ -198,37 +183,42 @@
         }
       }, 'fit').name('Fit');
       wallFolder.add({ getConfig: () => console.log(singleWall.getOPConfig()) }, 'getConfig').name('Get Config');
-    
-      
-      const openingFolder = gui.addFolder('Opening');
+
+      // ── Opening (generic, not a door/window) ───────────────────────────────
+      // After bindHostFrame, opening.points are wall-local (alongWall, acrossWall, elevation).
+      // The slider labels reflect that, not world (x, y, z).
+      const openingFolder = gui.addFolder('Opening (generic)');
       openingFolder.open();
       const openingParams = {
-        start: { x: 1, y: 0, z: 0 },
-        end: { x: 4, y: 0, z: 0 },
-        thickness: 1,
-        height: 3,
-        baseHeight: 0.5,
+        start:       { alongWall: openingPoints[0][0], acrossWall: openingPoints[0][1], elevation: openingPoints[0][2] },
+        end:         { alongWall: openingPoints[1][0], acrossWall: openingPoints[1][1], elevation: openingPoints[1][2] },
+        thickness:   openingThickness,
+        height:      openingHeightVal,
+        baseHeight:  openingBaseHeight,
         profileView: true,
-        modelView: true,
+        modelView:   true,
       };
 
-      openingFolder.add(openingParams.start, 'x', -10, 10, 0.1).name('Start X').onChange((value) => {
-        if (opening) opening.start = [value, openingParams.start.y, openingParams.start.z];
+      // Slider ranges are clamped to the wall length so dragging can't push
+      // the cutter past the wall ends — the kernel produces non-manifold
+      // geometry when a CSG cutter exceeds the cuttee bounds.
+      openingFolder.add(openingParams.start, 'alongWall', 0, DIAG, 0.05).name('Start (along wall)').onChange((value) => {
+        if (opening) opening.start = [value, openingParams.start.acrossWall, openingParams.start.elevation];
       });
-      openingFolder.add(openingParams.start, 'y', -10, 10, 0.1).name('Start Y').onChange((value) => {
-        if (opening) opening.start = [openingParams.start.x, value, openingParams.start.z];
+      openingFolder.add(openingParams.start, 'acrossWall', -2, 2, 0.1).name('Start (across wall)').onChange((value) => {
+        if (opening) opening.start = [openingParams.start.alongWall, value, openingParams.start.elevation];
       });
-      openingFolder.add(openingParams.start, 'z', -10, 10, 0.1).name('Start Z').onChange((value) => {
-        if (opening) opening.start = [openingParams.start.x, openingParams.start.y, value];
+      openingFolder.add(openingParams.start, 'elevation', 0, 5, 0.1).name('Start (elevation)').onChange((value) => {
+        if (opening) opening.start = [openingParams.start.alongWall, openingParams.start.acrossWall, value];
       });
-      openingFolder.add(openingParams.end, 'x', -10, 10, 0.1).name('End X').onChange((value) => {
-        if (opening) opening.end = [value, openingParams.end.y, openingParams.end.z];
+      openingFolder.add(openingParams.end, 'alongWall', 0, DIAG, 0.05).name('End (along wall)').onChange((value) => {
+        if (opening) opening.end = [value, openingParams.end.acrossWall, openingParams.end.elevation];
       });
-      openingFolder.add(openingParams.end, 'y', -10, 10, 0.1).name('End Y').onChange((value) => {
-        if (opening) opening.end = [openingParams.end.x, value, openingParams.end.z];
+      openingFolder.add(openingParams.end, 'acrossWall', -2, 2, 0.1).name('End (across wall)').onChange((value) => {
+        if (opening) opening.end = [openingParams.end.alongWall, value, openingParams.end.elevation];
       });
-      openingFolder.add(openingParams.end, 'z', -10, 10, 0.1).name('End Z').onChange((value) => {
-        if (opening) opening.end = [openingParams.end.x, openingParams.end.y, value]; 
+      openingFolder.add(openingParams.end, 'elevation', 0, 5, 0.1).name('End (elevation)').onChange((value) => {
+        if (opening) opening.end = [openingParams.end.alongWall, openingParams.end.acrossWall, value];
       });
       openingFolder.add(openingParams, 'thickness', 0.1, 2, 0.1).name('Thickness').onChange((value) => {
         if (opening) opening.thickness = value;
@@ -246,29 +236,84 @@
         if (opening) opening.modelView = value;
       });
 
+      // ── Door ───────────────────────────────────────────────────────────────
+      const doorFolder = gui.addFolder('Door');
+      doorFolder.open();
+      const doorParams = {
+        stationLocal:      { ...doorInitial.stationLocal },
+        panelWidth:        doorInitial.panelDimensions.width,
+        panelThickness:    doorInitial.panelDimensions.thickness,
+        frameWidth:        doorInitial.frameDimensions.width,
+        doorHeight:        doorInitial.doorHeight,
+        doorQuadrant:      doorInitial.doorQuadrant,
+        swingAngleDegrees: doorInitial.swingAngleDegrees,
+        doorColor:         doorInitial.doorColor,
+        frameColor:        doorInitial.frameColor,
+        outline:           true,
+        profileView:       true,
+        modelView:         true,
+      };
+
+      // Clamp station range so the door's hole can't extend past the wall ends
+      // (out-of-bounds CSG cutters are a kernel non-manifold trigger).
+      doorFolder.add(doorParams.stationLocal, 'alongWall', 0.7, DIAG - 0.7, 0.05).name('Station (along wall)').onChange((value) => {
+        if (door) door.station = { alongWall: value, elevation: doorParams.stationLocal.elevation };
+      });
+      doorFolder.add(doorParams.stationLocal, 'elevation', 0, 2, 0.05).name('Station (elevation)').onChange((value) => {
+        if (door) door.station = { alongWall: doorParams.stationLocal.alongWall, elevation: value };
+      });
+      doorFolder.add(doorParams, 'doorQuadrant', 1, 4, 1).name('Door Quadrant (1-4)').onChange((value) => {
+        if (door) door.doorQuadrant = value;
+      });
+      doorFolder.add(doorParams, 'swingAngleDegrees', 0, 90, 1).name('Swing Angle (°)').onChange((value) => {
+        if (door) door.swingAngleDegrees = value;
+      });
+      doorFolder.add(doorParams, 'panelWidth', 0.6, 2.4, 0.05).name('Panel Width').onChange((value) => {
+        if (door) door.panelWidth = value;
+      });
+      doorFolder.add(doorParams, 'panelThickness', 0.025, 0.1, 0.005).name('Panel Thickness').onChange((value) => {
+        if (door) door.panelThickness = value;
+      });
+      doorFolder.add(doorParams, 'frameWidth', 0.025, 0.2, 0.005).name('Frame Width').onChange((value) => {
+        if (door) door.frameWidth = value;
+      });
+      doorFolder.add(doorParams, 'doorHeight', 1.5, 3, 0.05).name('Door Height').onChange((value) => {
+        if (door) door.doorHeight = value;
+      });
+      doorFolder.addColor(doorParams, 'doorColor').name('Panel Color').onChange((value) => {
+        if (door) door.doorColor = value;
+      });
+      doorFolder.addColor(doorParams, 'frameColor').name('Frame Color').onChange((value) => {
+        if (door) door.frameColor = value;
+      });
+      doorFolder.add(doorParams, 'outline').name('Outline').onChange((value) => {
+        if (door) door.outline = value;
+      });
+      doorFolder.add(doorParams, 'profileView').name('Profile View').onChange((value) => {
+        if (door) door.profileView = value;
+      });
+      doorFolder.add(doorParams, 'modelView').name('Model View').onChange((value) => {
+        if (door) door.modelView = value;
+      });
+
+      // ── Window ─────────────────────────────────────────────────────────────
       const windowFolder = gui.addFolder('Window');
       windowFolder.open();
       const windowParams = {
-        station: { x: 7.5, y: 0, z: 0 },
-        windowDimensions: { width: 1.6, thickness: 0.2 },
-        frameDimensions: { width: 0.14, thickness: 0.2 },
-        windowHeight: 1.2,
-        sillHeight: 1,
-        glassColor: '#8fbfdf',
-        frameColor: '#2f2f2f',
-        outline: true,
-        profileView: true,
-        modelView: false,
+        stationLocal:     { ...windowInitial.stationLocal },
+        windowDimensions: { ...windowInitial.windowDimensions },
+        frameDimensions:  { ...windowInitial.frameDimensions },
+        windowHeight:     windowInitial.windowHeight,
+        sillHeight:       windowInitial.sillHeight,
+        glassColor:       windowInitial.glassColor,
+        frameColor:       windowInitial.frameColor,
+        outline:          true,
+        profileView:      true,
+        modelView:        true,
       };
 
-      windowFolder.add(windowParams.station, 'x', -10, 10, 0.1).name('Station X').onChange((value) => {
-        if (windowElement) windowElement.station = [value, windowParams.station.y, windowParams.station.z];
-      });
-      windowFolder.add(windowParams.station, 'y', -10, 10, 0.1).name('Station Y').onChange((value) => {
-        if (windowElement) windowElement.station = [windowParams.station.x, value, windowParams.station.z];
-      });
-      windowFolder.add(windowParams.station, 'z', -10, 10, 0.1).name('Station Z').onChange((value) => {
-        if (windowElement) windowElement.station = [windowParams.station.x, windowParams.station.y, value];
+      windowFolder.add(windowParams.stationLocal, 'alongWall', 1, DIAG - 1, 0.05).name('Station (along wall)').onChange((value) => {
+        if (windowElement) windowElement.station = { alongWall: value };
       });
       windowFolder.add(windowParams.windowDimensions, 'width', 0.2, 4, 0.1).name('Width').onChange((value) => {
         if (windowElement) windowElement.windowWidth = value;

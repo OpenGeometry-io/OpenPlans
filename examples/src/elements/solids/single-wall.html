@@ -3,7 +3,8 @@
 
 <head>
   <title>OpenPlans Wall</title>
-  <!-- MIXPANEL_TRACKING -->
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="../../shared/example.css">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="OpenGeometry Demo">
@@ -14,47 +15,24 @@
     rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      overflow: hidden;
       font-family: "JetBrains Mono", monospace;
     }
-
-    #app {
-      width: 100%;
-      height: 100vh;
-    }
-
-    .example-title {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #fff;
-      background: rgba(26, 26, 26, 0.8);
-      padding: 12px 24px;
-      z-index: 1000;
-    }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="example-title">Wall Shape</div>
-  <div id="app" style="width: 100%; height: 100vh;">
+  <div id="app">
   </div>
   <script type="module">
-    import { OpenPlans, CameraMode } from './../../../../src/index.ts';
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
     import Stats from 'stats.js';
     const stats = new Stats();
     stats.showPanel(2);
 
     let singleWall;
+    let windowElement = null;
     let openPlans;
 
     async function init() {
@@ -63,12 +41,30 @@
       await openPlans.setupOpenGeometry();
 
       openPlans.CameraMode = CameraMode.Model;
+      openPlans.toggleGrid(false);
 
-      openPlans.showGrid = false;
-
-      // Create a default wall on scene load
-      singleWall = openPlans.singleWall();
+      // Create a 5 m straight wall so the window has room to sit comfortably.
+      singleWall = openPlans.singleWall({
+        points: [[0, 0, 0], [5, 0, 0]],
+        thickness: 0.3,
+        height: 3,
+      });
       singleWall.outline = true;
+
+      // Attach a window centred at 2.5 m along the wall.
+      windowElement = openPlans.window({
+        stationLocal: { alongWall: 2.5 },
+        windowDimensions: { width: 1.2, thickness: 0.04 },
+        frameDimensions: { width: 0.05, thickness: 0.3 },
+        windowHeight: 1.2,
+        sillHeight: 0.9,
+        frameColor: 0xD4D0CB,
+        glassColor: 0x87ceeb,
+      });
+      windowElement.outline = true;
+      singleWall.attachWindow(windowElement);
+
+      openPlans.fitToView([singleWall]);
 
       openPlans.onRender.add(() => {
         stats.begin();
@@ -79,13 +75,14 @@
     function setUI() {
       const gui = new GUI();
 
+      // ── Wall ────────────────────────────────────────────────────────────────
       const wallFolder = gui.addFolder('Wall');
       wallFolder.open();
 
       const params = {
         outline: true,
         start: { x: 0, y: 0, z: 0 },
-        end: { x: 1.5, y: 0, z: 1.5 },
+        end: { x: 5, y: 0, z: 0 },
         thickness: 0.3,
         height: 3,
         isProfileView: true,
@@ -127,34 +124,94 @@
       });
 
       wallFolder.add({
-        preloadWall: () => {
-          const config = {
-            ogid: '86302abc-d71e-47be-affc-dc05de1db8fe',
-            points: [
-              [3, 0, 0],
-              [5, 0, -5],
-            ],
-            color: '#ff0000',
-          };
-          const preloadConfig = openPlans.singleWall(config);
-          preloadConfig.outline = params.outline;
-
-          console.log('Preloaded Wall Config:', preloadConfig.getOPConfig());
-        }
-      }, 'preloadWall');
-
-      wallFolder.add({
         logConfig: () => {
           if (singleWall) {
             console.log('Current Wall Config:', singleWall.getOPConfig());
-          } else {
-            console.log('No wall created yet.');
           }
         }
-      }, 'logConfig');
+      }, 'logConfig').name('Log Config');
 
-      wallFolder.add({ fit: () => { if (singleWall) openPlans.fit(singleWall.id) } }, 'fit').name('Fit');
-      wallFolder.add({ getConfig: () => console.log(singleWall.getOPConfig()) }, 'getConfig').name('Get Config');
+      wallFolder.add({
+        fit: () => openPlans.fitToView([singleWall, ...(windowElement ? [windowElement] : [])]),
+      }, 'fit').name('Fit');
+
+      // ── Window ──────────────────────────────────────────────────────────────
+      const windowFolder = gui.addFolder('Window');
+      windowFolder.open();
+
+      const windowParams = {
+        attached: true,
+        alongWall: 2.5,
+        planElevation: 0,
+        windowWidth: 1.2,
+        glassThickness: 0.04,
+        frameWidth: 0.05,
+        frameThickness: 0.3,
+        windowHeight: 1.2,
+        sillHeight: 0.9,
+        glassColor: '#87ceeb',
+        frameColor: '#d4d0cb',
+        outline: true,
+        profileView: true,
+        modelView: true,
+      };
+
+      windowFolder.add(windowParams, 'attached').name('Attached to Wall').onChange((value) => {
+        if (!singleWall || !windowElement) return;
+        if (value) {
+          singleWall.attachWindow(windowElement);
+        } else {
+          singleWall.detachWindow(windowElement);
+        }
+      });
+
+      windowFolder.add(windowParams, 'alongWall', 0.5, 4.5, 0.05).name('Along Wall').onChange((value) => {
+        if (windowElement) windowElement.station = { alongWall: value, elevation: windowParams.planElevation };
+      });
+
+      windowFolder.add(windowParams, 'planElevation', 0, 10, 0.5).name('Plan Elevation').onChange((value) => {
+        if (windowElement) windowElement.planElevation = value;
+      });
+
+      windowFolder.add(windowParams, 'windowWidth', 0.3, 2.5, 0.05).name('Width').onChange((value) => {
+        if (windowElement) windowElement.windowWidth = value;
+      });
+      windowFolder.add(windowParams, 'glassThickness', 0.02, 0.1, 0.005).name('Glass Thickness').onChange((value) => {
+        if (windowElement) windowElement.windowThickness = value;
+      });
+      windowFolder.add(windowParams, 'frameWidth', 0.03, 0.15, 0.005).name('Frame Width').onChange((value) => {
+        if (windowElement) windowElement.frameWidth = value;
+      });
+      windowFolder.add(windowParams, 'frameThickness', 0.1, 0.4, 0.01).name('Frame Thickness').onChange((value) => {
+        if (windowElement) windowElement.frameThickness = value;
+      });
+      windowFolder.add(windowParams, 'windowHeight', 0.3, 2.5, 0.05).name('Height').onChange((value) => {
+        if (windowElement) windowElement.windowHeight = value;
+      });
+      windowFolder.add(windowParams, 'sillHeight', 0, 2, 0.05).name('Sill Height').onChange((value) => {
+        if (windowElement) windowElement.sillHeight = value;
+      });
+      windowFolder.addColor(windowParams, 'glassColor').name('Glass Color').onChange((value) => {
+        if (windowElement) windowElement.glassColor = parseInt(value.slice(1), 16);
+      });
+      windowFolder.addColor(windowParams, 'frameColor').name('Frame Color').onChange((value) => {
+        if (windowElement) windowElement.frameColor = parseInt(value.slice(1), 16);
+      });
+      windowFolder.add(windowParams, 'outline').name('Outline').onChange((value) => {
+        if (windowElement) windowElement.outline = value;
+      });
+      windowFolder.add(windowParams, 'profileView').name('Profile View').onChange((value) => {
+        if (windowElement) windowElement.profileView = value;
+      });
+      windowFolder.add(windowParams, 'modelView').name('Model View').onChange((value) => {
+        if (windowElement) windowElement.modelView = value;
+      });
+
+      windowFolder.add({
+        logConfig: () => {
+          if (windowElement) console.log('Window Config:', windowElement.getOPConfig());
+        }
+      }, 'logConfig').name('Log Config');
     }
 
     (async function () {

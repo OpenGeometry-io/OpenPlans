@@ -1,0 +1,427 @@
+---
+title: Architectural Elements
+description: Work with doors, windows, slabs, stairs, and other architectural components
+---
+
+## Overview
+
+OpenPlans provides pre-built architectural elements that combine multiple primitives and 3D shapes to create realistic building components. These elements are fully configurable and follow architectural standards.
+
+## Door Elements
+
+Doors are parametric elements with frames, panels, and hinges.
+
+### Creating a Basic Door
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+const openPlans = new OpenPlans(container);
+await openPlans.setupOpenGeometry();
+
+const door = openPlans.baseDoor({
+  labelName: 'Main Entrance',
+  doorPosition: [0, 0, 0],
+  doorLength: 2,
+  doorHeight: 2.1,
+  doorThickness: 0.1,
+  frameThickness: 0.2,
+  doorColor: 0x8B4513,      // Brown
+  frameColor: 0x000000,     // Black
+  doorRotation: 1.5,
+  doorQuadrant: 1
+});
+```
+
+### Door Properties
+
+```typescript
+// Update door dimensions
+door.doorLength = 2.5;
+door.doorHeight = 2.2;
+door.doorThickness = 0.15;
+
+// Change position
+door.doorPosition = [5, 0, 3];
+
+// Modify rotation (1.0 to 2.0, where 1.0 = fully open, 2.0 = closed)
+door.doorRotation = 1.8;
+
+// Change door swing quadrant (1, 2, 3, or 4)
+door.doorQuadrant = 2;
+
+// Update colors
+door.doorColor = 0xFF0000;  // Not directly exposed, set via config
+```
+
+### Door Quadrants
+
+The `doorQuadrant` property controls the hinge position and swing direction:
+
+- **Quadrant 1**: Hinge on right, opens away from you
+- **Quadrant 2**: Hinge on left, opens away from you  
+- **Quadrant 3**: Hinge on left, opens toward you
+- **Quadrant 4**: Hinge on right, opens toward you
+
+```typescript
+// Create doors in different quadrants
+const door1 = openPlans.baseDoor({
+  labelName: 'Door Q1',
+  doorPosition: [0, 0, 0],
+  doorQuadrant: 1,
+  doorLength: 2
+});
+
+const door2 = openPlans.baseDoor({
+  labelName: 'Door Q2',
+  doorPosition: [5, 0, 0],
+  doorQuadrant: 2,
+  doorLength: 2
+});
+```
+
+### Preloading Doors
+
+```typescript
+const savedDoorConfig = {
+  type: 'door',
+  labelName: 'Saved Door',
+  dimensions: {
+    start: { x: 0, y: 0, z: 0 },
+    end: { x: 0, y: 0, z: 0 },
+    length: 2
+  },
+  doorPosition: [3, 0, 3],
+  doorType: 'WOOD',
+  doorHeight: 2.1,
+  doorThickness: 0.2,
+  frameThickness: 0.2,
+  doorColor: 9127187,
+  frameColor: 0,
+  doorRotation: 1.5,
+  doorQuadrant: 2,
+  coordinates: []
+};
+
+const preloadedDoor = openPlans.baseDoor(savedDoorConfig);
+```
+
+### Door Sub-Elements
+
+Doors consist of multiple sub-elements:
+
+```typescript
+// Access sub-elements
+const frameElement = door.subElements.get('frame');
+const panelElement = door.subElements.get('panel');
+
+// Sub-elements are THREE.Group objects
+console.log(door.subElements);
+// Map {
+//   'frame' => THREE.Group,
+//   'panel' => THREE.Group
+// }
+```
+
+## Window Elements
+
+OpenPlans supports single and double windows.
+
+### Single Window
+
+```typescript
+const singleWindow = openPlans.baseSingleWindow({
+  labelName: 'Bedroom Window',
+  windowPosition: [2, 0, 5],
+  windowLength: 1.5,
+  windowHeight: 1.2,
+  windowThickness: 0.1,
+  windowColor: 0xADD8E6,    // Light blue
+  frameColor: 0x000000
+});
+
+// Modify window properties
+singleWindow.windowLength = 2.0;
+singleWindow.windowHeight = 1.5;
+```
+
+### Double Window
+
+```typescript
+const doubleWindow = openPlans.baseDoubleWindow({
+  labelName: 'Living Room Windows',
+  windowPosition: [7, 0, 4],
+  windowLength: 2.5,
+  windowHeight: 1.5,
+  windowThickness: 0.1,
+  spacing: 0.2,             // Space between windows
+  windowColor: 0xADD8E6,
+  frameColor: 0x000000
+});
+```
+
+### Window Configuration
+
+```typescript
+// Get window configuration
+const windowConfig = singleWindow.getOPConfig();
+console.log(windowConfig);
+
+// Update from configuration
+singleWindow.setOPConfig({
+  ...windowConfig,
+  windowLength: 2.5,
+  windowHeight: 1.8
+});
+```
+
+## Slab Elements
+
+Slabs represent floor or ceiling surfaces.
+
+### Creating Slabs
+
+```typescript
+const floorSlab = openPlans.baseSlab({
+  labelName: 'Ground Floor Slab',
+  slabPosition: [0, -0.1, 0],  // Slightly below ground
+  slabWidth: 10,
+  slabDepth: 10,
+  slabThickness: 0.2,
+  slabColor: 0xCCCCCC,         // Gray
+  slabMaterial: 'CONCRETE'
+});
+
+// Create a ceiling slab
+const ceilingSlab = openPlans.baseSlab({
+  labelName: 'Ceiling',
+  slabPosition: [0, 3, 0],
+  slabWidth: 10,
+  slabDepth: 10,
+  slabThickness: 0.15,
+  slabColor: 0xFFFFFF
+});
+```
+
+### Slab Properties
+
+```typescript
+// Modify slab dimensions
+floorSlab.slabWidth = 15;
+floorSlab.slabDepth = 12;
+floorSlab.slabThickness = 0.25;
+
+// Update position
+floorSlab.slabPosition = [5, 0, 5];
+
+// Change color
+floorSlab.slabColor = 0xEEEEEE;
+```
+
+## Stair Elements
+
+Create parametric stairs with configurable steps.
+
+### Creating Stairs
+
+```typescript
+const stairs = openPlans.baseStair({
+  labelName: 'Main Staircase',
+  stairPosition: [5, 0, 2],
+  stairWidth: 1.2,
+  stairLength: 3.5,
+  numberOfSteps: 14,
+  stairHeight: 2.8,
+  riserHeight: 0.2,
+  treadDepth: 0.25,
+  stairColor: 0x888888,
+  handrailColor: 0x000000
+});
+```
+
+### Stair Properties
+
+```typescript
+// Update stair configuration
+stairs.numberOfSteps = 16;
+stairs.stairWidth = 1.5;
+stairs.stairHeight = 3.0;
+
+// Change position
+stairs.stairPosition = [8, 0, 6];
+
+// The stair geometry automatically recalculates
+// when properties are updated
+```
+
+### Calculating Step Dimensions
+
+```typescript
+// Rise and run are automatically calculated
+const riserHeight = stairs.stairHeight / stairs.numberOfSteps;
+const treadDepth = stairs.stairLength / stairs.numberOfSteps;
+
+console.log(`Riser: ${riserHeight}m, Tread: ${treadDepth}m`);
+```
+
+## Board Elements
+
+Boards are drawing surfaces for placing other elements.
+
+```typescript
+const board = openPlans.board({
+  boardWidth: 20,
+  boardHeight: 15,
+  boardPosition: [0, 0, 0],
+  boardColor: 0xFFFFFF,
+  showGrid: true,
+  gridSpacing: 1
+});
+```
+
+## Working with Element Views
+
+Architectural elements support multiple view types (plan view, 3D view).
+
+### Profile Views
+
+```typescript
+// Show profile view (outline only)
+door.showProfileView(true);
+
+// Show full 3D view
+door.showProfileView(false);
+```
+
+## Selection and Editing
+
+All elements support selection and editing states:
+
+```typescript
+// Select an element
+door.selected = true;
+
+// Enable edit mode
+door.edit = true;
+
+// Check selection state
+if (door.selected) {
+  console.log(`${door.labelName} is selected`);
+}
+```
+
+## Element Management
+
+### Getting Elements by Type
+
+```typescript
+// Get all doors
+const allDoors = openPlans.getEntitiesByType('baseDoor');
+console.log(`Found ${allDoors.length} doors`);
+
+// Get all windows
+const allWindows = [
+  ...openPlans.getEntitiesByType('baseSingleWindow'),
+  ...openPlans.getEntitiesByType('baseDoubleWindow')
+];
+
+// Get all slabs
+const allSlabs = openPlans.getEntitiesByType('baseSlab');
+```
+
+### Disposing Elements
+
+```typescript
+// Get the element's unique ID
+const doorId = door.ogid;
+
+// Dispose the element
+openPlans.disposeElement(doorId);
+```
+
+## Complete Example: Room with Elements
+
+```typescript
+import { OpenPlans } from 'openplans';
+
+async function createRoom() {
+  const container = document.getElementById('app');
+  const openPlans = new OpenPlans(container);
+  await openPlans.setupOpenGeometry();
+  
+  // Create room boundary
+  const roomOutline = openPlans.rectangle({
+    center: [5, 0, 4],
+    width: 10,
+    breadth: 8,
+    color: 0x000000
+  });
+  
+  // Add floor slab
+  const floor = openPlans.baseSlab({
+    labelName: 'Floor',
+    slabPosition: [5, -0.1, 4],
+    slabWidth: 10,
+    slabDepth: 8,
+    slabThickness: 0.2,
+    slabColor: 0xDDDDDD
+  });
+  
+  // Add entrance door
+  const entranceDoor = openPlans.baseDoor({
+    labelName: 'Entrance',
+    doorPosition: [5, 0, 0],
+    doorLength: 2,
+    doorHeight: 2.1,
+    doorThickness: 0.1,
+    doorQuadrant: 1,
+    doorColor: 0x8B4513,
+    frameColor: 0x000000
+  });
+  
+  // Add windows
+  const leftWindow = openPlans.baseSingleWindow({
+    labelName: 'Left Window',
+    windowPosition: [0, 0, 4],
+    windowLength: 1.5,
+    windowHeight: 1.2
+  });
+  
+  const rightWindow = openPlans.baseSingleWindow({
+    labelName: 'Right Window',
+    windowPosition: [10, 0, 4],
+    windowLength: 1.5,
+    windowHeight: 1.2
+  });
+  
+  // Add back double window
+  const backWindow = openPlans.baseDoubleWindow({
+    labelName: 'Back Windows',
+    windowPosition: [5, 0, 8],
+    windowLength: 2.5,
+    windowHeight: 1.5,
+    spacing: 0.2
+  });
+  
+  // Log all elements
+  const elements = [
+    ...openPlans.getEntitiesByType('baseDoor'),
+    ...openPlans.getEntitiesByType('baseSingleWindow'),
+    ...openPlans.getEntitiesByType('baseDoubleWindow'),
+    ...openPlans.getEntitiesByType('baseSlab')
+  ];
+  
+  console.log(`Created room with ${elements.length} elements`);
+  
+  // Fit camera to view all
+  openPlans.fit('RectanglePrimitive');
+}
+
+createRoom();
+```
+
+## Next Steps
+
+- Learn about [3D Shapes](/guides/3d-shapes) to add more geometric elements
+- Create [2D Views](/guides/2d-views) for section cuts
+- Add [Dimensions and Glyphs](/guides/dimensions-and-glyphs) for annotations

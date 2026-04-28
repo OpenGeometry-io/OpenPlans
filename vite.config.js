@@ -25,10 +25,11 @@ function getExampleInputs() {
 
 export default defineConfig({
   base: './',
+  root: resolve(__dirname, 'examples/src'),
   resolve: {
     dedupe: ['three'],
     alias: {
-      '@src': resolve(__dirname, 'src'),
+      '@opengeometry/openplans': resolve(__dirname, 'src/index.ts'),
     },
   },
   optimizeDeps: {
@@ -37,7 +38,7 @@ export default defineConfig({
   plugins: [trackPlugin()],
   build: {
     target: 'esnext',  // Enable top-level await support
-    outDir: 'examples/dist',
+    outDir: resolve(__dirname, 'examples/dist'),
     rollupOptions: {
       input: getExampleInputs(),
       output: {

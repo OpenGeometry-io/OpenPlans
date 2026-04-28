@@ -52,7 +52,12 @@ export interface WallElement extends SemanticElementBase {
 export interface DoorElement extends SemanticElementBase {
   kind: "DOOR";
   hostWallId?: string;
-  doorPosition: Point3D;
+  /**
+   * Door center in the host wall's local frame.
+   *   alongWall — distance along the wall from its start
+   *   elevation — vertical offset above wall base
+   */
+  stationLocal: { alongWall: number; elevation: number };
   doorWidth: number;
   doorHeight: number;
   doorThickness: number;
@@ -65,7 +70,12 @@ export interface DoorElement extends SemanticElementBase {
 export interface WindowElement extends SemanticElementBase {
   kind: "WINDOW";
   hostWallId?: string;
-  windowPosition: Point3D;
+  /**
+   * Window center in the host wall's local frame.
+   *   alongWall — distance along the wall from its start
+   * (Vertical position comes from sillHeight; the across-wall offset is always 0.)
+   */
+  stationLocal: { alongWall: number };
   windowWidth: number;
   windowHeight: number;
   windowThickness: number;

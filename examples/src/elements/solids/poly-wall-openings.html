@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans Polyline Wall — Multiple Openings</title>
+  <link rel="stylesheet" href="../../shared/example.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans demo: PolyWall hosting multiple doors and windows with runtime add/remove">
+  <meta name="author" content="Vishwajeet Mane">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: "JetBrains Mono", monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="example-title">Polyline Wall — Doors &amp; Windows (diagnostic)</div>
+  <div id="app"></div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+
+    const stats = new Stats();
+    stats.showPanel(2);
+
+    // U-shaped polyline wall (3 segments, 4 points). Total arc-length 30 m
+    // so openings can be placed on any of the three segments:
+    //   offset  0–10 → segment 0 (west wall, going south)
+    //   offset 10–20 → segment 1 (south wall, going east)
+    //   offset 20–30 → segment 2 (east wall, going north)
+    const WALL_POINTS = [
+      [-5, 0,  5],   // p0: top-west — open end
+      [-5, 0, -5],   // p1: bot-west — corner (interior)
+      [ 5, 0, -5],   // p2: bot-east — corner (interior)
+      [ 5, 0,  5],   // p3: top-east — open end
+    ];
+    const WALL_TOTAL_LENGTH = 30;
+    const WALL_THICKNESS    = 0.3;
+    const WALL_HEIGHT       = 3;
+
+    // Default templates used when the GUI adds a new element.
+    const DOOR_TEMPLATE = {
+      panelDimensions:   { width: 0.9, thickness: 0.04 },
+      frameDimensions:   { width: 0.05, thickness: 0.3 },
+      doorHeight:        2.1,
+      doorQuadrant:      1,
+      swingAngleDegrees: 90,
+      doorColor:         0xcc7a00,
+      frameColor:        0x654321,
+    };
+
+    const WINDOW_TEMPLATE = {
+      windowDimensions: { width: 1.2, thickness: 0.04 },
+      frameDimensions:  { width: 0.05, thickness: 0.3 },
+      windowHeight:     1.2,
+      sillHeight:       0.9,
+      frameColor:       0xD4D0CB,
+      glassColor:       0x87ceeb,
+    };
+
+    let openPlans;
+    let polyWall;
+    let gui;
+    let doorsFolder;
+    let windowsFolder;
+
+    // Each entry: { door, offset, folder }.
+    const doors = [];
+    // Each entry: { window, offset, folder }.
+    const windows = [];
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    /** All occupied offsets (doors + windows) for spacing checks. */
+    function allOffsets() {
+      return [
+        ...doors.map((e) => ({ offset: e.offset, halfWidth: 0.9 / 2 + 0.05 })),
+        ...windows.map((e) => ({ offset: e.offset, halfWidth: 1.2 / 2 + 0.05 })),
+      ];
+    }
+
+    /** Pick the next safe offset (≥1.5 m gap from every other opening). */
+    function pickNextOffset() {
+      const minSpacing = 1.5;
+      const step = 0.5;
+      const taken = allOffsets();
+      for (let candidate = 1; candidate <= WALL_TOTAL_LENGTH - 1; candidate += step) {
+        const farEnough = taken.every((other) => Math.abs(other.offset - candidate) >= minSpacing);
+        if (farEnough) return candidate;
+      }
+      return ((doors.length + windows.length + 1) * minSpacing) % (WALL_TOTAL_LENGTH - 2) + 1;
+    }
+
+    // ── Doors ────────────────────────────────────────────────────────────────
+
+    function addDoor(placement) {
+      const { offset, doorQuadrant } = placement;
+      const segmentIndex = Math.min(2, Math.floor(offset / 10));
+      const localUWithinSegment = offset - segmentIndex * 10;
+
+      const door = openPlans.door({
+        ...DOOR_TEMPLATE,
+        doorQuadrant: doorQuadrant ?? DOOR_TEMPLATE.doorQuadrant,
+      });
+
+      console.log(
+        `[example] adding door #${doors.length + 1} ` +
+        `at offset=${offset.toFixed(2)} (segment ${segmentIndex}, localU=${localUWithinSegment.toFixed(2)}) ` +
+        `quadrant=${door.doorQuadrant}`,
+      );
+
+      try {
+        polyWall.attachDoor(door, { offset, baseHeight: 0 });
+      } catch (error) {
+        console.error(`[example] FAILED attaching door #${doors.length + 1} at offset=${offset}:`, error);
+        door.dispose?.();
+        door.removeFromParent?.();
+        return null;
+      }
+
+      const entry = { door, offset, folder: null };
+      doors.push(entry);
+      if (gui) {
+        entry.folder = buildDoorFolder(entry, doors.length - 1);
+      }
+      return entry;
+    }
+
+    function removeLastDoor() {
+      const entry = doors.pop();
+      if (!entry) return;
+      polyWall.detachDoor(entry.door);
+      entry.door.dispose?.();
+      entry.door.removeFromParent?.();
+      entry.folder?.destroy();
+    }
+
+    function removeDoor(entry) {
+      const idx = doors.indexOf(entry);
+      if (idx === -1) return;
+      doors.splice(idx, 1);
+      polyWall.detachDoor(entry.door);
+      entry.door.dispose?.();
+      entry.door.removeFromParent?.();
+      entry.folder?.destroy();
+    }
+
+    function buildDoorFolder(entry, index) {
+      const { door } = entry;
+      const folder = doorsFolder.addFolder(`Door ${index + 1} (offset ${entry.offset.toFixed(1)})`);
+      folder.open();
+
+      const doorParams = {
+        offset:            entry.offset,
+        doorQuadrant:      door.doorQuadrant,
+        swingAngleDegrees: door.swingAngleDegrees,
+        panelWidth:        door.panelWidth,
+        panelThickness:    door.panelThickness,
+        frameWidth:        door.frameWidth,
+        doorHeight:        door.doorHeight,
+        doorColor:         '#' + door.doorColor.toString(16).padStart(6, '0'),
+        frameColor:        '#' + door.frameColor.toString(16).padStart(6, '0'),
+      };
+
+      folder.add(doorParams, 'offset', 0.7, WALL_TOTAL_LENGTH - 0.7, 0.05).name('Offset').onChange((value) => {
+        const oldRes = polyWall.getFrameForOffset(entry.offset);
+        const newRes = polyWall.getFrameForOffset(value);
+        try {
+          if (oldRes.segmentIndex === newRes.segmentIndex) {
+            door.station = { alongWall: newRes.localU, elevation: 0 };
+          } else {
+            polyWall.detachDoor(door);
+            polyWall.attachDoor(door, { offset: value, baseHeight: 0 });
+          }
+          entry.offset = value;
+        } catch (error) {
+          console.error(`[example] re-host of door ${index + 1} to offset=${value} failed:`, error);
+        }
+      });
+      folder.add(doorParams, 'doorQuadrant', 1, 4, 1).name('Quadrant').onChange((v) => { door.doorQuadrant = v; });
+      folder.add(doorParams, 'swingAngleDegrees', 0, 90, 1).name('Swing (°)').onChange((v) => { door.swingAngleDegrees = v; });
+      folder.add(doorParams, 'panelWidth', 0.6, 1.2, 0.05).name('Panel Width').onChange((v) => { door.panelWidth = v; });
+      folder.add(doorParams, 'panelThickness', 0.025, 0.08, 0.005).name('Panel Thickness').onChange((v) => { door.panelThickness = v; });
+      folder.add(doorParams, 'frameWidth', 0.025, 0.15, 0.005).name('Frame Width').onChange((v) => { door.frameWidth = v; });
+      folder.add(doorParams, 'doorHeight', 1.8, 2.5, 0.05).name('Height').onChange((v) => { door.doorHeight = v; });
+      folder.addColor(doorParams, 'doorColor').name('Panel Color').onChange((v) => { door.doorColor = parseInt(v.slice(1), 16); });
+      folder.addColor(doorParams, 'frameColor').name('Frame Color').onChange((v) => { door.frameColor = parseInt(v.slice(1), 16); });
+      folder.add({ remove: () => removeDoor(entry) }, 'remove').name('− Remove This Door');
+
+      return folder;
+    }
+
+    // ── Windows ──────────────────────────────────────────────────────────────
+
+    function addWindow(placement) {
+      const { offset } = placement;
+      const segmentIndex = Math.min(2, Math.floor(offset / 10));
+      const localUWithinSegment = offset - segmentIndex * 10;
+
+      const win = openPlans.window({ ...WINDOW_TEMPLATE });
+      win.outline = true;
+
+      console.log(
+        `[example] adding window #${windows.length + 1} ` +
+        `at offset=${offset.toFixed(2)} (segment ${segmentIndex}, localU=${localUWithinSegment.toFixed(2)})`,
+      );
+
+      try {
+        polyWall.attachWindow(win, { offset });
+      } catch (error) {
+        console.error(`[example] FAILED attaching window #${windows.length + 1} at offset=${offset}:`, error);
+        win.dispose?.();
+        win.removeFromParent?.();
+        return null;
+      }
+
+      const entry = { window: win, offset, folder: null };
+      windows.push(entry);
+      if (gui) {
+        entry.folder = buildWindowFolder(entry, windows.length - 1);
+      }
+      return entry;
+    }
+
+    function removeLastWindow() {
+      const entry = windows.pop();
+      if (!entry) return;
+      polyWall.detachWindow(entry.window);
+      entry.window.dispose?.();
+      entry.window.removeFromParent?.();
+      entry.folder?.destroy();
+    }
+
+    function removeWindow(entry) {
+      const idx = windows.indexOf(entry);
+      if (idx === -1) return;
+      windows.splice(idx, 1);
+      polyWall.detachWindow(entry.window);
+      entry.window.dispose?.();
+      entry.window.removeFromParent?.();
+      entry.folder?.destroy();
+    }
+
+    function buildWindowFolder(entry, index) {
+      const { window: win } = entry;
+      const folder = windowsFolder.addFolder(`Window ${index + 1} (offset ${entry.offset.toFixed(1)})`);
+      folder.open();
+
+      const winParams = {
+        offset:      entry.offset,
+        windowWidth: win.windowWidth,
+        windowHeight: win.windowHeight,
+        sillHeight:  win.sillHeight,
+        frameWidth:  win.frameWidth,
+        glassColor:  '#' + win.glassColor.toString(16).padStart(6, '0'),
+        frameColor:  '#' + win.frameColor.toString(16).padStart(6, '0'),
+      };
+
+      folder.add(winParams, 'offset', 0.7, WALL_TOTAL_LENGTH - 0.7, 0.05).name('Offset').onChange((value) => {
+        const oldRes = polyWall.getFrameForOffset(entry.offset);
+        const newRes = polyWall.getFrameForOffset(value);
+        try {
+          if (oldRes.segmentIndex === newRes.segmentIndex) {
+            // Same segment: slide the window.
+            win.station = { alongWall: newRes.localU };
+          } else {
+            // Crossed a corner: re-bind to the new segment's frame.
+            polyWall.detachWindow(win);
+            polyWall.attachWindow(win, { offset: value });
+          }
+          entry.offset = value;
+        } catch (error) {
+          console.error(`[example] re-host of window ${index + 1} to offset=${value} failed:`, error);
+        }
+      });
+      folder.add(winParams, 'windowWidth', 0.4, 2.5, 0.05).name('Width').onChange((v) => { win.windowWidth = v; });
+      folder.add(winParams, 'windowHeight', 0.3, 2.0, 0.05).name('Height').onChange((v) => { win.windowHeight = v; });
+      folder.add(winParams, 'sillHeight', 0, 1.5, 0.05).name('Sill Height').onChange((v) => { win.sillHeight = v; });
+      folder.add(winParams, 'frameWidth', 0.025, 0.15, 0.005).name('Frame Width').onChange((v) => { win.frameWidth = v; });
+      folder.addColor(winParams, 'glassColor').name('Glass Color').onChange((v) => { win.glassColor = parseInt(v.slice(1), 16); });
+      folder.addColor(winParams, 'frameColor').name('Frame Color').onChange((v) => { win.frameColor = parseInt(v.slice(1), 16); });
+      folder.add({ remove: () => removeWindow(entry) }, 'remove').name('− Remove This Window');
+
+      return folder;
+    }
+
+    // ── Init & UI ────────────────────────────────────────────────────────────
+
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      document.body.appendChild(stats.dom);
+
+      openPlans.CameraMode = CameraMode.Model;
+      openPlans.toggleGrid(false);
+
+      polyWall = openPlans.polyWall({
+        points:    WALL_POINTS,
+        thickness: WALL_THICKNESS,
+        height:    WALL_HEIGHT,
+      });
+      polyWall.outline    = true;
+      polyWall.profileView = true;
+      polyWall.modelView   = true;
+
+      openPlans.fitToView([polyWall]);
+
+      openPlans.onRender.add(() => {
+        stats.begin();
+        stats.end();
+      });
+    }
+
+    function setUI() {
+      gui = new GUI();
+
+      // ── Wall ──────────────────────────────────────────────────────────────
+      const wallFolder = gui.addFolder('PolyWall');
+      wallFolder.open();
+      const wallParams = {
+        thickness:   WALL_THICKNESS,
+        height:      WALL_HEIGHT,
+        outline:     true,
+        profileView: true,
+        modelView:   true,
+      };
+      wallFolder.add(wallParams, 'thickness', 0.1, 0.6, 0.01).name('Wall Thickness').onChange((v) => { polyWall.wallThickness = v; });
+      wallFolder.add(wallParams, 'height', 1, 6, 0.1).name('Wall Height').onChange((v) => { polyWall.wallHeight = v; });
+      wallFolder.add(wallParams, 'outline').name('Outline').onChange((v) => { polyWall.outline = v; });
+      wallFolder.add(wallParams, 'profileView').name('Profile View').onChange((v) => { polyWall.profileView = v; });
+      wallFolder.add(wallParams, 'modelView').name('Model View').onChange((v) => { polyWall.modelView = v; });
+      wallFolder.add({
+        fit: () => openPlans.fitToView([
+          polyWall,
+          ...doors.map((e) => e.door),
+          ...windows.map((e) => e.window),
+        ]),
+      }, 'fit').name('Fit to View');
+
+      // ── Diagnostics ───────────────────────────────────────────────────────
+      const diagFolder = gui.addFolder('Diagnostics');
+      diagFolder.open();
+      diagFolder.add({
+        logState: () => {
+          const baseKey = polyWall.ogid + '-2d-base';
+          const wall2D = polyWall.subElements2D?.get?.(baseKey);
+          const verts = wall2D?.geometry?.attributes?.position?.array;
+          console.log('[example] wall footprint vertices (xyz triples):', verts);
+          console.log('[example] doors attached:', doors.length, doors.map((e) => ({ offset: e.offset, ogid: e.door.ogid })));
+          console.log('[example] windows attached:', windows.length, windows.map((e) => ({ offset: e.offset, ogid: e.window.ogid })));
+        },
+      }, 'logState').name('Log Wall + Opening State');
+
+      // ── Doors ─────────────────────────────────────────────────────────────
+      doorsFolder = gui.addFolder('Doors');
+      doorsFolder.open();
+
+      doorsFolder.add({
+        addDoor: () => {
+          const offset = pickNextOffset();
+          const quadrant = (doors.length % 4) + 1;
+          addDoor({ offset, doorQuadrant: quadrant });
+        }
+      }, 'addDoor').name('+ Add Door');
+
+      doorsFolder.add({
+        removeLast: () => removeLastDoor(),
+      }, 'removeLast').name('− Remove Last Door');
+
+      doorsFolder.add({
+        addThree: () => {
+          // One door per segment, well clear of the corners.
+          [{ offset: 3,  doorQuadrant: 1 },
+           { offset: 15, doorQuadrant: 2 },
+           { offset: 27, doorQuadrant: 3 }].forEach((p) => addDoor(p));
+        }
+      }, 'addThree').name('Add 3 (one per segment)');
+
+      // ── Windows ───────────────────────────────────────────────────────────
+      windowsFolder = gui.addFolder('Windows');
+      windowsFolder.open();
+
+      windowsFolder.add({
+        addWindow: () => {
+          const offset = pickNextOffset();
+          addWindow({ offset });
+        }
+      }, 'addWindow').name('+ Add Window');
+
+      windowsFolder.add({
+        removeLast: () => removeLastWindow(),
+      }, 'removeLast').name('− Remove Last Window');
+
+      windowsFolder.add({
+        addThree: () => {
+          // One window per segment, staggered away from the door preset offsets.
+          [{ offset: 7 },
+           { offset: 12 },
+           { offset: 23 }].forEach((p) => addWindow(p));
+        }
+      }, 'addThree').name('Add 3 (one per segment)');
+
+      windowsFolder.add({
+        addMixed: () => {
+          // Demonstrate doors and windows coexisting on the same wall.
+          [{ offset: 3,  doorQuadrant: 1 },
+           { offset: 15, doorQuadrant: 2 }].forEach((p) => addDoor(p));
+          [{ offset: 7 },
+           { offset: 23 }].forEach((p) => addWindow(p));
+        }
+      }, 'addMixed').name('Add Mixed (2 doors + 2 windows)');
+    }
+
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>

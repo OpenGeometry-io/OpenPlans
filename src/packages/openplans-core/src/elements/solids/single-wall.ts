@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BooleanResult, Line, Polygon, Solid, Vector3 } from "opengeometry";
+import { Line, Polygon, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
@@ -9,6 +9,8 @@ import {
 } from "./wall-types";
 import { Opening } from "../openings/opening";
 import { Door, Window } from "../openings";
+import { WallFrame, computeWallFrame } from "./wall-frame";
+import { Event } from "../../../../../utils/event";
 export { WallMaterial } from "./wall-types";
 
 export class SingleWall extends Line implements IShape {
@@ -21,6 +23,11 @@ export class SingleWall extends Line implements IShape {
   private isModelView: boolean = true;
 
   private openings: Opening[] = [];
+  private _frame: WallFrame | null = null;
+  private _wallOutlineVertices: Vector3[] = [];
+
+  /** Fires whenever the wall's frame changes (endpoints, thickness, height). */
+  onWallGeometryChanged: Event<null> = new Event();
 
   selected = false;
   edit = false;
@@ -133,16 +140,8 @@ export class SingleWall extends Line implements IShape {
   get profileView() { return this.isProfileView; }
   set profileView(value: boolean) {
     this.isProfileView = value;
-
-    if (this.subElements2D.has(this.ogid + '-2d-resolved')) {
-      const resolved2D = this.subElements2D.get(this.ogid + '-2d-resolved') as Polygon;
-      resolved2D.visible = value;
-      return;
-    }
-
-    for (const obj of this.subElements2D.values()) {
-      obj.visible = value;
-    }
+    const wall2D = this.subElements2D.get(this.ogid + '-2d');
+    if (wall2D) wall2D.visible = value;
   }
 
   get modelView() { return this.isModelView; }
@@ -197,40 +196,111 @@ export class SingleWall extends Line implements IShape {
     return this.propertySet;
   }
 
+  /** Returns this wall's local coordinate frame, computing on demand. */
+  getFrame(): WallFrame {
+    if (!this._frame) {
+      const [s, e] = this.propertySet.points;
+      this._frame = computeWallFrame(
+        new Vector3(s[0], s[1], s[2]),
+        new Vector3(e[0], e[1], e[2]),
+        this.propertySet.thickness,
+      );
+    }
+    return this._frame;
+  }
+
   attachDoor(doorElement: Door) {
+    doorElement.hostWallId = this.ogid;
+    doorElement.bindHostFrame(this.getFrame());
+
     const openingFromDoor = doorElement.opening as Opening;
     if (!openingFromDoor) {
       console.error("Door element does not have a valid opening configuration.");
       return;
     }
     this.openings.push(openingFromDoor);
-    const openingConfig = openingFromDoor.getOPConfig();
-    // Add Opening to Wall's propertySet
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.propertySet.openings.push(openingFromDoor.ogid!);
     this.resolveOpenings();
 
     openingFromDoor.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      doorElement.bindHostFrame(this.getFrame());
     });
   }
 
+  /**
+   * Detach a previously attached door. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG so the cut hole is closed up.
+   */
+  detachDoor(doorElement: Door) {
+    const openingFromDoor = doorElement.opening as Opening;
+    const openingOgid = openingFromDoor?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromDoor);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    doorElement.hostWallId = undefined;
+    doorElement.bindHostFrame(null);
+
+    this.resolveOpenings();
+  }
+
+  /**
+   * Detach a previously attached window. Removes it from the openings list,
+   * unbinds its host frame (so it falls back to the unhosted identity frame),
+   * and re-resolves the wall's CSG so the cut hole is closed up.
+   */
+  detachWindow(windowElement: Window) {
+    const openingFromWindow = windowElement.opening as Opening;
+    const openingOgid = openingFromWindow?.ogid;
+
+    const index = this.openings.findIndex((o) => o === openingFromWindow);
+    if (index !== -1) this.openings.splice(index, 1);
+
+    if (openingOgid) {
+      const propIndex = this.propertySet.openings.indexOf(openingOgid);
+      if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    }
+
+    windowElement.hostWallId = undefined;
+    windowElement.bindHostFrame(null);
+
+    this.resolveOpenings();
+  }
+
   attachWindow(windowElement: Window) {
+    windowElement.hostWallId = this.ogid;
+    windowElement.bindHostFrame(this.getFrame());
+
     const openingFromWindow = windowElement.opening as Opening;
     if (!openingFromWindow) {
       console.error("Window element does not have a valid opening configuration.");
       return;
     }
     this.openings.push(openingFromWindow);
-    const openingConfig = openingFromWindow.getOPConfig();
-    this.propertySet.openings.push(openingConfig.ogid!);
+    this.propertySet.openings.push(openingFromWindow.ogid!);
     this.resolveOpenings();
 
     openingFromWindow.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      windowElement.bindHostFrame(this.getFrame());
     });
   }
 
   attachOpening(openingElement: Opening) {
+    openingElement.bindHostFrame(this.getFrame());
     this.openings.push(openingElement);
     const openingConfig = openingElement.getOPConfig();
     // Add Opening to Wall's propertySet
@@ -238,41 +308,46 @@ export class SingleWall extends Line implements IShape {
     this.resolveOpenings();
 
     openingElement.onOpeningUpdated.add(() => {
-      this.setOPGeometry();
+      this.resolveOpenings();
+    });
+
+    this.onWallGeometryChanged.add(() => {
+      openingElement.bindHostFrame(this.getFrame());
     });
   }
 
   resolveOpenings() {
-    const wall2D = this.subElements2D.get(this.ogid + "-2d-base") as Polygon | undefined;
-    if (!wall2D) return;
+    // ── 2D: polygon-with-holes rebuild ───────────────────────────────────────
+    if (this._wallOutlineVertices.length >= 3) {
+      const existing2D = this.subElements2D.get(this.ogid + '-2d');
+      if (existing2D) {
+        const mesh = existing2D as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => (m as THREE.Material).dispose());
+        } else if (mesh.material) {
+          (mesh.material as THREE.Material).dispose();
+        }
+        existing2D.removeFromParent();
+        this.subElements2D.delete(this.ogid + '-2d');
+      }
 
-    const resolved2DKey = this.ogid + "-2d-resolved";
-    const existingResolved2D = this.subElements2D.get(resolved2DKey);
-    if (existingResolved2D) {
-      existingResolved2D.removeFromParent();
-      this.subElements2D.delete(resolved2DKey);
-    }
+      const holeLoops = this.openings
+        .map((o) => o.holeLoop2D)
+        .filter((loop): loop is Vector3[] => loop.length >= 3);
 
-    const all2DOpenings = this.openings
-      .map((opening) => opening.opening2D)
-      .filter((opening): opening is Polygon => Boolean(opening));
-
-    if (all2DOpenings.length === 0) {
+      const wall2D = new Polygon({
+        vertices: this._wallOutlineVertices.map((v) => v.clone()),
+        holes: holeLoops,
+        color: this.propertySet.color,
+      });
+      wall2D.outline = this._outlineEnabled;
       wall2D.visible = this.isProfileView;
-      return;
+      this.subElements2D.set(this.ogid + '-2d', wall2D);
+      this.add(wall2D);
     }
 
-    const result = wall2D.subtract(all2DOpenings);
-
-    wall2D.visible = false;
-    all2DOpenings.forEach((opening2D) => {
-      opening2D.visible = false;
-    });
-
-    this.subElements2D.set(resolved2DKey, result);
-    this.add(result);
-
-    // 3D Resolution
+    // ── 3D: unchanged boolean subtract ───────────────────────────────────────
     const wall3D = this.subElements3D.get(this.ogid + "-3d-base") as Solid | undefined;
     if (!wall3D) return;
 
@@ -292,7 +367,11 @@ export class SingleWall extends Line implements IShape {
       return;
     }
 
-    const result3D = wall3D.subtract(all3DOpenings);
+    const result3D = wall3D.subtract(all3DOpenings, {
+      color:       this.propertySet.color,
+      transparent: false,
+      opacity:     1,
+    });
 
     wall3D.visible = false;
     all3DOpenings.forEach((opening3D) => {
@@ -301,20 +380,15 @@ export class SingleWall extends Line implements IShape {
 
     this.subElements3D.set(resolved3DKey, result3D);
     this.add(result3D);
-}
+  }
 
 
   detachOpening(ogid: string) {
-    const index = this.openings.findIndex(opening => opening.ogid === ogid);
-    if (index !== -1) {
-      this.openings.splice(index, 1);
-    }
-
-    if (this.openings.length === 0) {
-      // If no more openings, remove resolved geometry and show original wall geometry
-      this.subElements2D.delete(this.ogid + '-2d-resolved');
-      this.subElements3D.delete(this.ogid + '-3d-resolved');
-    }
+    const index = this.openings.findIndex((opening) => opening.ogid === ogid);
+    if (index !== -1) this.openings.splice(index, 1);
+    const propIndex = this.propertySet.openings.indexOf(ogid);
+    if (propIndex !== -1) this.propertySet.openings.splice(propIndex, 1);
+    this.resolveOpenings();
   }
 
   getHostedOpenings() {
@@ -353,11 +427,18 @@ export class SingleWall extends Line implements IShape {
   setOPGeometry(): void {
     this.dispose();
 
+    const [s, e] = this.propertySet.points;
+    const startVec = new Vector3(s[0], s[1], s[2]);
+    const endVec = new Vector3(e[0], e[1], e[2]);
+
     this.setConfig({
-      start: new Vector3(this.propertySet.points[0][0], this.propertySet.points[0][1], this.propertySet.points[0][2]),
-      end: new Vector3(this.propertySet.points[1][0], this.propertySet.points[1][1], this.propertySet.points[1][2]),
+      start: startVec,
+      end: endVec,
       color: this.propertySet.color,
     });
+
+    this._frame = computeWallFrame(startVec, endVec, this.propertySet.thickness);
+    this.onWallGeometryChanged.trigger(null);
 
     if (this.isLineWall) {
       return;
@@ -378,13 +459,16 @@ export class SingleWall extends Line implements IShape {
       offset2.points[0].clone(),
     ];
 
-    // We will use these points to generate the 2D and 3D geometry for the wall, and keep them in sync with the line geometry.
-    // 2D Polygon
+    // Store wall outline for resolveOpenings() to build the polygon-with-holes.
+    this._wallOutlineVertices = points.map((v) => v.clone());
+
+    // Base polygon: extrusion seed for the 3D path; not directly rendered (resolveOpenings builds '-2d').
     const polygon = new Polygon({
       ogid: this.ogid + '-2d-base',
       vertices: points,
       color: this.propertySet.color,
     });
+    polygon.visible = false;
     this.subElements2D.set(polygon.ogid, polygon);
     this.add(polygon);
 

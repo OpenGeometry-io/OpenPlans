@@ -1,10 +1,12 @@
 import * as THREE from "three";
-import { Line, Polygon, Solid, Vector3 } from "opengeometry";
+import { Polygon, Solid, Vector3 } from "opengeometry";
 
 import { IShape } from "../../shapes/base-type";
 import { ElementType } from "../base-type";
+import { OPElement } from "../op-element";
 import { Placement } from "../../types";
 import { Event } from "../../../../../utils/event";
+import { WallFrame, localToWorld } from "../solids/wall-frame";
 
 export interface OpeningOptions {
   ogid?: string;
@@ -14,15 +16,22 @@ export interface OpeningOptions {
   thickness: number;
   height: number;
   baseHeight: number;
-  // The Points Here are defined in the local coordinate system of the wall, with the wall's start point as the origin, and the wall's direction as the positive X axis. The Z axis is vertical, and Y axis is perpendicular to the wall plane.
+  // Wall-local coordinates. +Y up; walls live in the XZ plane.
+  //   points[i] = [u, v, h] where
+  //     u — distance along the wall from its start,
+  //     v — perpendicular offset in the XZ plane (normal to the wall),
+  //     h — vertical offset above the wall's base.
+  // When no host frame has been bound, points are interpreted as world
+  // (x, y, z) — the unhosted/legacy path.
   length?: number; // Optional length property for convenience, can be derived from points if not provided
-  
+
   points: [number, number, number][];
   placement: Placement;
 }
 
-export class Opening extends Line implements IShape {
+export class Opening extends OPElement implements IShape {
   ogType = ElementType.OPENING;
+  ogid: string;
   
   subElements2D: Map<string, THREE.Object3D> = new Map();
   private isProfileView: boolean = false;
@@ -36,7 +45,10 @@ export class Opening extends Line implements IShape {
 
   _outlineEnabled: boolean = false;
   onOpeningUpdated: Event<null> = new Event();
-  
+
+  /** Host wall's local coordinate frame. Null until bound via bindHostFrame. */
+  protected hostFrame: WallFrame | null = null;
+
   // Semantic Properties
   propertySet: OpeningOptions = {
     labelName: "Standard Opening",
@@ -44,10 +56,10 @@ export class Opening extends Line implements IShape {
     thickness: 0.3,
     height: 1,
     baseHeight: 0,
-    // The Points Here are defined in the local coordinate system of the wall, with the wall's start point as the origin, and the wall's direction as the positive X axis. The Z axis is vertical, and Y axis is perpendicular to the wall plane.
+    // Wall-local (u, v, h). Interpreted as world (x, y, z) until bindHostFrame is called.
     points: [
       [0, 0, 0],
-      [1.5, 0, 1.5],
+      [1.5, 0, 0],
     ],
     // TODO: Fix placement, something is wrong.
     placement: {
@@ -116,13 +128,35 @@ export class Opening extends Line implements IShape {
   get modelView() { return this.isModelView; }
   set modelView(value: boolean) {
     this.isModelView = value;
-    for (const obj of this.subElements3D.values()) {
-      obj.visible = value;
+    for (const [key, obj] of this.subElements3D.entries()) {
+      if (key === 'hole-base-3d') {
+        // 3D extrusion seed; never rendered.
+        obj.visible = false;
+      } else {
+        obj.visible = value;
+      }
     }
   }
 
-  get opening2D(): Polygon {
-    return this.subElements2D.get(this.ogid + '-2d') as Polygon;
+  /** Plan-view hole loop (Vector3[] in the XZ plane at Y=0). The wall uses this as a Polygon hole.
+   *  The 1 µm across-wall inset keeps hole edges strictly inside the outer polygon so the WASM
+   *  triangulator does not produce degenerate output when edges coincide with the boundary. */
+  get holeLoop2D(): Vector3[] {
+    const worldPoints = this.toWorldPoints();
+    if (worldPoints.length < 2) return [];
+
+    const start = worldPoints[0];
+    const end   = worldPoints[1];
+    const dir   = new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
+    const perp  = new THREE.Vector3(0, 1, 0).cross(dir);
+    const t2    = this.propertySet.thickness / 2 - 1e-6;
+
+    return [
+      new Vector3(start.x + perp.x * t2, 0, start.z + perp.z * t2),
+      new Vector3(end.x   + perp.x * t2, 0, end.z   + perp.z * t2),
+      new Vector3(end.x   - perp.x * t2, 0, end.z   - perp.z * t2),
+      new Vector3(start.x - perp.x * t2, 0, start.z - perp.z * t2),
+    ];
   }
 
   get opening3D(): Solid {
@@ -130,11 +164,8 @@ export class Opening extends Line implements IShape {
   }
 
   constructor(openingConfig?: Partial<OpeningOptions>) {
-    super({
-      start: new Vector3(0, 0, 0),
-      end: new Vector3(1.5, 0, 1.5),
-      color: 0xffcccc,
-    });
+    super();
+    this.ogid = openingConfig?.ogid ?? crypto.randomUUID();
 
     this.subElements2D = new Map<string, THREE.Object3D>();
     this.subElements3D = new Map<string, THREE.Object3D>();
@@ -166,6 +197,35 @@ export class Opening extends Line implements IShape {
     return this.propertySet;
   }
 
+  /**
+   * Bind this opening to its host wall's frame. After binding, propertySet.points
+   * are interpreted as wall-local (alongWall, acrossWall, elevation) and
+   * transformed to world on demand. Pass `null` to unhost the opening — its
+   * geometry then renders in identity coordinates (alongWall→x, elevation→y,
+   * acrossWall→z).
+   */
+  bindHostFrame(frame: WallFrame | null): void {
+    this.hostFrame = frame;
+    this.setOPGeometry();
+  }
+
+  /**
+   * Convert stored points to world-space Vector3s.
+   * If a host frame is bound: points are (u, v, h) local → world.
+   * Otherwise: points are already world (x, y, z).
+   */
+  toWorldPoints(): Vector3[] {
+    const frame = this.hostFrame;
+    if (!frame) {
+      return this.propertySet.points.map(
+        ([x, y, z]) => new Vector3(x, y, z),
+      );
+    }
+    return this.propertySet.points.map(
+      ([u, v, h]) => localToWorld(frame, u, v, h),
+    );
+  }
+
   dispose() {
     for (const obj of this.subElements2D.values()) {
       const mesh = obj as THREE.Mesh;
@@ -192,48 +252,45 @@ export class Opening extends Line implements IShape {
 
     this.subElements2D.clear();
     this.subElements3D.clear();
-    this.discardGeometry();
   }
 
   setOPGeometry(): void {
     this.dispose();
 
-    this.setConfig({
-      start: new Vector3(this.propertySet.points[0][0], this.propertySet.points[0][1], this.propertySet.points[0][2]),
-      end: new Vector3(this.propertySet.points[1][0], this.propertySet.points[1][1], this.propertySet.points[1][2]),
-    });
+    const worldPoints = this.toWorldPoints();
+    if (worldPoints.length < 2) {
+      return;
+    }
 
-    const offset1 = this.getOffset(this.propertySet.thickness / 2);
-    const offset2 = this.getOffset(-this.propertySet.thickness / 2);
+    const start = worldPoints[0];
+    const end   = worldPoints[1];
+    const dir   = new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
+    const perp  = new THREE.Vector3(0, 1, 0).cross(dir);
+    const t2    = this.propertySet.thickness / 2;
 
-    // Use loop later
-    const points: Vector3[] = [
-      // Start point with positive offset
-      offset1.points[0].clone(),
-      // End point with positive offset
-      offset1.points[1].clone(),
-      // End point with negative offset
-      offset2.points[1].clone(),
-      // Start point with negative offset
-      offset2.points[0].clone(),
+    // Four polygon vertices — winding matches the old getOffset result:
+    // [off1.start, off1.end, off2.end, off2.start]
+    const elevatedFootprint: Vector3[] = [
+      new Vector3(start.x + perp.x * t2, start.y + perp.y * t2, start.z + perp.z * t2),
+      new Vector3(end.x   + perp.x * t2, end.y   + perp.y * t2, end.z   + perp.z * t2),
+      new Vector3(end.x   - perp.x * t2, end.y   - perp.y * t2, end.z   - perp.z * t2),
+      new Vector3(start.x - perp.x * t2, start.y - perp.y * t2, start.z - perp.z * t2),
     ];
 
-    // We will use these points to generate the 2D and 3D geometry for the wall, and keep them in sync with the line geometry.
-    // 2D Polygon
-    const polygon = new Polygon({
-      ogid: this.ogid + '-2d',
-      vertices: points,
+    // ── 3D extrusion seed at the line's actual elevation ────────────────────
+    // Extruded vertically by `height` so the resulting solid spans
+    // [lineElevation, lineElevation + height] for boolean subtraction from
+    // the wall's volume.
+    const polygon3DBase = new Polygon({
+      vertices: elevatedFootprint,
       color: 0xffcccc,
     });
-    this.subElements2D.set(polygon.ogid, polygon);
-    // polygon.visible = false;
-    polygon.outline = true;
-    polygon.outlineColor = 0x4466ff;
-    this.add(polygon);
+    polygon3DBase.outline = false;
+    polygon3DBase.visible = false;     // never rendered; just an extrusion seed.
+    this.subElements3D.set('hole-base-3d', polygon3DBase);
+    this.add(polygon3DBase);
 
-    // 3D Extrusion
-    const height = this.propertySet.height; // Default height if not set
-    const extrudedShape = polygon.extrude(height);
+    const extrudedShape = polygon3DBase.extrude(this.propertySet.height);
     extrudedShape.ogid = this.ogid + '-3d';
     this.subElements3D.set(extrudedShape.ogid, extrudedShape);
     this.add(extrudedShape);
