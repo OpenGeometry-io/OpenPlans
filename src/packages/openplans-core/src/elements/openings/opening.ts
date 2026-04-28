@@ -138,7 +138,9 @@ export class Opening extends OPElement implements IShape {
     }
   }
 
-  /** Plan-view hole loop (Vector3[] in the XZ plane at Y=0). The wall uses this as a Polygon hole. */
+  /** Plan-view hole loop (Vector3[] in the XZ plane at Y=0). The wall uses this as a Polygon hole.
+   *  The 1 µm across-wall inset keeps hole edges strictly inside the outer polygon so the WASM
+   *  triangulator does not produce degenerate output when edges coincide with the boundary. */
   get holeLoop2D(): Vector3[] {
     const worldPoints = this.toWorldPoints();
     if (worldPoints.length < 2) return [];
@@ -147,7 +149,7 @@ export class Opening extends OPElement implements IShape {
     const end   = worldPoints[1];
     const dir   = new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
     const perp  = new THREE.Vector3(0, 1, 0).cross(dir);
-    const t2    = this.propertySet.thickness / 2;
+    const t2    = this.propertySet.thickness / 2 - 1e-6;
 
     return [
       new Vector3(start.x + perp.x * t2, 0, start.z + perp.z * t2),

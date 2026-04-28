@@ -6,6 +6,10 @@ import type { Placement, PlanExportView, PlanVectorExportable } from "../../type
 import { Opening } from "./opening";
 import { localToWorld } from "../solids/wall-frame";
 
+// 1 µm inset keeps hole edges strictly inside the wall boundary.
+// See door.ts HOLE_2D_TOLERANCE comment for full explanation.
+const HOLE_2D_TOLERANCE = 1e-6;
+
 export interface WindowStationLocal {
   /** Distance along the wall from its start point. */
   alongWall: number;
@@ -214,13 +218,14 @@ export class Window extends Opening implements IShape, PlanVectorExportable {
    */
   get opening(): Opening { return this as unknown as Opening; }
 
-  /** Plan-view hole loop (Vector3[] at Y=0). No acrossWall tolerance — the polygon-with-holes path needs exact edges. */
+  /** Plan-view hole loop (Vector3[] at Y=0). The 1 µm across-wall inset (HOLE_2D_TOLERANCE) keeps
+   *  hole edges strictly inside the outer polygon so the WASM triangulator handles them correctly. */
   get holeLoop2D(): Vector3[] {
     const { windowDimensions, frameDimensions, stationLocal } = this.propertySet;
     if (!windowDimensions) return [];
     const wallThickness         = this.resolveWallThickness();
     const halfTotalWidth        = windowDimensions.width / 2 + frameDimensions.width;
-    const halfWallThicknessSlab = wallThickness / 2;
+    const halfWallThicknessSlab = wallThickness / 2 - HOLE_2D_TOLERANCE;
 
     const u0 = stationLocal.alongWall - halfTotalWidth;
     const u1 = stationLocal.alongWall + halfTotalWidth;

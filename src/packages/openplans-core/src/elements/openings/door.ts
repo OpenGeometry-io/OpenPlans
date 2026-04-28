@@ -6,6 +6,12 @@ import type { Placement } from "../../types";
 import { Opening } from "./opening";
 import { localToWorld } from "../solids/wall-frame";
 
+// 1 µm inset keeps hole edges strictly inside the wall boundary.
+// Without this, hole edges coincide exactly with the outer polygon's face edges
+// when an opening is fully contained within a wall segment, causing the WASM
+// polygon-with-holes triangulator to produce empty/incorrect 2D geometry.
+const HOLE_2D_TOLERANCE = 1e-6;
+
 export enum DoorMaterialType {
   WOOD = 'WOOD',
   GLASS = 'GLASS',
@@ -189,13 +195,14 @@ export class Door extends Opening implements IShape {
   // different `type` literal than OpeningOptions). At runtime Door IS an Opening.
   get opening(): Opening { return this as unknown as Opening; }
 
-  /** Plan-view hole loop (Vector3[] at Y=0). No acrossWall tolerance — the polygon-with-holes path needs exact edges. */
+  /** Plan-view hole loop (Vector3[] at Y=0). The 1 µm across-wall inset (HOLE_2D_TOLERANCE) keeps
+   *  hole edges strictly inside the outer polygon so the WASM triangulator handles them correctly. */
   get holeLoop2D(): Vector3[] {
     const { panelDimensions, frameDimensions, stationLocal } = this.propertySet;
     if (!panelDimensions) return [];
     const wallThickness           = this.resolveWallThickness();
     const halfTotalWidthAlongWall = panelDimensions.width / 2 + frameDimensions.width;
-    const halfWallThicknessSlab   = wallThickness / 2;
+    const halfWallThicknessSlab   = wallThickness / 2 - HOLE_2D_TOLERANCE;
 
     const startAlongWall = stationLocal.alongWall - halfTotalWidthAlongWall;
     const endAlongWall   = stationLocal.alongWall + halfTotalWidthAlongWall;
