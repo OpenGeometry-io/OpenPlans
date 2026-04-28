@@ -2,7 +2,6 @@ import { SingleWall } from "../single-wall";
 import { WallOptions } from "../wall-types";
 
 
-const wallJoinTolerance: number = 0.01; // Tolerance for detecting joins
 
 interface WallRelationship {
   wallId: string;
@@ -54,7 +53,7 @@ export class WallEngine {
     }
   }
 
-  private updateWallGeometry(wallId: string) {
+  private updateWallGeometry(_wallId: string) {
     // Logic to update the wall geometry based on its relationships (joins)
     // This would involve checking the type of join (L, T, X) and modifying the wall's geometry accordingly to reflect the join.
   }
@@ -72,7 +71,7 @@ export class WallEngine {
     this.resolveJoinsForWall(wall);
   }
 
-  private resolveJoinsForWall(wall: SingleWall) {
+  private resolveJoinsForWall(_wall: SingleWall) {
     // Logic to check for overlapping walls and determine join types (L, T, X)
     // This is a complex logic that involves checking the geometry of the wall against other walls in the system and determining if they are connected at the start, end, or middle.
     // Based on the connections, we can then update the wall's geometry to reflect the appropriate join type.

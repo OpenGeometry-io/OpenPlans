@@ -368,9 +368,7 @@ export class SingleWall extends Line implements IShape {
     }
 
     const result3D = wall3D.subtract(all3DOpenings, {
-      color:       this.propertySet.color,
-      transparent: false,
-      opacity:     1,
+      color: this.propertySet.color,
     });
 
     wall3D.visible = false;

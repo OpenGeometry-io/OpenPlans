@@ -58,6 +58,9 @@ export class ViewportBlock extends THREE.Object3D implements IShape {
     edit: boolean = false;
     locked: boolean = false;
 
+    subElements2D: Map<string, THREE.Object3D> = new Map();
+    subElements3D: Map<string, THREE.Object3D> = new Map();
+
     subElements: Map<string, THREE.Object3D> = new Map();
 
     constructor(viewportConfig: ViewportConfig) {

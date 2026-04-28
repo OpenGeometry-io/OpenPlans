@@ -729,10 +729,8 @@ export class PolyWall extends Polyline implements IShape {
     if (wall3D && all3DOpenings.length > 0) {
       try {
         const result3D = wall3D.subtract(all3DOpenings, {
-          color:       this.propertySet.color,
-          outline:     this._outlineEnabled,
-          transparent: false,
-          opacity:     1,
+          color:   this.propertySet.color,
+          outline: this._outlineEnabled,
         }) as BooleanResult;
 
         this.subElements3D.set(this.ogid + "-3d-resolved", result3D);
