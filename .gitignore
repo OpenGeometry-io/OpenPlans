@@ -8,3 +8,19 @@ examples/dist/
 
 # Scripts
 scripts/
+
+# Internal-only docs and notes (not for public OSS repo)
+AGENTS.md
+OPENGEOMETRY_KERNEL_DEBT.md
+.spec/
+mint.json
+
+# In-repo docs site (lives in external auto-docs now)
+docs/
+
+# Internal agent / IDE config
+.claude/
+.github/copilot-instructions.md
+
+# WIP example harnesses
+examples/src/elements/solids/test-openings.html

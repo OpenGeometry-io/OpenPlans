@@ -2,7 +2,15 @@
   "name": "@opengeometry/openplans",
   "version": "0.1.3",
   "author": "Vishwajeet Mane",
-  "description": "Create 2D Drawings with OpenPlans",
+  "description": "Browser-native floor-planning, drawing, and BIM (IFC/PDF/DXF) export toolkit built on the OpenGeometry kernel.",
+  "homepage": "https://openplans.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenGeometry-io/OpenPlans.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OpenGeometry-io/OpenPlans/issues"
+  },
   "main": "./index.js",
   "type": "module",
   "types": "./types/src/index.d.ts",
@@ -21,9 +29,14 @@
     "openplans",
     "opengeometry",
     "architecture",
-    "design",
+    "bim",
+    "ifc",
+    "floor-plan",
     "cad",
-    "geometry"
+    "browser-cad",
+    "threejs",
+    "aec",
+    "wasm"
   ],
   "license": "MIT",
   "dependencies": {
