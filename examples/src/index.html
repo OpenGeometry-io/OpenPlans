@@ -625,6 +625,7 @@
           <a href="#" class="nav-dropdown-item" data-filter="drawings">Drawings</a>
           <a href="#" class="nav-dropdown-item" data-filter="views">Views</a>
           <a href="#" class="nav-dropdown-item" data-filter="exporters">Exporters</a>
+          <a href="#" class="nav-dropdown-item" data-filter="performance">Performance</a>
         </div>
       </div>
       <a href="#" id="docs-link">Docs</a>
@@ -677,6 +678,7 @@
     <button class="filter-btn" data-filter="drawings">Drawings</button>
     <button class="filter-btn" data-filter="views">Views</button>
     <button class="filter-btn" data-filter="exporters">Exporters</button>
+    <button class="filter-btn" data-filter="performance" style="background:#ff6b00;color:#fff;border-color:#ff6b00;">Performance</button>
   </div>
 
   <!-- Demo Section -->
@@ -983,6 +985,31 @@
         <p class="card-description">Window element with glass pane, frame bars, sill height, and color controls.</p>
         <div class="card-links">
           <a href="./elements/openings/window.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Performance Section -->
+  <section class="section" data-category="performance">
+    <div class="section-header">
+      <h2 class="section-title">Performance</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card" style="border: 2px solid #ff6b00;">
+        <div class="card-image" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);">
+          <div style="color:#fff; font-family:'Space Mono',monospace; text-align:center; padding:20px;">
+            <div style="font-size:40px; margin-bottom:10px;">⚡</div>
+            <div style="font-size:13px; text-transform:uppercase; letter-spacing:2px;">500 Walls · CSG Stress Test</div>
+          </div>
+        </div>
+        <span class="card-tag" style="background:#ff6b00;color:#fff;border-color:#ff6b00;">Performance</span>
+        <h3 class="card-title">Stress Test — 500 Walls</h3>
+        <p class="card-description">500 walls with 500 toggleable doors or windows. GUI slider moves all station points at once. Roundtrip timing overlay shows real WASM CSG cost per operation. FPS / MS / MB panels included.</p>
+        <div class="card-links">
+          <a href="./stress-500-walls.html" class="card-link primary">Run Stress Test <span class="arrow">→</span></a>
         </div>
       </div>
     </div>

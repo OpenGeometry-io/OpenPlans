@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Stress Test — 500 Walls</title>
+  <link rel="stylesheet" href="./shared/example.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans performance stress test — 500 walls with toggleable doors/windows">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Space Mono', monospace; }
+
+    /* ── Loading overlay ─────────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.94);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: #f5f5f5;
+      gap: 0;
+    }
+    #loading-overlay.hidden { display: none; }
+
+    .load-title {
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 28px;
+      color: #ff6b00;
+    }
+
+    .load-bar-wrap {
+      width: 340px;
+      height: 3px;
+      background: #2a2a2a;
+      margin-bottom: 14px;
+    }
+    .load-bar {
+      height: 100%;
+      background: #ff6b00;
+      width: 0%;
+      transition: width 0.08s linear;
+    }
+    .load-status {
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .load-sub {
+      font-size: 10px;
+      color: #444;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Performance overlay (bottom-right) ──────────────────────────── */
+    #perf-overlay {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(14, 14, 14, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f5f2ea;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 12px 16px;
+      z-index: 1000;
+      line-height: 2;
+      min-width: 230px;
+      backdrop-filter: blur(8px);
+      display: none;
+    }
+    #perf-overlay.visible { display: block; }
+
+    .perf-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #555;
+      border-bottom: 1px solid #222;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+    }
+    .perf-row { display: flex; justify-content: space-between; gap: 16px; }
+    .perf-label { color: #666; }
+    .perf-value { color: #ff6b00; font-weight: 700; }
+    .perf-value.ok  { color: #8fbf5c; }
+    .perf-value.warn { color: #ffcc00; }
+    .perf-value.slow { color: #ff4444; }
+
+    /* ── Stats panels label strip ────────────────────────────────────── */
+    #stats-labels {
+      position: fixed;
+      left: 0;
+      top: 48px;
+      display: none;
+      gap: 0;
+      z-index: 1001;
+    }
+    #stats-labels.visible { display: flex; }
+    .stats-label {
+      width: 80px;
+      background: rgba(14,14,14,0.85);
+      color: #555;
+      font-size: 9px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="load-title">Building Stress Test</div>
+    <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+    <div class="load-status" id="load-status">Initializing...</div>
+    <div class="load-sub" id="load-sub">500 walls · 500 doors · 500 windows</div>
+  </div>
+
+  <!-- Stats panel labels (FPS / MS / MB) -->
+  <div id="stats-labels">
+    <div class="stats-label">FPS</div>
+    <div class="stats-label">MS</div>
+    <div class="stats-label">MB</div>
+  </div>
+
+  <!-- Performance / roundtrip overlay -->
+  <div id="perf-overlay">
+    <div class="perf-title">Roundtrip Stats</div>
+    <div class="perf-row">
+      <span class="perf-label">Walls</span>
+      <span class="perf-value" id="p-walls">500</span>
+    </div>
+    <div class="perf-row">
+      <span class="perf-label">Openings</span>
+      <span class="perf-value" id="p-openings">500</span>
+    </div>
+    <div class="perf-row">
+      <span class="perf-label">Current type</span>
+      <span class="perf-value" id="p-mode">door</span>
+    </div>
+    <div class="perf-row">
+      <span class="perf-label">Last operation</span>
+      <span class="perf-value" id="p-op">—</span>
+    </div>
+    <div class="perf-row">
+      <span class="perf-label">Roundtrip</span>
+      <span class="perf-value" id="p-roundtrip">—</span>
+    </div>
+    <div class="perf-row">
+      <span class="perf-label">Per element</span>
+      <span class="perf-value" id="p-per">—</span>
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module">
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import Stats from 'stats.js';
+
+    // ── Constants ─────────────────────────────────────────────────────────
+    const COUNT      = 500;
+    const COLS       = 25;
+    const ROWS       = 20;    // COLS × ROWS = 500
+    const WALL_LEN   = 2.0;   // metres
+    const COL_GAP    = 3.5;   // x-axis spacing (start-to-start)
+    const ROW_GAP    = 5.0;   // z-axis spacing
+    const INIT_STA   = 1.0;   // initial station (centre of 2 m wall)
+    const BATCH      = 10;    // elements per yield tick during load
+
+    // ── State ─────────────────────────────────────────────────────────────
+    let openPlans;
+    const walls          = [];
+    const doors          = [];
+    const windowElements = [];
+    let currentMode    = 'door';
+    let currentStation = INIT_STA;
+
+    // ── Loading helpers ───────────────────────────────────────────────────
+    const loadOverlay = document.getElementById('loading-overlay');
+    const loadBar     = document.getElementById('load-bar');
+    const loadStatus  = document.getElementById('load-status');
+
+    function setProgress(done, total, label) {
+      loadBar.style.width = Math.round((done / total) * 100) + '%';
+      loadStatus.textContent = label;
+    }
+
+    // Yield to the browser event-loop so the loading bar can repaint.
+    const yieldTick = () => new Promise(r => setTimeout(r, 0));
+
+    // ── Performance overlay helpers ───────────────────────────────────────
+    const perfOverlay = document.getElementById('perf-overlay');
+    const pMode       = document.getElementById('p-mode');
+    const pOp         = document.getElementById('p-op');
+    const pRoundtrip  = document.getElementById('p-roundtrip');
+    const pPer        = document.getElementById('p-per');
+
+    function recordRoundtrip(opName, ms, count) {
+      const perElem = ms / count;
+      pOp.textContent        = opName;
+      pRoundtrip.textContent = ms.toFixed(1) + ' ms';
+      pPer.textContent       = perElem.toFixed(2) + ' ms';
+      pMode.textContent      = currentMode;
+
+      // Colour-code roundtrip value
+      pRoundtrip.className = 'perf-value' +
+        (ms < 200 ? ' ok' : ms < 800 ? ' warn' : ' slow');
+    }
+
+    // ── Initialise scene ─────────────────────────────────────────────────
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+
+      openPlans.CameraMode = CameraMode.Model;
+      openPlans.showGrid   = false;
+
+      const offsetX = (COLS * COL_GAP) / 2;
+      const offsetZ = (ROWS * ROW_GAP) / 2;
+
+      // ── Phase 1: walls ─────────────────────────────────────────────
+      for (let i = 0; i < COUNT; i += BATCH) {
+        for (let j = i; j < Math.min(i + BATCH, COUNT); j++) {
+          const col = j % COLS;
+          const row = Math.floor(j / COLS);
+          const x0  = col * COL_GAP - offsetX;
+          const z0  = row * ROW_GAP - offsetZ;
+
+          const wall = openPlans.singleWall({
+            points:    [[x0, 0, z0], [x0 + WALL_LEN, 0, z0]],
+            thickness: 0.28,
+            height:    3.0,
+          });
+          walls.push(wall);
+        }
+        setProgress(Math.min(i + BATCH, COUNT), COUNT,
+          `Creating walls … ${Math.min(i + BATCH, COUNT)} / ${COUNT}`);
+        await yieldTick();
+      }
+
+      // ── Phase 2: doors ─────────────────────────────────────────────
+      for (let i = 0; i < COUNT; i += BATCH) {
+        for (let j = i; j < Math.min(i + BATCH, COUNT); j++) {
+          const door = openPlans.door({
+            panelDimensions: { width: 0.85, thickness: 0.04 },
+            frameDimensions: { width: 0.08, thickness: 0.28 },
+            doorHeight:  2.1,
+            doorColor:   0xc17f24,
+            frameColor:  0x2a2a2a,
+          });
+          doors.push(door);
+        }
+        setProgress(Math.min(i + BATCH, COUNT), COUNT,
+          `Creating doors … ${Math.min(i + BATCH, COUNT)} / ${COUNT}`);
+        await yieldTick();
+      }
+
+      // ── Phase 3: windows (created upfront, detached) ───────────────
+      for (let i = 0; i < COUNT; i += BATCH) {
+        for (let j = i; j < Math.min(i + BATCH, COUNT); j++) {
+          const win = openPlans.window({
+            windowDimensions: { width: 1.0, thickness: 0.04 },
+            frameDimensions:  { width: 0.07, thickness: 0.28 },
+            windowHeight: 1.0,
+            sillHeight:   0.9,
+            glassColor:   0x87ceeb,
+            frameColor:   0x2a2a2a,
+          });
+          windowElements.push(win);
+        }
+        setProgress(Math.min(i + BATCH, COUNT), COUNT,
+          `Creating windows … ${Math.min(i + BATCH, COUNT)} / ${COUNT}`);
+        await yieldTick();
+      }
+
+      // ── Phase 4: attach all doors → walls (CSG pass) ───────────────
+      for (let i = 0; i < COUNT; i += BATCH) {
+        for (let j = i; j < Math.min(i + BATCH, COUNT); j++) {
+          doors[j].station = { alongWall: INIT_STA, elevation: 0 };
+          walls[j].attachDoor(doors[j]);
+        }
+        setProgress(Math.min(i + BATCH, COUNT), COUNT,
+          `Cutting doors into walls … ${Math.min(i + BATCH, COUNT)} / ${COUNT}`);
+        await yieldTick();
+      }
+
+      // ── Stats.js: three panels (FPS / MS / MB) ─────────────────────
+      [0, 1, 2].forEach((panel, idx) => {
+        const s = new Stats();
+        s.showPanel(panel);
+        Object.assign(s.dom.style, {
+          position: 'fixed',
+          left:     (idx * 80) + 'px',
+          top:      '0px',
+          zIndex:   '1000',
+        });
+        document.body.appendChild(s.dom);
+
+        openPlans.onRender.add(() => {
+          s.begin();
+          s.end();
+        });
+      });
+
+      document.getElementById('stats-labels').classList.add('visible');
+
+      openPlans.fitToView(walls);
+      loadOverlay.classList.add('hidden');
+      perfOverlay.classList.add('visible');
+    }
+
+    // ── Bulk operations (measured) ────────────────────────────────────────
+
+    /**
+     * Switch all 500 openings from door → window or window → door.
+     * Each detach + attach triggers a full wall CSG resolve —
+     * the roundtrip time reflects the real WASM compute cost.
+     *
+     * Note: attach() adds new event listeners each call; after multiple
+     * toggles those accumulate, making subsequent passes incrementally
+     * slower — that degradation is itself a meaningful data point.
+     */
+    function switchToMode(targetMode) {
+      if (targetMode === currentMode) return;
+      const t0 = performance.now();
+
+      if (targetMode === 'window') {
+        for (let i = 0; i < COUNT; i++) {
+          walls[i].detachDoor(doors[i]);
+          windowElements[i].station = { alongWall: currentStation };
+          walls[i].attachWindow(windowElements[i]);
+        }
+      } else {
+        for (let i = 0; i < COUNT; i++) {
+          walls[i].detachWindow(windowElements[i]);
+          doors[i].station = { alongWall: currentStation, elevation: 0 };
+          walls[i].attachDoor(doors[i]);
+        }
+      }
+
+      currentMode = targetMode;
+      const ms = performance.now() - t0;
+      recordRoundtrip('Toggle door ↔ window', ms, COUNT);
+    }
+
+    /** Move the station point for all 500 active openings at once. */
+    function updateAllStations(value) {
+      currentStation = value;
+      const t0 = performance.now();
+
+      const elements = currentMode === 'door' ? doors : windowElements;
+      for (const el of elements) {
+        if (currentMode === 'door') {
+          el.station = { alongWall: value, elevation: 0 };
+        } else {
+          el.station = { alongWall: value };
+        }
+      }
+
+      const ms = performance.now() - t0;
+      recordRoundtrip('Station update ×500', ms, COUNT);
+    }
+
+    /** Toggle between 3D model view and 2D profile (plan) view. */
+    function applyViewMode(modelView) {
+      openPlans.CameraMode = modelView ? CameraMode.Model : CameraMode.Plan;
+      for (const wall of walls) {
+        wall.profileView = !modelView;
+        wall.modelView   =  modelView;
+      }
+      for (const door of doors) {
+        door.profileView = !modelView;
+        door.modelView   =  modelView;
+      }
+      for (const win of windowElements) {
+        win.profileView = !modelView;
+        win.modelView   =  modelView;
+      }
+    }
+
+    // ── GUI ───────────────────────────────────────────────────────────────
+    function setUI() {
+      const gui = new GUI({ title: 'Stress Controls', width: 300 });
+
+      // ── Stress folder ───────────────────────────────────────────────
+      const stressFolder = gui.addFolder('Opening Controls');
+      stressFolder.open();
+
+      const params = {
+        useDoors:     true,
+        stationAlong: INIT_STA,
+        modelView:    true,
+      };
+
+      stressFolder
+        .add(params, 'useDoors')
+        .name('Use Doors (off = Windows)')
+        .onChange(value => switchToMode(value ? 'door' : 'window'));
+
+      stressFolder
+        .add(params, 'stationAlong', 0.50, 1.50, 0.01)
+        .name('Station along wall (m)')
+        .onChange(value => updateAllStations(value));
+
+      stressFolder
+        .add(params, 'modelView')
+        .name('Model view (off = Profile)')
+        .onChange(value => applyViewMode(value));
+
+      // ── Actions ─────────────────────────────────────────────────────
+      const actionsFolder = gui.addFolder('Actions');
+      actionsFolder.add({ fit: () => openPlans.fitToView(walls) }, 'fit')
+        .name('Fit to View');
+
+      actionsFolder.add({
+        resetStation: () => {
+          params.stationAlong = INIT_STA;
+          updateAllStations(INIT_STA);
+          // Sync the slider display
+          gui.controllers.forEach(c => {
+            if (c.property === 'stationAlong') c.updateDisplay();
+          });
+          stressFolder.controllers.forEach(c => {
+            if (c.property === 'stationAlong') c.updateDisplay();
+          });
+        }
+      }, 'resetStation').name('Reset Station');
+
+      // ── Scene info (read-only) ───────────────────────────────────────
+      const infoFolder = gui.addFolder('Scene Info');
+      const info = { walls: COUNT, openings: COUNT, wallLen: WALL_LEN + ' m' };
+      infoFolder.add(info, 'walls').name('Walls').disable();
+      infoFolder.add(info, 'openings').name('Openings').disable();
+      infoFolder.add(info, 'wallLen').name('Wall length').disable();
+      infoFolder.close();
+    }
+
+    // ── Bootstrap ─────────────────────────────────────────────────────────
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
+</body>
+
+</html>
