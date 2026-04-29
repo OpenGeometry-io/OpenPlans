@@ -619,9 +619,12 @@
         <div class="nav-dropdown-menu">
           <a href="#" class="nav-dropdown-item" data-filter="primitives">Primitives</a>
           <a href="#" class="nav-dropdown-item" data-filter="dimensions">Dimensions</a>
+          <a href="#" class="nav-dropdown-item" data-filter="datums">Datums</a>
           <a href="#" class="nav-dropdown-item" data-filter="shapes">Shapes & 3D</a>
           <a href="#" class="nav-dropdown-item" data-filter="elements">Elements</a>
-          <a href="#" class="nav-dropdown-item" data-filter="2d-elements">2D Elements</a>
+          <a href="#" class="nav-dropdown-item" data-filter="drawings">Drawings</a>
+          <a href="#" class="nav-dropdown-item" data-filter="views">Views</a>
+          <a href="#" class="nav-dropdown-item" data-filter="exporters">Exporters</a>
         </div>
       </div>
       <a href="#" id="docs-link">Docs</a>
@@ -668,9 +671,12 @@
       style="background: #ff6b00; color: #fff; border-color: #ff6b00;">Demo</button>
     <button class="filter-btn" data-filter="primitives">Primitives</button>
     <button class="filter-btn" data-filter="dimensions">Dimensions</button>
+    <button class="filter-btn" data-filter="datums">Datums</button>
     <button class="filter-btn" data-filter="shapes">Shapes & 3D</button>
     <button class="filter-btn" data-filter="elements">Elements</button>
-    <button class="filter-btn" data-filter="2d-elements">2D Elements</button>
+    <button class="filter-btn" data-filter="drawings">Drawings</button>
+    <button class="filter-btn" data-filter="views">Views</button>
+    <button class="filter-btn" data-filter="exporters">Exporters</button>
   </div>
 
   <!-- Demo Section -->
@@ -780,77 +786,12 @@
     </div>
   </section>
 
-  <!-- Elements Section -->
-  <section class="section" data-category="elements">
-    <div class="section-header">
-      <h2 class="section-title">Drafting Elements</h2>
-      <div class="section-line"></div>
-      <span class="section-count"></span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <span class="card-tag">Element</span>
-        <h3 class="card-title">Paper Frame</h3>
-        <p class="card-description">Collection of layouts for creating printable documents and drawings for a defined view.</p>
-        <div class="card-links">
-          <a href="./drawings/paper.html" class="card-link primary">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag coming-soon">Coming Soon</span>
-        <h3 class="card-title">Element Loader</h3>
-        <p class="card-description">Load and render reusable .op asset files (furniture, fixtures, appliances, landscape). Backed by the generic element system on feature/drawings.</p>
-        <div class="card-links">
-          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Semantic Elements Section -->
-  <section class="section" data-category="semantic-elements">
-    <div class="section-header">
-      <h2 class="section-title">Semantic Elements</h2>
-      <div class="section-line"></div>
-      <span class="section-count"></span>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <span class="card-tag">Semantic Element</span>
-        <h3 class="card-title">Door</h3>
-        <p class="card-description">Single door plan symbol with swing arc and frame representation.</p>
-        <div class="card-links">
-          <a href="./elements/openings/door.html" class="card-link primary">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag">Semantic Element</span>
-        <h3 class="card-title">Window</h3>
-        <p class="card-description">Single window plan symbol with glass pane and frame bars.</p>
-        <div class="card-links">
-          <a href="./elements/openings/window.html" class="card-link primary">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-tag">Semantic Element</span>
-        <h3 class="card-title">Single Wall</h3>
-        <p class="card-description">Wall plan symbol with configurable segments and thickness.</p>
-        <div class="card-links">
-          <a href="./elements/solids/single-wall.html" class="card-link primary">View Example <span class="arrow">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Shapes & 3D Section -->
   <section class="section" data-category="shapes">
     <div class="section-header">
       <h2 class="section-title">Shapes & 3D</h2>
       <div class="section-line"></div>
-      <span class="section-count">2 examples</span>
+      <span class="section-count"></span>
     </div>
     <div class="card-grid">
       <div class="card">
@@ -868,6 +809,273 @@
         <p class="card-description">3D shape with circular base and uniform cross-section.</p>
         <div class="card-links">
           <a href="./shapes/cylinder.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Datums Section -->
+  <section class="section" data-category="datums">
+    <div class="section-header">
+      <h2 class="section-title">Datums</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Level</h3>
+        <p class="card-description">Horizontal reference elevation with head label, tick marks, and configurable extents for section views.</p>
+        <div class="card-links">
+          <a href="./datums/level.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Structural Grid</h3>
+        <p class="card-description">Rectangular column grid with configurable bay spacings and ISO 5457 / US NCS bubble labels.</p>
+        <div class="card-links">
+          <a href="./datums/grid.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Reference Plane</h3>
+        <p class="card-description">Named construction plane defined by an origin and normal vector, with optional body display.</p>
+        <div class="card-links">
+          <a href="./datums/reference-plane.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Project Origin</h3>
+        <p class="card-description">World coordinate origin gizmo with optional benchmark symbol and rotation.</p>
+        <div class="card-links">
+          <a href="./datums/project-origin.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Section Line</h3>
+        <p class="card-description">Cut-plane indicator with direction arrows, view depth, and drawing/sheet number heads.</p>
+        <div class="card-links">
+          <a href="./datums/section-line.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">Elevation Marker</h3>
+        <p class="card-description">Compass-direction elevation marker bubble, supporting both single and clustered multi-view heads.</p>
+        <div class="card-links">
+          <a href="./datums/elevation-marker.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Datum</span>
+        <h3 class="card-title">All Datums</h3>
+        <p class="card-description">Combined showcase placing levels, grid, reference plane, section line, and elevation marker together in one scene.</p>
+        <div class="card-links">
+          <a href="./datums/all-datums.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Walls Section -->
+  <section class="section" data-category="elements">
+    <div class="section-header">
+      <h2 class="section-title">Walls</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Single Wall</h3>
+        <p class="card-description">Straight wall segment with configurable thickness, height, profile view and model view.</p>
+        <div class="card-links">
+          <a href="./elements/solids/single-wall.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Polyline Wall</h3>
+        <p class="card-description">Multi-segment wall following a polyline path with live point editing, append, insert, and remove.</p>
+        <div class="card-links">
+          <a href="./elements/solids/polyline-wall.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Wall Opening</h3>
+        <p class="card-description">Single wall hosting a generic opening, door, and window cut into the geometry via CSG.</p>
+        <div class="card-links">
+          <a href="./elements/solids/wall-opening.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Polyline Wall — Multiple Openings</h3>
+        <p class="card-description">U-shaped polyline wall with dynamic add/remove of doors and windows across all three segments.</p>
+        <div class="card-links">
+          <a href="./elements/solids/poly-wall-openings.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Wall Joins</h3>
+        <p class="card-description">X-join and T-junction playground demonstrating how overlapping and intersecting walls are resolved.</p>
+        <div class="card-links">
+          <a href="./wall.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Wall Openings (Hosted)</h3>
+        <p class="card-description">Hosted opening workflow showing doors and windows attached to a wall with live position controls.</p>
+        <div class="card-links">
+          <a href="./wall-openings.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Openings Section -->
+  <section class="section" data-category="elements">
+    <div class="section-header">
+      <h2 class="section-title">Openings</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Opening</h3>
+        <p class="card-description">Generic wall opening shape defined by two points, with thickness, height, and base height controls.</p>
+        <div class="card-links">
+          <a href="./elements/openings/opening.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Door</h3>
+        <p class="card-description">Door element with swing arc, frame, panel dimensions, quadrant, and color controls.</p>
+        <div class="card-links">
+          <a href="./elements/openings/door.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Element</span>
+        <h3 class="card-title">Window</h3>
+        <p class="card-description">Window element with glass pane, frame bars, sill height, and color controls.</p>
+        <div class="card-links">
+          <a href="./elements/openings/window.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drawings Section -->
+  <section class="section" data-category="drawings">
+    <div class="section-header">
+      <h2 class="section-title">Drawings & Layouts</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">Drawing</span>
+        <h3 class="card-title">Paper Frame</h3>
+        <p class="card-description">Sheet layout with title block, revision block, and date block for printable architectural drawings.</p>
+        <div class="card-links">
+          <a href="./drawings/paper.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">Drawing</span>
+        <h3 class="card-title">Viewport Block</h3>
+        <p class="card-description">Embedded viewport that renders the scene from a configurable camera direction — top, front, right, left, or back.</p>
+        <div class="card-links">
+          <a href="./drawings/viewport-block.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag coming-soon">Coming Soon</span>
+        <h3 class="card-title">Element Loader</h3>
+        <p class="card-description">Load and render reusable .op asset files (furniture, fixtures, appliances, landscape). Backed by the generic element system.</p>
+        <div class="card-links">
+          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Exporters Section -->
+  <section class="section" data-category="exporters">
+    <div class="section-header">
+      <h2 class="section-title">Exporters</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">Exporter</span>
+        <h3 class="card-title">IFC Export</h3>
+        <p class="card-description">Export window elements to IFC format using IFCExporter. Downloads a standards-compliant .ifc file.</p>
+        <div class="card-links">
+          <a href="./export-ifc.html" class="card-link primary">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag coming-soon">Coming Soon</span>
+        <h3 class="card-title">DXF Export</h3>
+        <p class="card-description">Export plan drawings to DXF format for use in AutoCAD and other CAD applications.</p>
+        <div class="card-links">
+          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-tag coming-soon">Coming Soon</span>
+        <h3 class="card-title">PDF Export</h3>
+        <p class="card-description">Export plan drawings to PDF using PlanPDFGenerator for printing and sharing.</p>
+        <div class="card-links">
+          <a href="#" class="card-link disabled">View Example <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Views Section -->
+  <section class="section" data-category="views">
+    <div class="section-header">
+      <h2 class="section-title">Views</h2>
+      <div class="section-line"></div>
+      <span class="section-count"></span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-tag">View</span>
+        <h3 class="card-title">View Creation</h3>
+        <p class="card-description">Create and store named camera views via ViewManager, then switch between them at runtime.</p>
+        <div class="card-links">
+          <a href="./views/view-creation.html" class="card-link primary">View Example <span class="arrow">→</span></a>
         </div>
       </div>
     </div>

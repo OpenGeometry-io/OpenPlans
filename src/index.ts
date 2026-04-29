@@ -15,6 +15,8 @@ import {
 } from './packages/openplans-core/src/elements';
 
 import { ViewManager } from './packages/openplans-core/src/view-manager';
+import { DimensionTool, DimensionType } from './packages/openplans-core/src/dimensions';
+import { ViewportBlock, ViewportConfig } from './packages/openplans-core/src/layouts/viewport-block';
 
 import {
   DatumTool,
@@ -93,6 +95,7 @@ export class OpenPlans {
     // dimensionTool.sceneRef = this.openThree.scene;
 
     DatumTool.sceneRef = this.openThree.scene;
+    DimensionTool.sceneRef = this.openThree.scene;
 
     // this.pencil?.onCursorDown.add((coords) => {
     //   console.log('Cursor Down', coords)
@@ -106,6 +109,9 @@ export class OpenPlans {
 
   private renderCallback = () => {
     this.onRender.trigger();
+    this.getElementsByType(ViewportBlock).forEach((vb) => {
+      vb.render(this.openThree.renderer, this.openThree.scene);
+    });
     // if (this.openThree && this.labelRenderer) {
     //   // console.log('Rendering labels');
     //   this.labelRenderer.render(this.openThree.scene, this.openThree.threeCamera);
@@ -374,5 +380,16 @@ export class OpenPlans {
 
   elevationMarker(config?: Partial<ElevationMarkerOptions>) {
     return this.addElement(new ElevationMarker(config));
+  }
+
+  // Dimensions
+  createDimension(type: DimensionType) {
+    return DimensionTool.createDimension(type);
+  }
+
+  // Layouts
+  viewportBlock(config: Omit<ViewportConfig, 'ogType' | 'scale' | 'rotation'> & Partial<Pick<ViewportConfig, 'scale' | 'rotation'>>) {
+    const fullConfig: ViewportConfig = { ogType: 'VIEWPORT_BLOCK', scale: 1, rotation: 0, ...config };
+    return this.addElement(new ViewportBlock(fullConfig));
   }
 }

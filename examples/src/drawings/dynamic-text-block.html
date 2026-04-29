@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans — Dynamic Text Block</title>
+  <link rel="stylesheet" href="../shared/example.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans Layout — Dynamic Text Block">
+  <meta name="author" content="OpenPlans">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 60px 40px;
+      border: 2px dashed #ccc;
+      max-width: 480px;
+    }
+
+    .placeholder h2 {
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .placeholder p {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #fff8e6;
+      border: 1px solid #ffcc00;
+      color: #996600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="example-title">Dynamic Text Block</div>
+  <div class="placeholder">
+    <div class="badge">In Progress</div>
+    <h2>Dynamic Text Block</h2>
+    <p>
+      The dynamic text block renders live, data-bound text cells inside a paper frame —
+      useful for project name, date, revision, and other title-block fields.
+      This example will be available once the <code>DynamicTextBlock</code> API
+      is finalised and exported from the <code>@opengeometry/openplans</code> package.
+    </p>
+  </div>
+</body>
+
+</html>

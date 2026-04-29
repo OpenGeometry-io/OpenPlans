@@ -2,136 +2,108 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenPlan Radius Dimensions</title>
-    <style>
-    body {
-      background-color: #f0f0f0;
+  <title>OpenPlans — Radius Dimension</title>
+  <!-- TRACKING -->
+  <link rel="stylesheet" href="../shared/example.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenPlans Dimension — Radius">
+  <meta name="author" content="OpenPlans">
+  <style>
+    #app {
+      cursor: unset !important;
     }
   </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "../../node_modules/three/build/three.module.js",
-          "three/addons/": "../../node_modules/three/examples/jsm/",
-          "@opengeometry/openglyph": "../../node_modules/@opengeometry/openglyph/index.js"
-        }
-      }
-    </script>
-  <link rel="stylesheet" href="../shared/example.css">
 </head>
 
 <body>
-    <div id="app"></div>
-    <script type="module">
-        import * as THREE from "three";
-        import { OpenPlans, CameraMode } from "/openplans";
-        import GUI from "three/addons/libs/lil-gui.module.min.js";
+  <div class="example-title">Radius Dimension</div>
+  <div id="app"></div>
+  <script type="module">
+    import { OpenPlans, CameraMode } from '@opengeometry/openplans';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-        // Initialize OpenPlans
-        const container = document.getElementById("app");
-        const openPlans = new OpenPlans(container);
+    let openPlans;
+    let radiusDim;
+    let circlePrimitive;
 
-        let radiusDim;
-        let circlePrimitive;
+    const params = {
+      centerX: 0,
+      centerY: 0,
+      centerZ: 0,
+      radius: 5,
+      angleDeg: 45,
+      lineColor: '#000000',
+      lineWidth: 2,
+      fontSize: 2,
+      fontColor: '#000000',
+      label: '',
+    };
 
-        const params = {
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0,
-            radius: 5,
-            angleDeg: 45,
-            textOffset: 0.2,
-            lineColor: "#000000",
-            lineWidth: 2,
-            fontSize: 2,
-            fontColor: "#000000",
-            label: "",
-        };
+    function hexToNumber(hex) {
+      return parseInt(hex.replace('#', ''), 16);
+    }
 
-        async function init() {
-            await openPlans.setupOpenGeometry();
-            openPlans.CameraMode = CameraMode.Model;
+    async function init() {
+      const container = document.getElementById('app');
+      openPlans = new OpenPlans(container);
+      await openPlans.setupOpenGeometry();
+      openPlans.CameraMode = CameraMode.Plan;
 
-            // Circle Primitive using OpenPlans
-            circlePrimitive = openPlans.arc({
-                center: [params.centerX, params.centerY, params.centerZ],
-                radius: params.radius,
-                startAngle: 0,
-                endAngle: 2 * Math.PI,
-                segments: 64,
-                color: 0xaaaaaa
-            });
+      circlePrimitive = openPlans.arc({
+        center: [params.centerX, params.centerY, params.centerZ],
+        radius: params.radius,
+        startAngle: 0,
+        endAngle: 2 * Math.PI,
+        segments: 64,
+        color: 0xaaaaaa,
+      });
 
-            // Grid
-            const gridHelper = new THREE.GridHelper(100, 100);
-            openPlans.openThree.scene.add(gridHelper);
+      radiusDim = openPlans.createDimension('radius');
+      update();
+    }
 
-            radiusDim = openPlans.createDimension("radius");
-            updateDimension();
+    function update() {
+      radiusDim.center = [params.centerX, params.centerY, params.centerZ];
+      radiusDim.radius = params.radius;
+      radiusDim.angle = (params.angleDeg * Math.PI) / 180;
+      radiusDim.dimColor = hexToNumber(params.lineColor);
+      radiusDim.lineWidth = params.lineWidth;
+      radiusDim.fontSize = params.fontSize;
+      radiusDim.fontColor = hexToNumber(params.fontColor);
+      radiusDim.label = params.label || undefined;
 
-            setupGUI();
+      circlePrimitive.arcCenter = [params.centerX, params.centerY, params.centerZ];
+      circlePrimitive.arcRadius = params.radius;
+    }
 
-            // Zoom out a bit
-            openPlans.openThree.camera.position.set(0, 20, 0);
-            openPlans.openThree.controls.update();
+    function setUI() {
+      const gui = new GUI();
 
-            animate();
-        }
+      const centerFolder = gui.addFolder('Center');
+      centerFolder.add(params, 'centerX', -10, 10, 0.1).name('X').onChange(update);
+      centerFolder.add(params, 'centerY', -10, 10, 0.1).name('Y').onChange(update);
+      centerFolder.add(params, 'centerZ', -10, 10, 0.1).name('Z').onChange(update);
+      centerFolder.open();
 
-        function updateDimension() {
-            const center = [params.centerX, params.centerY, params.centerZ];
-            const angleRad = (params.angleDeg * Math.PI) / 180;
+      gui.add(params, 'radius', 0.5, 20, 0.1).name('Radius').onChange(update);
+      gui.add(params, 'angleDeg', 0, 360, 1).name('Leader Angle (°)').onChange(update);
 
-            // Update Dim
-            radiusDim.center = center;
-            radiusDim.radius = params.radius;
-            radiusDim.angle = angleRad;
+      gui.addColor(params, 'lineColor').name('Line Color').onChange(update);
+      gui.add(params, 'lineWidth', 1, 10, 0.5).name('Line Width').onChange(update);
 
-            radiusDim.textOffset = params.textOffset;
+      const labelFolder = gui.addFolder('Label');
+      labelFolder.add(params, 'label').name('Text (blank = auto)').onChange(update);
+      labelFolder.add(params, 'fontSize', 1, 10, 0.5).name('Font Size').onChange(update);
+      labelFolder.addColor(params, 'fontColor').name('Font Color').onChange(update);
+      labelFolder.open();
+    }
 
-            radiusDim.dimColor = parseInt(params.lineColor.replace("#", ""), 16);
-            radiusDim.lineWidth = params.lineWidth;
-            radiusDim.fontSize = params.fontSize;
-            radiusDim.fontColor = parseInt(params.fontColor.replace("#", ""), 16);
-            radiusDim.label = params.label;
-
-            // Update Arc Primitive
-            if (circlePrimitive) {
-                circlePrimitive.arcCenter = new THREE.Vector3(...center);
-                circlePrimitive.arcRadius = params.radius;
-            }
-        }
-
-        function setupGUI() {
-            const gui = new GUI();
-
-            const folder = gui.addFolder("Radius Dimension");
-
-            folder.add(params, "centerX", -10, 10).onChange(updateDimension);
-            folder.add(params, "centerY", -10, 10).onChange(updateDimension);
-            folder.add(params, "centerZ", -10, 10).onChange(updateDimension);
-
-            folder.add(params, "radius", 1, 20).onChange(updateDimension);
-            folder.add(params, "angleDeg", 0, 360).name("Angle (Deg)").onChange(updateDimension);
-            folder.add(params, "textOffset", -5, 10).name("Text Offset").onChange(updateDimension);
-
-            folder.addColor(params, "lineColor").onChange(updateDimension);
-            folder.add(params, "lineWidth", 1, 10).onChange(updateDimension);
-            folder.add(params, "fontSize", 1, 10).onChange(updateDimension);
-            folder.addColor(params, "fontColor").onChange(updateDimension);
-            folder.add(params, "label").onChange(updateDimension);
-
-            folder.open();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-        }
-
-        init();
-    </script>
+    (async function () {
+      await init();
+      setUI();
+    })();
+  </script>
 </body>
 
 </html>
