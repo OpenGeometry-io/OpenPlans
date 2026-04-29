@@ -29,12 +29,23 @@
       await openPlans.setupOpenGeometry();
 
       openPlans.CameraMode = CameraMode.Model;
-      openPlans.openThree.toggleTheme('darkBlue');
 
       // ── Scene content ──
-      // Add some elements so the viewports have something to render
-      const door = openPlans.baseDoor();
-      door.position.set(0, 0, 0);
+      const wall = openPlans.singleWall({
+        points: [[0, 0, 0], [6, 0, 0]],
+        thickness: 0.3,
+        height: 3,
+      });
+      wall.outline = true;
+
+      const door = openPlans.door({
+        panelDimensions: { width: 0.9, thickness: 0.04 },
+        frameDimensions: { width: 0.08, thickness: 0.3 },
+        doorHeight: 2.1,
+        doorColor: 0xcc7a00,
+        frameColor: 0x654321,
+      });
+      wall.attachDoor(door, { offset: 3, baseHeight: 0 });
 
       // const slab = openPlans.baseSlab();
       // slab.position.set(3, 0, 0);
