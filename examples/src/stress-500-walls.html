@@ -189,6 +189,7 @@
     const windowElements = [];
     let currentMode    = 'door';
     let currentStation = INIT_STA;
+    let outlineEnabled = true;
 
     // ── Loading helpers ───────────────────────────────────────────────────
     const loadOverlay = document.getElementById('loading-overlay');
@@ -377,6 +378,20 @@
       recordRoundtrip('Station update ×500', ms, COUNT);
     }
 
+    /** Toggle outline rendering on all 1500 elements (walls + doors + windows). */
+    function applyOutline(value) {
+      outlineEnabled = value;
+      const t0 = performance.now();
+
+      for (const wall of walls) wall.outline = value;
+      for (const door of doors) door.outline = value;
+      for (const win of windowElements) win.outline = value;
+
+      const ms = performance.now() - t0;
+      const total = walls.length + doors.length + windowElements.length;
+      recordRoundtrip('Outline toggle ×' + total, ms, total);
+    }
+
     /** Toggle between 3D model view and 2D profile (plan) view. */
     function applyViewMode(modelView) {
       openPlans.CameraMode = modelView ? CameraMode.Model : CameraMode.Plan;
@@ -422,6 +437,17 @@
         .add(params, 'modelView')
         .name('Model view (off = Profile)')
         .onChange(value => applyViewMode(value));
+
+      // ── Rendering folder ────────────────────────────────────────────
+      const renderFolder = gui.addFolder('Rendering');
+      renderFolder.open();
+
+      const renderParams = { outline: true };
+
+      renderFolder
+        .add(renderParams, 'outline')
+        .name('Outline (all elements)')
+        .onChange(value => applyOutline(value));
 
       // ── Actions ─────────────────────────────────────────────────────
       const actionsFolder = gui.addFolder('Actions');
