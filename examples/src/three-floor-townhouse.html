@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>OpenPlans — Three-Floor Townhouse</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="Three-floor townhouse floorplan (Ground / Main / Upper) modelled with OpenPlans walls, doors, and windows. Toggle between plan view and model view.">
+  <meta name="author" content="OpenGeometry">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f5efe5;
+      --paper-shadow: rgba(36, 28, 22, 0.12);
+      --panel: rgba(255, 251, 246, 0.92);
+      --panel-border: rgba(48, 37, 29, 0.16);
+      --text: #201813;
+      --muted: rgba(32, 24, 19, 0.68);
+      --accent: #7f5f4a;
+      --accent-soft: rgba(127, 95, 74, 0.12);
+      --button: rgba(255, 255, 255, 0.76);
+      --button-active: #201813;
+      --button-active-text: #fff8ef;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(205, 184, 161, 0.5), transparent 26%),
+        radial-gradient(circle at 82% 14%, rgba(160, 136, 115, 0.16), transparent 18%),
+        linear-gradient(180deg, #f9f3ea 0%, #efe6d9 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    #app { width: 100%; height: 100vh; }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .hero {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      max-width: min(440px, calc(100vw - 40px));
+      padding: 18px 20px 16px;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 48px var(--paper-shadow);
+      pointer-events: auto;
+    }
+
+    .eyebrow {
+      margin-bottom: 10px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(26px, 3.6vw, 36px);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 36ch;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .controls button {
+      appearance: none;
+      border: 1px solid rgba(32, 24, 19, 0.12);
+      background: var(--button);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .controls button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(32, 24, 19, 0.28);
+    }
+
+    .controls button.is-active {
+      background: var(--button-active);
+      color: var(--button-active-text);
+      border-color: var(--button-active);
+    }
+
+    .legend {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: min(320px, calc(100vw - 40px));
+      padding: 14px 16px;
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      background: rgba(255, 249, 241, 0.88);
+      box-shadow: 0 18px 40px rgba(55, 39, 27, 0.1);
+      backdrop-filter: blur(14px);
+      pointer-events: auto;
+    }
+
+    .legend strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .legend p {
+      margin: 0 0 8px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .floor-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .floor-pills .pill {
+      display: inline-flex;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10.5px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      .hero { top: 14px; left: 14px; right: 14px; max-width: none; }
+      .legend { right: 14px; left: 14px; bottom: 14px; max-width: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hud">
+    <div class="hero">
+      <div class="eyebrow">Three-Floor Townhouse</div>
+      <h1>Ground · Main · Upper</h1>
+      <p>
+        A 20'×32' three-floor townhouse modelled from the reference floorplan using OpenPlans walls, doors, and windows.
+        Toggle between a plan-style top-down profile view and a full 3D model view.
+      </p>
+      <div class="controls">
+        <button id="plan-view">Plan View</button>
+        <button id="model-view" class="is-active">Model View</button>
+        <button id="reset-view">Reset View</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <strong>Floors</strong>
+      <p>Three stacked levels with their own walls, doors, and windows. The plan view shows 2D profiles; the model view shows the extruded 3D walls with cut openings.</p>
+      <div class="floor-pills">
+        <span class="pill">Ground · Garage / Office</span>
+        <span class="pill">Main · Family / Kitchen</span>
+        <span class="pill">Upper · Bedrooms / Baths</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { CameraMode, OpenPlans } from './../../src/index.ts';
+
+    // ── Palette ─────────────────────────────────────────────────────────────
+    const palette = {
+      paper: 0xf5efe5,
+      modelPaper: 0xe5ddd0,
+      wallExterior: 0x241d18,
+      wallInterior: 0x3a2e25,
+      wallGround: 0x2c241c,
+      frame: 0x201914,
+      doorPanel: 0xf9f3e8,
+      windowGlass: 0xcddbeb,
+      swing: 0x7a6757,
+    };
+
+    // ── Geometry constants ──────────────────────────────────────────────────
+    const FLOOR_HEIGHT = 2.8;
+    const FLOOR_Y = { ground: 0, main: FLOOR_HEIGHT, upper: FLOOR_HEIGHT * 2 };
+    const EXT_THK = 0.24;
+    const INT_THK = 0.14;
+
+    // Building footprint: ~20'×32' → 6.0m × 9.6m, origin at front-left corner
+    // x: 0..6 (W..E), z: 0..9.6 (S front .. N back)
+
+    const state = { viewMode: 'model' };
+    const walls = new Map();
+    const openings = [];
+    const focusElements = [];
+
+    let openPlans;
+    let planCamera;
+    let scene;
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function p(x, y, z) { return [x, y, z]; }
+
+    function addFocus(el) { focusElements.push(el); return el; }
+
+    function createWall({
+      id,
+      start,        // [x, z]
+      end,          // [x, z]
+      y = 0,
+      thickness = EXT_THK,
+      height = FLOOR_HEIGHT,
+      color = palette.wallExterior,
+    }) {
+      const wall = openPlans.singleWall({
+        labelName: id,
+        thickness,
+        height,
+        color,
+        points: [p(start[0], y, start[1]), p(end[0], y, end[1])],
+      });
+      wall.outline = true;
+      walls.set(id, wall);
+      addFocus(wall);
+      return wall;
+    }
+
+    function tintDoorSwing(door) {
+      const swingArc = door.subElements2D.get('swingArc');
+      if (swingArc) swingArc.color = palette.swing;
+    }
+
+    function createDoor({
+      id,
+      wallId,
+      station,
+      width = 0.9,
+      height = 2.1,
+      panelThickness = 0.05,
+      frameWidth = 0.07,
+      frameThickness = 0.1,
+      rotationY = 0,
+    }) {
+      const wall = walls.get(wallId);
+      if (!wall) throw new Error(`Missing host wall for door: ${wallId} (${id})`);
+
+      const door = openPlans.door({
+        labelName: id,
+        hostWallId: wall.ogid,
+        stationLocal: { alongWall: station, elevation: 0 },
+        panelDimensions: { width, thickness: panelThickness },
+        frameDimensions: { width: frameWidth, thickness: frameThickness },
+        doorHeight: height,
+        doorColor: palette.doorPanel,
+        frameColor: palette.frame,
+      });
+      door.outline = true;
+      if (rotationY !== 0) door.rotation.y = rotationY;
+      wall.attachDoor(door);
+      tintDoorSwing(door);
+      openings.push(door);
+      addFocus(door);
+      return door;
+    }
+
+    function createWindow({
+      id,
+      wallId,
+      station,
+      width = 1.2,
+      height = 1.0,
+      sillHeight = 0.95,
+      frameWidth = 0.07,
+      frameThickness = 0.1,
+      windowThickness = 0.06,
+    }) {
+      const wall = walls.get(wallId);
+      if (!wall) throw new Error(`Missing host wall for window: ${wallId} (${id})`);
+
+      const win = openPlans.window({
+        labelName: id,
+        hostWallId: wall.ogid,
+        stationLocal: { alongWall: station },
+        windowDimensions: { width, thickness: windowThickness },
+        frameDimensions: { width: frameWidth, thickness: frameThickness },
+        windowHeight: height,
+        sillHeight,
+        frameColor: palette.frame,
+        glassColor: palette.windowGlass,
+      });
+      win.outline = true;
+      wall.attachWindow(win);
+      openings.push(win);
+      addFocus(win);
+      return win;
+    }
+
+    // ── GROUND FLOOR ────────────────────────────────────────────────────────
+    // Garage right side, Office/Bed 3 top-left, Bath top-right, Storage / entry
+    function buildGround() {
+      const y = FLOOR_Y.ground;
+      const ext = { y, color: palette.wallGround, thickness: EXT_THK };
+      const int = { y, color: palette.wallInterior, thickness: INT_THK };
+
+      // Exterior shell — south wall is split to leave a garage door opening
+      // (garage opening: x=2.4..5.7 has no south wall).
+      createWall({ id: 'g-ext-south-entry', start: [0, 0],   end: [2.4, 0],   ...ext });
+      createWall({ id: 'g-ext-south-jamb',  start: [5.7, 0], end: [6.0, 0],   ...ext });
+      createWall({ id: 'g-ext-east',        start: [6.0, 0], end: [6.0, 9.6], ...ext });
+      createWall({ id: 'g-ext-north',       start: [6.0, 9.6], end: [0, 9.6], ...ext });
+      createWall({ id: 'g-ext-west',        start: [0, 9.6], end: [0, 0],     ...ext });
+
+      // Interior — separate the garage from the live area
+      createWall({ id: 'g-garage-divider', start: [2.4, 0], end: [2.4, 6.6], ...int });
+      // Office / Bed 3 back wall
+      createWall({ id: 'g-office-back',    start: [0, 6.6], end: [2.4, 6.6], ...int });
+      // Bath (top-right) partition
+      createWall({ id: 'g-bath-south',     start: [3.6, 7.4], end: [6.0, 7.4], ...int });
+      createWall({ id: 'g-bath-west',      start: [3.6, 7.4], end: [3.6, 9.6], ...int });
+      // Mech / storage divider on east side
+      createWall({ id: 'g-mech-north',     start: [4.6, 5.4], end: [6.0, 5.4], ...int });
+
+      // Doors
+      createDoor({ id: 'g-entry-door',     wallId: 'g-ext-south-entry', station: 1.2, width: 1.0 });
+      createDoor({ id: 'g-office-door',    wallId: 'g-office-back',     station: 1.6, width: 0.9 });
+      createDoor({ id: 'g-bath-door',      wallId: 'g-bath-south',      station: 0.8, width: 0.78 });
+
+      // Windows
+      createWindow({ id: 'g-office-window', wallId: 'g-ext-west',  station: 8.0, width: 1.4, height: 1.0, sillHeight: 1.0 });
+      createWindow({ id: 'g-bath-window',   wallId: 'g-ext-north', station: 1.4, width: 0.7, height: 0.7, sillHeight: 1.4 });
+      createWindow({ id: 'g-mech-window',   wallId: 'g-ext-east',  station: 7.0, width: 0.6, height: 0.7, sillHeight: 1.5 });
+    }
+
+    // ── MAIN FLOOR ──────────────────────────────────────────────────────────
+    // Family room (north), Dining + Kitchen (south), stair zone east-middle
+    function buildMain() {
+      const y = FLOOR_Y.main;
+      const ext = { y, color: palette.wallExterior, thickness: EXT_THK };
+      const int = { y, color: palette.wallInterior, thickness: INT_THK };
+
+      // Exterior shell — fully enclosed (patio is cantilever, no walls)
+      createWall({ id: 'm-ext-south', start: [0, 0],   end: [6.0, 0],   ...ext });
+      createWall({ id: 'm-ext-east',  start: [6.0, 0], end: [6.0, 9.6], ...ext });
+      createWall({ id: 'm-ext-north', start: [6.0, 9.6], end: [0, 9.6], ...ext });
+      createWall({ id: 'm-ext-west',  start: [0, 9.6], end: [0, 0],     ...ext });
+
+      // Interior — kitchen / family separator with a wide opening near east side
+      createWall({ id: 'm-kitchen-divider', start: [0, 4.4], end: [3.4, 4.4], ...int });
+      // Pantry / kitchen back wall
+      createWall({ id: 'm-pantry-east', start: [1.2, 0], end: [1.2, 1.6], ...int });
+      createWall({ id: 'm-pantry-north', start: [0, 1.6], end: [1.2, 1.6], ...int });
+      // Stair zone partition (wraps east side, north–south)
+      createWall({ id: 'm-stair-west', start: [4.6, 3.0], end: [4.6, 6.6], ...int });
+      createWall({ id: 'm-stair-south', start: [4.6, 3.0], end: [6.0, 3.0], ...int });
+      createWall({ id: 'm-stair-north', start: [4.6, 6.6], end: [6.0, 6.6], ...int });
+
+      // Doors
+      createDoor({ id: 'm-kitchen-door', wallId: 'm-kitchen-divider', station: 2.4, width: 1.1 });
+      createDoor({ id: 'm-pantry-door',  wallId: 'm-pantry-north',    station: 0.6, width: 0.7 });
+      createDoor({ id: 'm-stair-door',   wallId: 'm-stair-west',      station: 0.8, width: 0.86 });
+      createDoor({ id: 'm-patio-door',   wallId: 'm-ext-south',       station: 3.4, width: 1.6, height: 2.2 });
+
+      // Windows — front (patio side) and rear (back deck side)
+      createWindow({ id: 'm-family-rear-w',  wallId: 'm-ext-north', station: 1.6, width: 1.6, height: 1.3, sillHeight: 0.95 });
+      createWindow({ id: 'm-family-rear-e',  wallId: 'm-ext-north', station: 4.4, width: 1.4, height: 1.3, sillHeight: 0.95 });
+      createWindow({ id: 'm-family-east',    wallId: 'm-ext-east',  station: 8.0, width: 1.4, height: 1.3, sillHeight: 0.95 });
+      createWindow({ id: 'm-kitchen-window', wallId: 'm-ext-west',  station: 1.6, width: 1.0, height: 1.0, sillHeight: 1.1 });
+      createWindow({ id: 'm-dining-window',  wallId: 'm-ext-west',  station: 6.0, width: 1.4, height: 1.3, sillHeight: 0.95 });
+    }
+
+    // ── UPPER FLOOR ─────────────────────────────────────────────────────────
+    // Bed 2 (top-left) + Bath (top-right), Master suite (bottom-left) + Bath (bottom-right)
+    function buildUpper() {
+      const y = FLOOR_Y.upper;
+      const ext = { y, color: palette.wallExterior, thickness: EXT_THK };
+      const int = { y, color: palette.wallInterior, thickness: INT_THK };
+
+      // Exterior shell — decks at front/back are cantilevers; walls fully enclose
+      createWall({ id: 'u-ext-south', start: [0, 0],   end: [6.0, 0],   ...ext });
+      createWall({ id: 'u-ext-east',  start: [6.0, 0], end: [6.0, 9.6], ...ext });
+      createWall({ id: 'u-ext-north', start: [6.0, 9.6], end: [0, 9.6], ...ext });
+      createWall({ id: 'u-ext-west',  start: [0, 9.6], end: [0, 0],     ...ext });
+
+      // Central east-west divider between the two suites
+      createWall({ id: 'u-mid-divider', start: [0, 4.8], end: [6.0, 4.8], ...int });
+
+      // Master suite (south half) interior partitions
+      createWall({ id: 'u-master-bath-w', start: [3.6, 0],   end: [3.6, 2.8], ...int });
+      createWall({ id: 'u-master-bath-n', start: [3.6, 2.8], end: [6.0, 2.8], ...int });
+      createWall({ id: 'u-master-wardrobe-n', start: [2.0, 3.4], end: [3.6, 3.4], ...int });
+      createWall({ id: 'u-master-wardrobe-e', start: [3.6, 2.8], end: [3.6, 3.4], ...int });
+
+      // Bedroom 2 (north half) interior partitions
+      createWall({ id: 'u-bed2-bath-w',   start: [3.6, 6.6], end: [3.6, 9.6], ...int });
+      createWall({ id: 'u-bed2-bath-s',   start: [3.6, 6.6], end: [6.0, 6.6], ...int });
+      createWall({ id: 'u-bed2-wardrobe-s', start: [2.0, 6.0], end: [3.6, 6.0], ...int });
+      createWall({ id: 'u-bed2-wardrobe-e', start: [3.6, 6.0], end: [3.6, 6.6], ...int });
+
+      // Stair landing wall (matches main floor stair zone)
+      createWall({ id: 'u-stair-east', start: [2.0, 4.0], end: [2.0, 5.6], ...int });
+
+      // Doors
+      createDoor({ id: 'u-master-door',   wallId: 'u-mid-divider',     station: 1.4, width: 0.9 });
+      createDoor({ id: 'u-master-bath-door', wallId: 'u-master-bath-n', station: 1.0, width: 0.74 });
+      createDoor({ id: 'u-bed2-door',     wallId: 'u-mid-divider',     station: 4.4, width: 0.9 });
+      createDoor({ id: 'u-bed2-bath-door', wallId: 'u-bed2-bath-s',    station: 1.0, width: 0.74, rotationY: Math.PI });
+
+      // Windows — exterior on every elevation (front deck, back deck, sides)
+      createWindow({ id: 'u-master-front-window', wallId: 'u-ext-south', station: 1.6, width: 1.6, height: 1.3, sillHeight: 0.95 });
+      createWindow({ id: 'u-master-side-window',  wallId: 'u-ext-west',  station: 1.6, width: 1.0, height: 1.1, sillHeight: 1.0 });
+      createWindow({ id: 'u-master-bath-window',  wallId: 'u-ext-east',  station: 1.4, width: 0.7, height: 0.7, sillHeight: 1.4 });
+      createWindow({ id: 'u-bed2-rear-window',    wallId: 'u-ext-north', station: 1.6, width: 1.6, height: 1.3, sillHeight: 0.95 });
+      createWindow({ id: 'u-bed2-side-window',    wallId: 'u-ext-west',  station: 7.6, width: 1.2, height: 1.1, sillHeight: 1.0 });
+      createWindow({ id: 'u-bed2-bath-window',    wallId: 'u-ext-east',  station: 8.2, width: 0.7, height: 0.7, sillHeight: 1.4 });
+    }
+
+    // ── View management ─────────────────────────────────────────────────────
+    function nextFrame() {
+      return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+
+    async function resetView() {
+      if (planCamera?.fitToElement) {
+        await planCamera.fitToElement(focusElements);
+        return;
+      }
+      openPlans.fitToView(focusElements);
+    }
+
+    function updateButtons() {
+      document.getElementById('plan-view').classList.toggle('is-active', state.viewMode === 'plan');
+      document.getElementById('model-view').classList.toggle('is-active', state.viewMode === 'model');
+    }
+
+    async function setViewMode(mode) {
+      state.viewMode = mode;
+      const planMode = mode === 'plan';
+
+      openPlans.CameraMode = planMode ? CameraMode.Plan : CameraMode.Model;
+
+      walls.forEach((wall) => {
+        wall.profileView = planMode;
+        wall.modelView = !planMode;
+      });
+
+      openings.forEach((element) => {
+        element.profileView = planMode;
+        element.modelView = !planMode;
+      });
+
+      scene.background = new THREE.Color(planMode ? palette.paper : palette.modelPaper);
+      updateButtons();
+      await nextFrame();
+      await resetView();
+    }
+
+    // ── Bootstrap ───────────────────────────────────────────────────────────
+    async function init() {
+      openPlans = new OpenPlans(document.getElementById('app'));
+      await openPlans.setupOpenGeometry();
+      openPlans.toggleGrid(false);
+
+      scene = openPlans['openThree'].scene;
+      planCamera = openPlans['planCamera'];
+      scene.background = new THREE.Color(palette.modelPaper);
+
+      buildGround();
+      buildMain();
+      buildUpper();
+
+      await setViewMode('model');
+    }
+
+    function bindUI() {
+      document.getElementById('plan-view').addEventListener('click', () => { void setViewMode('plan'); });
+      document.getElementById('model-view').addEventListener('click', () => { void setViewMode('model'); });
+      document.getElementById('reset-view').addEventListener('click', () => { void resetView(); });
+    }
+
+    (async function () {
+      await init();
+      bindUI();
+    })();
+  </script>
+</body>
+
+</html>
